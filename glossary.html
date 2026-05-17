@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossary | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html" class="active">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Reference</div>
+    <h1>Glossary</h1>
+    <p>Concise definitions for 75+ technical terms used throughout this guide. Click any term in the other pages to search here.</p>
+  </div>
+</header>
+
+<main>
+<div class="gloss-letter">A</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Activation Function</div>
+  <div class="gloss-def">A nonlinear function applied to a neuron's weighted sum before passing the result to the next layer. Common examples: ReLU, GELU, SiLU, sigmoid, softmax. Without activations, a network of any depth reduces to a single linear transformation.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Adam (Adaptive Moment Estimation)</div>
+  <div class="gloss-def">The dominant optimiser for deep learning. Maintains a first-moment estimate (exponential moving average of gradients) and second-moment estimate (EMA of squared gradients) per parameter. Divides the update by the root of the second moment, giving adaptive per-parameter learning rates. Hyperparameters: β₁=0.9, β₂=0.95, ε=1e-8.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">All-Reduce</div>
+  <div class="gloss-def">A collective communication operation where every node sends its local data, the data is summed across all nodes, and every node receives the global sum. Used in data-parallel training to average gradients across GPUs. Implemented via ring-all-reduce or tree-all-reduce algorithms by NCCL.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Attention (Self-Attention)</div>
+  <div class="gloss-def">The core mechanism of the transformer. Each token generates Query, Key, and Value vectors. Attention weights are computed as softmax(QKᵀ/√d_k), then applied to values to produce new representations. Allows every token to attend to every other token in O(n²) time and memory.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Autoregressive Generation</div>
+  <div class="gloss-def">Generating a sequence one token at a time, each token conditioned on all previously generated tokens. LLMs are autoregressive: a 500-token response requires 500 sequential forward passes through the model. This is inherently serial and cannot be parallelised in the generation direction.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">AWQ (Activation-Aware Weight Quantisation)</div>
+  <div class="gloss-def">A post-training quantisation technique that identifies which weights are most important (those activated by large inputs) and protects them from quantisation error by scaling. Achieves near-lossless INT4 quantisation on LLMs.</div>
+</div>
+
+<div class="gloss-letter">B</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Backpropagation</div>
+  <div class="gloss-def">The algorithm that computes gradients of the loss with respect to all model parameters. Applies the chain rule of calculus in reverse through the computation graph. Each layer's gradient is computed using the gradient of the next layer (the downstream error signal). Enables efficient gradient computation without symbolic differentiation.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Batch Normalisation (BatchNorm)</div>
+  <div class="gloss-def">Normalises activations within a mini-batch to zero mean and unit variance, then applies learned scale (γ) and shift (β). Dramatically stabilises training of deep networks. Replaced by Layer Normalisation in transformers because LayerNorm normalises across features rather than the batch, making it suitable for variable-length sequences and small batches.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">BF16 (BFloat16)</div>
+  <div class="gloss-def">A 16-bit floating-point format with 8 exponent bits and 7 mantissa bits. Same exponent range as FP32 (±3.4×10³⁸), lower precision. Preferred over FP16 for AI training because overflow is rare — critical for stability with large gradients. All major AI accelerators (H100, TPU v4+, AMD MI300) support BF16 natively in tensor cores.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">BPE (Byte-Pair Encoding)</div>
+  <div class="gloss-def">A subword tokenisation algorithm that starts with a character vocabulary and iteratively merges the most frequent adjacent pairs. After V merge operations, the vocabulary has ~V entries. Used by GPT-2, GPT-4, and many other LLMs. Produces compact representations of common words and gracefully handles rare words by decomposing them into familiar subwords.</div>
+</div>
+
+<div class="gloss-letter">C</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">CUDA (Compute Unified Device Architecture)</div>
+  <div class="gloss-def">NVIDIA's proprietary GPU programming platform, introduced 2006. Extends C/C++ with GPU-specific constructs: kernels (GPU functions), thread hierarchy (thread/warp/block/grid), and memory spaces (global, shared, registers). The de facto standard for AI compute; AMD ROCm provides a compatible alternative (HIP) but has a smaller ecosystem.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">cuDNN</div>
+  <div class="gloss-def">NVIDIA's library of optimised GPU primitives for deep learning: convolution, attention, pooling, normalisation, activation functions. Provides hand-tuned CUDA kernels that exploit each GPU's specific architecture. PyTorch and TensorFlow call cuDNN internally for most heavy compute operations.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Chinchilla Scaling Law</div>
+  <div class="gloss-def">Empirical law from Hoffmann et al. (DeepMind, 2022) relating compute budget C, optimal model size P, and optimal training tokens D: D ≈ 20×P at equal loss. Prior work undertrained large models relative to this optimum. The loss follows a power law: L(P,D) = E + A/Pᵅ + B/Dᵝ with specific fitted constants.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Continuous Batching</div>
+  <div class="gloss-def">An inference scheduling technique that adds new requests to the active batch at each decode step as existing requests complete, rather than waiting for an entire batch to finish. Increases GPU utilisation from ~40% (static batching) to ~80%+ on typical workloads. Implemented in vLLM, TensorRT-LLM, and most production serving engines.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">CoWoS (Chip on Wafer on Substrate)</div>
+  <div class="gloss-def">TSMC's advanced 2.5D packaging technology. The GPU die and HBM stacks are placed on a large silicon interposer manufactured on a separate wafer, connected via microbumps. The interposer provides dense metal routing (1μm pitch) and short buses to HBM stacks, enabling the 1,024-bit wide HBM interface that delivers 3.35+ TB/s bandwidth. Required for H100, H200, and B200.</div>
+</div>
+
+<div class="gloss-letter">D</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Data Parallelism</div>
+  <div class="gloss-def">A distributed training strategy where each GPU holds a full replica of the model and processes a different mini-batch. Gradients are averaged across all replicas via all-reduce after each backward pass. Scales easily to any number of GPUs if the full model fits on one GPU; requires ZeRO sharding when it doesn't.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">DPO (Direct Preference Optimisation)</div>
+  <div class="gloss-def">An alignment technique (Rafailov et al., 2023) that directly optimises the language model on human preference pairs (preferred vs rejected responses) without training a separate reward model. Derived from the RLHF objective but bypasses the RL training loop. Simpler than PPO-based RLHF and increasingly popular.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Dropout</div>
+  <div class="gloss-def">A regularisation technique that randomly sets neuron activations to zero with probability p during training (typically 0.1–0.5), scaling remaining activations by 1/(1−p). Prevents co-adaptation and reduces overfitting by forcing redundant representations. Disabled at inference. Common in transformer attention layers but not FFN layers in modern LLMs.</div>
+</div>
+
+<div class="gloss-letter">E</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Embedding</div>
+  <div class="gloss-def">A learned lookup table that maps discrete tokens (integers) to dense continuous vectors. The input embedding matrix E ∈ ℝ^{V×d} has one row per vocabulary token. The same matrix (transposed) is often used for the final output projection (weight tying), reducing parameters and improving training stability.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">EUV (Extreme Ultraviolet Lithography)</div>
+  <div class="gloss-def">Lithography using 13.5nm wavelength light, generated by tin plasma. Enables single-exposure patterning of features requiring quadruple DUV patterning. Essential for 5nm and below process nodes. Exclusively manufactured by ASML (Netherlands). Each machine costs ~$200–380M and is subject to US/Dutch export controls prohibiting sale to China.</div>
+</div>
+
+<div class="gloss-letter">F</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Fat-Tree Topology</div>
+  <div class="gloss-def">A three-tier network topology (leaf/aggregation/core) where bandwidth increases toward the core, providing non-blocking any-to-any communication at full line rate. Used in AI training clusters to allow all-reduce collective operations between any pair of servers without congestion. Based on the Clos network architecture.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Fine-Tuning</div>
+  <div class="gloss-def">Continuing the training of a pretrained model on a smaller, task-specific dataset at a lower learning rate. Adapts the model to a new domain or format without training from scratch. Supervised Fine-Tuning (SFT) for instruction following uses 10,000–1M (instruction, response) pairs. Full fine-tuning updates all parameters; LoRA fine-tuning updates only low-rank adapters.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Flash Attention</div>
+  <div class="gloss-def">An I/O-aware attention algorithm (Dao et al., 2022) that tiles the attention computation to stay within GPU SRAM, avoiding writing the O(n²) attention matrix to HBM. Reduces attention memory from O(n²) to O(n) and speeds up attention 2–4× on H100. Essential for training on long sequences. FlashAttention-2 and -3 further optimise for Hopper/Blackwell GPU features.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">FLOP / TFLOPS / PFLOPS</div>
+  <div class="gloss-def">Floating-Point Operation. TFLOPS = 10¹² FLOP/second. PFLOPS = 10¹⁵ FLOP/second. GPU performance is measured in TFLOPS at a given precision (FP32, BF16, FP8, INT8). A multiply-accumulate (MAC) counts as 2 FLOP. H100 SXM5: 1,979 TFLOPS at BF16 (tensor core peak).</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">FP8</div>
+  <div class="gloss-def">8-bit floating-point format with two variants: E4M3 (4 exponent, 3 mantissa bits — higher precision, used for weights/activations) and E5M2 (5 exponent, 2 mantissa bits — higher range, used for gradients). Natively supported by H100/H200/B200 Tensor Cores, delivering 2× the throughput of BF16 at comparable quality with careful calibration.</div>
+</div>
+
+<div class="gloss-letter">G</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">GELU (Gaussian Error Linear Unit)</div>
+  <div class="gloss-def">Activation function: GELU(x) = x·Φ(x), where Φ is the Gaussian CDF. A smooth approximation: ≈ 0.5x(1 + tanh(√(2/π)(x + 0.044715x³))). Used in original BERT and GPT-2. Replaced by SiLU/SwiGLU in most modern LLMs (LLaMA, Mistral, Claude) because SwiGLU is slightly stronger empirically and has faster GPU kernels.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">GEMM (General Matrix Multiply)</div>
+  <div class="gloss-def">The operation C = αAB + βC for matrices A, B, C and scalars α, β. The overwhelming majority of compute in neural network training and inference is GEMM: attention projections, FFN layers, and embedding lookups all reduce to matrix multiplication. GPU tensor cores are specifically designed to compute GEMM extremely fast.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">GQA (Grouped Query Attention)</div>
+  <div class="gloss-def">A variant of multi-head attention where multiple query heads share a single key-value head. With G groups, the KV cache is G× smaller than standard MHA. Used in LLaMA-3 (G=8), Mistral, and most post-2023 LLMs. Near-identical model quality to MHA with 8× KV cache reduction at G=8, critical for long-context serving.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">GPU (Graphics Processing Unit)</div>
+  <div class="gloss-def">A massively parallel processor originally designed for 3D graphics. Contains thousands of simpler cores optimised for data-parallel computation, plus tensor cores for matrix-multiply acceleration. H100: 16,896 CUDA cores, 528 Tensor Core units, 80 GB HBM3. Dominates AI training due to peak TFLOPS and ecosystem (CUDA/cuDNN).</div>
+</div>
+
+<div class="gloss-letter">H</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">HBM (High Bandwidth Memory)</div>
+  <div class="gloss-def">A GPU memory technology that stacks multiple DRAM dies vertically and connects them with through-silicon vias (TSVs). Uses a very wide bus (1,024 bits per stack) at shorter distance than GDDR, delivering massive bandwidth. HBM3: 819 GB/s per stack; H100 has 6 stacks → 3.35 TB/s total. Sits adjacent to the GPU die on a silicon interposer (CoWoS).</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">HPC (High Performance Computing)</div>
+  <div class="gloss-def">Scientific supercomputing for simulations, climate modelling, genomics, etc. AI training clusters derive much of their architecture (InfiniBand, parallel file systems, job schedulers) from HPC. The Linpack benchmark (floating-point dense linear algebra) is how supercomputers are ranked in the Top500 list.</div>
+</div>
+
+<div class="gloss-letter">I</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">InfiniBand (IB)</div>
+  <div class="gloss-def">A high-speed, low-latency network protocol designed for HPC and AI clusters. Provides RDMA (Remote Direct Memory Access), allowing one GPU to read/write another GPU's memory over the network without CPU involvement. Current generation: NDR (400 Gb/s per port, ~0.5 μs latency). Maintained by NVIDIA (acquired Mellanox in 2020).</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">INT4 / INT8 Quantisation</div>
+  <div class="gloss-def">Representing model weights in 4-bit or 8-bit integers instead of 16-bit floats. Reduces memory footprint 2–4× and memory bandwidth requirements proportionally. W4A16 (4-bit weights, 16-bit activations) allows a 70B model to fit on a single 80 GB H100. Quality degradation: INT8 ~0.1–0.5%, INT4 ~1–3% on benchmarks, minimised by careful calibration.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">ITL (Inter-Token Latency)</div>
+  <div class="gloss-def">Time between consecutive generated tokens during the decode phase. Typically 20–50 ms for a 70B model at moderate batch sizes. Users perceive generation as "real-time" at ITL &lt;30 ms (≈33 tokens/sec). Primary bottleneck: memory bandwidth utilisation when reading model weights from HBM for each decode step.</div>
+</div>
+
+<div class="gloss-letter">K</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">KV Cache</div>
+  <div class="gloss-def">Stores the Key and Value tensors computed for all past tokens during autoregressive generation, avoiding recomputation at each decode step. Size: 2 × n_layers × n_heads × d_head × 2 bytes per token. For LLaMA-3 70B: ~2.62 MB/token. Long context (128K tokens) requires ~336 GB of KV cache — more than 4× an H100's HBM capacity, requiring multi-GPU serving.</div>
+</div>
+
+<div class="gloss-letter">L</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Layer Normalisation</div>
+  <div class="gloss-def">Normalises activations across the feature dimension (not the batch dimension) to zero mean and unit variance, then applies learned γ and β. Formula: LN(x) = γ·(x−μ)/√(σ²+ε) + β where μ,σ are computed per sample per layer. Standard in transformers; independent of batch size, making it suitable for online and streaming inference.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Learning Rate</div>
+  <div class="gloss-def">The step size η in gradient descent: θ ← θ − η·∇L. Too large → oscillation, divergence. Too small → slow convergence. Modern LLM training uses a cosine schedule: linear warm-up from 0 to η_max (~3×10⁻⁴), then cosine decay to η_min (~3×10⁻⁵) over the full training run. Finding the right η_max is empirical and critically affects final model quality.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Loss Function</div>
+  <div class="gloss-def">Measures prediction error. Cross-entropy loss for classification: L = −Σ y_true·log(y_pred). MSE for regression: L = (1/n)Σ(ŷ−y)². LLMs use cross-entropy on next-token prediction: L = −(1/T)Σ log P(x_t|x_{&lt;t}). Measured in nats (natural log) or bits (log base 2). Irreducible entropy of English text ≈ 1.2–1.7 nats/token.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">LoRA (Low-Rank Adaptation)</div>
+  <div class="gloss-def">A parameter-efficient fine-tuning technique. Instead of updating full weight matrices W ∈ ℝ^{d×k}, trains low-rank delta matrices: ΔW = AB where A ∈ ℝ^{d×r}, B ∈ ℝ^{r×k}, r &lt;&lt; min(d,k). Typically r=8–64. Reduces trainable parameters 100–1,000× vs full fine-tuning while achieving 90%+ of full fine-tuning quality on most tasks.</div>
+</div>
+
+<div class="gloss-letter">M</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">MFU (Model FLOP Utilisation)</div>
+  <div class="gloss-def">The fraction of peak GPU TFLOPS actually used for model computation: MFU = (achieved FLOP/s) / (peak FLOP/s). Values of 30–50% are typical; 60%+ is excellent. Lost utilisation comes from communication overhead (all-reduce), data loading, pipeline bubbles, and memory-bound operations that do not saturate compute units.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Mixed Precision Training</div>
+  <div class="gloss-def">Training with different precisions for different operations. Standard: BF16 activations and gradients, FP32 master weights and optimizer state. Reduces GPU memory ~2× vs pure FP32 and doubles throughput on BF16 tensor cores. FP8 mixed precision (H100+) offers further gains for forward pass compute.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">MoE (Mixture of Experts)</div>
+  <div class="gloss-def">A neural network architecture where each FFN layer is replaced by E independent "expert" networks, and a learned router sends each token to the top-k experts. Total parameters = E × FFN_size; active parameters per token = k × FFN_size. Enables very large model capacity (total params) at modest compute cost (active params). Used in GPT-4 (estimated), Mixtral 8×7B, Google Gemini.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Multi-Head Attention (MHA)</div>
+  <div class="gloss-def">H parallel self-attention operations, each with its own Q, K, V projection matrices of dimension d/H. Results are concatenated and projected. Allows the model to attend to different aspects of the input simultaneously — different heads specialise in different relationship types. H100 H=64 for a 70B model; d_head = 8192/64 = 128.</div>
+</div>
+
+<div class="gloss-letter">N</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">NCCL (NVIDIA Collective Communications Library)</div>
+  <div class="gloss-def">NVIDIA's library implementing collective operations (all-reduce, broadcast, scatter, gather) over NVLink and InfiniBand. Used by PyTorch DDP and DeepSpeed for gradient synchronisation. Automatically selects the optimal algorithm (ring, tree, direct) based on topology and message size. Essential for multi-GPU training efficiency.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">NVLink</div>
+  <div class="gloss-def">NVIDIA's proprietary GPU-to-GPU interconnect. NVLink 4.0 (H100): 900 GB/s bidirectional per GPU. Connects up to 8 GPUs within a server via NVSwitch crossbars (DGX H100). 14× faster than PCIe Gen5 for all-reduce operations. Critical for tensor parallelism: weight shards are spread across GPUs connected by NVLink.</div>
+</div>
+
+<div class="gloss-letter">O</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Overfitting</div>
+  <div class="gloss-def">When a model learns to memorise training data rather than generalise to unseen examples. Symptoms: training loss continues decreasing while validation loss increases. Mitigated by: regularisation (dropout, weight decay), data augmentation, early stopping, or more training data. Large LLMs rarely overfit due to massive data; small models fine-tuned on small datasets commonly do.</div>
+</div>
+
+<div class="gloss-letter">P</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">PagedAttention</div>
+  <div class="gloss-def">A KV cache memory management system (vLLM, 2023) inspired by OS virtual memory. Allocates KV cache in non-contiguous "pages" of ~16 tokens rather than contiguous max-length blocks. Eliminates internal fragmentation: a short request wastes no memory, and requests can share pages (prompt prefix caching). Increases GPU memory utilisation from ~30% to ~90%.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Pipeline Parallelism</div>
+  <div class="gloss-def">A distributed training strategy where the model is split into sequential stages, each running on a separate GPU group. Micro-batches flow through the pipeline in a 1F1B (one forward, one backward) schedule to minimise idle time. Allows training models too large for tensor parallelism alone. Introduces a "pipeline bubble" (idle time at start/end of each macro-batch) proportional to pipeline depth.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Positional Encoding</div>
+  <div class="gloss-def">Information injected into token representations so the transformer knows the order of tokens. Original transformers used sinusoidal functions. Modern LLMs use RoPE (Rotary Positional Embedding): rotating Q and K vectors by position-dependent angles so that Q·Kᵀ depends only on relative position. RoPE extrapolates to longer contexts than training length.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Prefill Phase</div>
+  <div class="gloss-def">The first phase of LLM inference: processing all input tokens simultaneously (in parallel, like training). Compute-bound; takes 10–500 ms depending on prompt length and model size. Produces the KV cache for the entire prompt, which is reused during decode. Time to first token (TTFT) is dominated by prefill latency.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Pretraining</div>
+  <div class="gloss-def">Training a large model from scratch on a massive unlabelled corpus using a self-supervised objective (next-token prediction for LLMs). Requires the most compute — typically 10²³–10²⁵ FLOPs for frontier models. Produces a model with broad world knowledge and language ability, which is then fine-tuned for specific tasks or aligned with RLHF.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Process Node (nm)</div>
+  <div class="gloss-def">A marketing label for a semiconductor manufacturing generation, nominally in nanometres. Not a direct physical measurement — TSMC's "3nm" (N3E) has transistor gate lengths of ~12–15nm. What matters is transistor density (million transistors per mm²): N3E achieves ~172 MTr/mm². Each node improves density ~40%, performance ~20%, and power ~30%.</div>
+</div>
+
+<div class="gloss-letter">Q</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Quantisation</div>
+  <div class="gloss-def">Representing model weights and/or activations in lower-precision integer formats (INT8, INT4) instead of floating-point. Reduces memory footprint and memory bandwidth requirements proportionally. W4A16 (4-bit weights, 16-bit activations) allows a 70B model to fit on a single H100 80GB GPU. Calibrated quantisation (AWQ, GPTQ) minimises quality loss.</div>
+</div>
+
+<div class="gloss-letter">R</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">RDMA (Remote Direct Memory Access)</div>
+  <div class="gloss-def">Network technology allowing one server to read or write another server's memory without involving either CPU. Used with InfiniBand in AI clusters to achieve sub-microsecond GPU-to-GPU communication across the network. Eliminates PCIe and CPU copying overhead. RDMA over Converged Ethernet (RoCE) brings this to Ethernet networks.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">ReLU (Rectified Linear Unit)</div>
+  <div class="gloss-def">The most widely used activation function: ReLU(x) = max(0, x). Computationally trivial (one comparison), avoids vanishing gradients in the positive region, and empirically trains fast and well. "Dead ReLU" problem: neurons receiving consistently negative input permanently output 0. Variants (Leaky ReLU, GELU, SiLU) address this.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">RLHF (Reinforcement Learning from Human Feedback)</div>
+  <div class="gloss-def">An alignment pipeline: (1) Train a reward model on human preference data (ranked response pairs). (2) Use PPO (Proximal Policy Optimisation) to update the LLM to maximise reward while staying close to the SFT model (KL penalty). Produces models that follow instructions and are helpful, harmless, and honest. Used by OpenAI (ChatGPT), Anthropic (Claude), and Google (Gemini).</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">RoPE (Rotary Positional Embedding)</div>
+  <div class="gloss-def">Encodes token position by rotating the Q and K vectors in attention by a position-dependent angle. After rotation: Q_m · K_nᵀ depends only on relative position (m−n), not absolute positions. Used in LLaMA, Mistral, Gemma, and most modern open LLMs. Extrapolates to longer context lengths than training with appropriate frequency scaling.</div>
+</div>
+
+<div class="gloss-letter">S</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Scaling Laws</div>
+  <div class="gloss-def">Empirical power-law relationships between model size P, training data D, compute C, and loss L. Kaplan et al. (2020) first quantified: L ∝ P^{−0.076}. Chinchilla (2022) refined: optimal D ≈ 20P at fixed compute. These laws allow predicting model quality and compute cost for models not yet trained, enabling compute budget planning for frontier labs.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">SM (Streaming Multiprocessor)</div>
+  <div class="gloss-def">The basic compute unit of an NVIDIA GPU. Each SM contains 128 FP32 CUDA cores, 4 tensor core units, 256 KB register file, and 228 KB L1/shared memory. CUDA thread blocks are scheduled to SMs; each SM runs up to 64 warps concurrently. H100 SXM5 has 132 SMs. The SM is the GPU's equivalent of a CPU core, though far simpler.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Softmax</div>
+  <div class="gloss-def">Converts a vector of real values (logits) to a probability distribution: softmax(z)_i = e^{z_i} / Σ_j e^{z_j}. Used in attention (row-wise) and output layer (to produce next-token probabilities). Numerically stabilised by subtracting max(z) before exponentiation. The Flash Attention algorithm maintains a running softmax normaliser to avoid materialising the full n×n attention matrix.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Speculative Decoding</div>
+  <div class="gloss-def">An inference speedup technique where a small draft model generates K candidate tokens, then the large target model verifies all K in one parallel forward pass. Accepted tokens are output; on rejection, the target model samples a corrected token. Effective speedup: ~2–4× when the draft acceptance rate is ~70–80%. First proposed by Leviathan et al. (Google, 2022).</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">SFT (Supervised Fine-Tuning)</div>
+  <div class="gloss-def">Fine-tuning a pretrained LLM on labelled instruction-response pairs. Typically uses 10,000–500,000 human-written or curated examples, trained for 1–3 epochs at a lower learning rate (~5×10⁻⁶). Produces a model that follows instructions and matches the style of the training examples. Prerequisite for RLHF alignment.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">SwiGLU</div>
+  <div class="gloss-def">The FFN variant used in LLaMA, PaLM, and most modern LLMs: SwiGLU(x) = W₂(SiLU(W₁x) ⊙ W₃x). Uses three weight matrices (vs two for standard FFN) with a smaller hidden dimension, keeping parameter count equal while improving quality. The gating mechanism (W₃x) allows the network to selectively suppress information, improving expressivity.</div>
+</div>
+
+<div class="gloss-letter">T</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Temperature (Sampling)</div>
+  <div class="gloss-def">A hyperparameter that scales the logits before softmax: P(v) ∝ exp(z_v/T). T&lt;1: sharper distribution (more deterministic, less creative). T=1: model's trained distribution. T&gt;1: flatter distribution (more random). T→0: greedy decoding (argmax). Common production values: T=0.7–1.0 for chat, T=0 for code completion.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Tensor Core</div>
+  <div class="gloss-def">Specialised execution unit in NVIDIA Volta+ GPUs (2017–present) that computes D = A×B+C on small matrices (e.g. 16×8×16) in a single instruction. H100 4th-gen Tensor Cores support BF16, FP16, FP8, INT8, INT4 inputs. Peak BF16 throughput: 1,979 TFLOPS. 6–16× faster than CUDA cores for GEMM workloads. The primary reason modern AI training uses NVIDIA GPUs.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Tensor Parallelism</div>
+  <div class="gloss-def">A distributed training/inference strategy that shards individual weight matrices across multiple GPUs. Each GPU holds a fraction of each matrix; they synchronise via all-reduce within each transformer layer. Requires high-bandwidth interconnect (NVLink) — inter-server InfiniBand is too slow. Used within DGX nodes (TP=8) for large model inference.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Tokenisation</div>
+  <div class="gloss-def">Converting raw text into a sequence of integer IDs (tokens) from a fixed vocabulary. Modern LLMs use subword tokenisation (BPE, SentencePiece): common words are single tokens, rare words decompose into subwords. Vocabulary size V: 32,000–130,000 tokens. Average English: ~1.3 tokens/word, ~4 characters/token. All tokens in a sequence are processed in parallel during prefill.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Top-p Sampling (Nucleus Sampling)</div>
+  <div class="gloss-def">Restricts token sampling to the smallest set of tokens whose cumulative probability exceeds p (e.g. 0.9). More adaptive than top-k: when the model is confident (peaked distribution), fewer tokens are included; when uncertain (flat distribution), more tokens are included. Standard sampling strategy for production LLMs, often combined with temperature scaling.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">TPU (Tensor Processing Unit)</div>
+  <div class="gloss-def">Google's custom AI ASIC, deployed at Google scale since 2016. Uses a systolic array architecture for highly efficient GEMM. Programmed via XLA (JAX/TensorFlow). TPU v5p: 459 TFLOPS BF16, 95 GB HBM, 4.8 TB/s inter-chip interconnect (ICI). Pods of 8,960 TPUs are used for Google's largest training runs (Gemini, PaLM 2). Not available as standalone hardware — only on Google Cloud.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Transformer</div>
+  <div class="gloss-def">The neural network architecture introduced in "Attention Is All You Need" (Vaswani et al., 2017) that replaced RNNs as the dominant architecture for language models. Key components: multi-head self-attention, position-wise feed-forward networks, residual connections, layer normalisation, and positional encoding. All major LLMs (GPT, Claude, LLaMA, Gemini, Mistral) are decoder-only transformers.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">TSMC</div>
+  <div class="gloss-def">Taiwan Semiconductor Manufacturing Company. The world's largest and most advanced pure-play foundry, founded 1987 by Morris Chang. Manufactures chips for NVIDIA, AMD, Apple, Qualcomm, Google, and most other major semiconductor companies. Commands ~60% of global foundry revenue and 90%+ of leading-edge (below 7nm) capacity. All NVIDIA H100/H200/B200 GPUs are manufactured at TSMC.</div>
+</div>
+
+<div class="gloss-letter">V</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Vanishing Gradient</div>
+  <div class="gloss-def">The problem where gradients become exponentially small as they propagate backward through deep networks. Occurs when activation functions (sigmoid, tanh) have near-zero derivatives at saturation, and these are multiplied together through many layers. Solved by ReLU activations, residual connections (skip connections), careful weight initialisation, and batch/layer normalisation.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">vLLM</div>
+  <div class="gloss-def">An open-source LLM serving engine (UC Berkeley, 2023) that introduced PagedAttention, continuous batching, and prefix caching. Achieves 2–24× higher throughput than naive Hugging Face inference. Supports most open LLMs (LLaMA, Mistral, Qwen, etc.) and multiple hardware backends. The de facto standard for self-hosted LLM inference.</div>
+</div>
+
+<div class="gloss-letter">W</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Warp</div>
+  <div class="gloss-def">The fundamental execution unit in NVIDIA's SIMT model: 32 threads executing the same instruction simultaneously on different data. All 32 threads in a warp advance in lockstep — if they diverge (different branches), they serialize. A GPU SM schedules between warps zero-cost, hiding memory latency by switching to a ready warp while another waits for HBM access.</div>
+</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">Weight Decay (L2 Regularisation)</div>
+  <div class="gloss-def">Adds a penalty term λ/2 × Σwᵢ² to the loss, causing weights to decay toward zero unless the gradient pushes back. Effective update: w ← w(1−ηλ) − η·∇L. Penalises large weights, biasing the model toward simpler solutions. Typical λ: 0.01–0.1 for large LLMs. Implemented in AdamW (Adam with decoupled weight decay).</div>
+</div>
+
+<div class="gloss-letter">Z</div>
+
+<div class="gloss-entry">
+  <div class="gloss-term">ZeRO (Zero Redundancy Optimizer)</div>
+  <div class="gloss-def">Microsoft DeepSpeed's technique to eliminate redundant copies in data-parallel training. Stage 1: shard optimizer state across ranks (4× memory reduction). Stage 2: + shard gradients (8×). Stage 3: + shard model parameters (P× where P = number of GPUs). With ZeRO-3 on 1,024 GPUs, a 70B model's 1.1 TB optimizer state is distributed as ~1 GB/GPU.</div>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="foundry.html">← Foundry</a> · <a href="index.html">Home</a></p>
+</footer>
+</body>
+</html>

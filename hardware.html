@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Hardware | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html" class="active">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Hardware</div>
+    <h1>AI Hardware: The Silicon Behind Intelligence</h1>
+    <p>From CPU cores to tensor cores, from DRAM to HBM3e, from PCIe to NVLink — the full hardware stack that makes billion-parameter model training and inference possible, and why each component's design decisions cascade up the entire software stack.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Why CPUs Cannot Train AI Models</h2>
+  <p>A modern server CPU (e.g. Intel Xeon Platinum 8592+) has 64 cores running at 3.9 GHz with AVX-512 SIMD units. AVX-512 can process 16 float32 values simultaneously per core. Total FP32 throughput:</p>
+
+  <div class="eq">64 cores × 2 (FMA) × 16 floats × 3.9 GHz = ~8 TFLOPS peak FP32
+
+NVIDIA H100 SXM5: 66.9 TFLOPS FP32, 1,979 TFLOPS BF16 (tensor cores)
+Ratio: ~250× more TFLOPS on GPU vs high-end CPU
+
+Core count:
+  CPU: 64 powerful cores optimised for serial, branch-heavy code
+  H100: 16,896 CUDA cores + 528 Tensor Core units
+
+Memory bandwidth:
+  CPU (DDR5-4800, 8-channel): 8 × 4800 MT/s × 8B = 307 GB/s
+  H100 SXM5 (HBM3): 3,350 GB/s → 11× more bandwidth</div>
+
+  <p>Neural network training consists almost entirely of matrix multiplications — the GEMM (General Matrix Multiply) operation: C = A × B. GEMM is embarrassingly parallel: every element of C can be computed independently, making it ideal for thousands of simple parallel cores. CPUs are over-engineered for this: their complex out-of-order execution engines, large caches, and branch predictors all add transistor cost that contributes nothing to GEMM throughput.</p>
+</section>
+
+<section>
+  <h2>GPU Architecture</h2>
+
+  <h3>SIMT Execution Model</h3>
+  <p>A GPU executes threads in groups of 32 called <strong>warps</strong>. All 32 threads in a warp execute the same instruction simultaneously on different data — Single Instruction, Multiple Thread (SIMT). This is highly efficient when all threads follow the same code path. Branch divergence (threads taking different if/else paths) serialises execution, reducing throughput by up to 32×.</p>
+
+  <div class="eq">H100 SM (Streaming Multiprocessor) count: 132 SMs
+Each SM contains:
+  - 128 FP32 CUDA cores
+  - 4 Tensor Core units (4th gen)
+  - 256 KB register file
+  - 228 KB L1 cache / shared memory (configurable)
+  - 4 warp schedulers (issue 1 instruction/warp/cycle)
+
+Maximum resident warps per SM: 64
+Maximum resident threads per SM: 2,048
+Total CUDA cores: 132 × 128 = 16,896
+Total Tensor Core units: 132 × 4 = 528</div>
+
+  <h3>Tensor Cores</h3>
+  <p>Tensor Cores are specialised matrix-multiply-accumulate (MMA) units introduced in NVIDIA Volta (2017). They compute D = A × B + C on 16×16 or 8×16 matrices in a single operation, far faster than using CUDA cores for the same computation:</p>
+
+  <div class="eq">H100 4th-gen Tensor Core operation (per cycle per unit):
+  Input:  A ∈ ℝ^{16×8} (BF16), B ∈ ℝ^{8×16} (BF16)
+  Output: D ∈ ℝ^{16×16} (FP32)
+  FLOPs:  16×16×8 × 2 (mul+add) = 4,096 FLOPs per MMA per cycle
+
+Total Tensor Core throughput (BF16 → FP32, H100):
+  528 units × 4,096 FLOPs × 1.8 GHz boost clock ≈ 3.9 PFLOPS
+  (Measured/published: 1,979 TFLOPS — reflects actual achievable with memory limitations)
+
+FP8 Tensor Core throughput (H100): 3,958 TFLOPS → 2× BF16
+INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
+</section>
+
+<section>
+  <h2>NVIDIA GPU Generations</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>GPU</th><th>Year</th><th>Architecture</th><th>CUDA Cores</th><th>BF16 TFLOPS</th><th>HBM</th><th>Memory BW</th><th>NVLink BW</th><th>TDP</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A100 SXM4</strong></td><td>2020</td><td>Ampere</td><td>6,912</td><td>312</td><td>HBM2e 80GB</td><td>2,000 GB/s</td><td>600 GB/s</td><td>400W</td></tr>
+      <tr><td><strong>H100 SXM5</strong></td><td>2022</td><td>Hopper</td><td>16,896</td><td>1,979</td><td>HBM3 80GB</td><td>3,350 GB/s</td><td>900 GB/s</td><td>700W</td></tr>
+      <tr><td><strong>H200 SXM</strong></td><td>2024</td><td>Hopper</td><td>16,896</td><td>1,979</td><td>HBM3e 141GB</td><td>4,800 GB/s</td><td>900 GB/s</td><td>700W</td></tr>
+      <tr><td><strong>B200 SXM</strong></td><td>2025</td><td>Blackwell</td><td>~20,000</td><td>~4,500</td><td>HBM3e 192GB</td><td>8,000 GB/s</td><td>1,800 GB/s</td><td>1,000W</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout fact">
+    <strong>H100 vs H200: same chip, different memory</strong>
+    The H200 uses the same Hopper GPU die as the H100, but with HBM3e (next-gen HBM) instead of HBM3. Memory capacity jumps from 80 GB to 141 GB (75% increase), and bandwidth from 3.35 TB/s to 4.8 TB/s (43% increase). This is primarily a win for inference: larger KV caches, larger batch sizes, more memory-bandwidth-bound throughput. Training FLOPs are unchanged — the same 1,979 TFLOPS BF16.
+  </div>
+
+  <h3>Blackwell Architecture (B200)</h3>
+  <p>The B200 (2025) introduces a dual-die design — two Blackwell GPU dies connected via NVLink with 1.8 TB/s die-to-die bandwidth. Together they function as a single logical GPU:</p>
+  <div class="eq">B200 SXM:
+  - 2× Blackwell dies per package (connected via 10 TBs NVLink-C2C)
+  - 192 GB HBM3e across 8 stacks (24 GB per stack)
+  - Memory bandwidth: 8,000 GB/s (2.4× H100)
+  - FP4 Tensor Core: 20 PFLOPS peak
+  - FP8 Tensor Core: 9 PFLOPS peak (vs 3.96 for H100)
+  - GB200 NVL72 rack: 36 Grace CPU + 72 B200 GPU modules
+    → 1,440 TB/s NVLink fabric within a rack
+    → 720 GB/s per B200 of NVLink bandwidth</div>
+</section>
+
+<section>
+  <h2>Google TPUs: Custom AI ASICs</h2>
+  <p>Google developed Tensor Processing Units (TPUs) internally starting in 2015, motivated by the explosive growth of TensorFlow inference compute. Unlike GPUs, TPUs are purpose-built for tensor operations with no pretence of general-purpose computing.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>TPU Version</th><th>Year</th><th>BF16 TFLOPS</th><th>HBM</th><th>Interconnect</th><th>Deployment</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TPU v4</strong></td><td>2021</td><td>275</td><td>32 GB</td><td>ICI 600 GB/s</td><td>Google Cloud (pods of 4,096)</td></tr>
+      <tr><td><strong>TPU v5e</strong></td><td>2023</td><td>197</td><td>16 GB</td><td>ICI 1.6 TB/s</td><td>Google Cloud, inference focus</td></tr>
+      <tr><td><strong>TPU v5p</strong></td><td>2023</td><td>459</td><td>95 GB</td><td>ICI 4.8 TB/s</td><td>Training, 8,960 chip pods</td></tr>
+      <tr><td><strong>Trillium (v6e)</strong></td><td>2024</td><td>~918</td><td>32 GB</td><td>ICI &gt;2 TB/s</td><td>Production at Google scale</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>TPU Architecture vs GPU</h3>
+  <div class="two-col">
+    <div>
+      <h4>GPU (H100)</h4>
+      <p>Many parallel SIMT cores (16,896). Large SRAM L2 cache (50 MB). Flexible: handles diverse computation graphs, branchy code, variable-length operations. Rich software ecosystem (CUDA, 3,000+ libraries). Requires skilled kernel programmers for peak performance. Memory in external HBM stacks.</p>
+    </div>
+    <div>
+      <h4>TPU (v5p)</h4>
+      <p>Systolic array matrix engine — data flows through an array of multiply-accumulate units like water through a grid. Extremely efficient for fixed GEMM shapes. Simpler control logic → more die area for MACs. Inter-chip interconnect (ICI) is on-chip, not via PCIe. Less flexible: dynamic shapes and control flow are expensive. Optimised for XLA (JAX/TensorFlow), not CUDA.</p>
+    </div>
+  </div>
+
+  <h3>TPU Systolic Array</h3>
+  <div class="eq">A systolic array computes C = A × B by streaming A and B through an array of PEs:
+
+Example: 128×128 systolic array
+  Row i of A flows rightward through row i of PEs.
+  Column j of B flows downward through column j of PEs.
+  PE(i,j) accumulates: C(i,j) += A(i,k) × B(k,j) as data pulses through.
+
+After 128 cycles: entire 128×128 matrix product is computed.
+No random memory access needed — data is delivered rhythmically.
+This regularity makes the TPU extremely area and power efficient for GEMM.</div>
+</section>
+
+<section>
+  <h2>Memory Hierarchy</h2>
+  <p>Every GPU operation navigates a memory hierarchy. Bandwidth and capacity trade off at every level:</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="680" height="380" fill="#f8fafc" rx="8"/>
+
+      <!-- Pyramid-style hierarchy -->
+      <!-- Registers -->
+      <rect x="250" y="20" width="180" height="48" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="340" y="40" text-anchor="middle" font-size="12" fill="white" font-weight="700">Registers</text>
+      <text x="340" y="56" text-anchor="middle" font-size="10" fill="#94a3b8">256 KB/SM · &gt;30 TB/s · &lt;1 ns</text>
+
+      <line x1="340" y1="68" x2="340" y2="78" stroke="#6366f1" stroke-width="1.5"/>
+
+      <!-- L1 / SRAM -->
+      <rect x="210" y="78" width="260" height="48" rx="8" fill="#1e3a8a" stroke="#6366f1" stroke-width="2"/>
+      <text x="340" y="98" text-anchor="middle" font-size="12" fill="white" font-weight="700">L1 Cache / Shared Memory (SRAM)</text>
+      <text x="340" y="114" text-anchor="middle" font-size="10" fill="#93c5fd">228 KB/SM = 30 MB total · ~20 TB/s · ~5 ns</text>
+
+      <line x1="340" y1="126" x2="340" y2="136" stroke="#6366f1" stroke-width="1.5"/>
+
+      <!-- L2 Cache -->
+      <rect x="155" y="136" width="370" height="48" rx="8" fill="#312e81" stroke="#818cf8" stroke-width="2"/>
+      <text x="340" y="156" text-anchor="middle" font-size="12" fill="white" font-weight="700">L2 Cache</text>
+      <text x="340" y="172" text-anchor="middle" font-size="10" fill="#c7d2fe">50 MB (H100) · ~5 TB/s · ~30 ns</text>
+
+      <line x1="340" y1="184" x2="340" y2="194" stroke="#6366f1" stroke-width="1.5"/>
+
+      <!-- HBM3 -->
+      <rect x="90" y="194" width="500" height="55" rx="8" fill="#0f3460" stroke="#818cf8" stroke-width="2"/>
+      <text x="340" y="214" text-anchor="middle" font-size="12" fill="white" font-weight="700">High Bandwidth Memory (HBM3)</text>
+      <text x="340" y="230" text-anchor="middle" font-size="10" fill="#93c5fd">80 GB (H100) · 3,350 GB/s · ~80 ns</text>
+      <text x="340" y="243" text-anchor="middle" font-size="10" fill="#7dd3fc">6 stacks × 12-Hi die stack · 1,024-bit bus per stack</text>
+
+      <line x1="340" y1="249" x2="340" y2="259" stroke="#6366f1" stroke-width="1.5"/>
+
+      <!-- NVLink / PCIe -->
+      <rect x="60" y="259" width="560" height="48" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+      <text x="340" y="279" text-anchor="middle" font-size="12" fill="white" font-weight="700">NVLink 4.0 (peer GPU HBM)</text>
+      <text x="340" y="295" text-anchor="middle" font-size="10" fill="#fcd34d">900 GB/s bidirectional · ~1 μs · 8 GPUs within a node</text>
+
+      <line x1="340" y1="307" x2="340" y2="317" stroke="#f59e0b" stroke-width="1.5"/>
+
+      <!-- IB / DRAM -->
+      <rect x="20" y="317" width="640" height="48" rx="8" fill="#111827" stroke="#94a3b8" stroke-width="2"/>
+      <text x="340" y="337" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="700">InfiniBand NDR (remote node HBM)</text>
+      <text x="340" y="353" text-anchor="middle" font-size="10" fill="#9ca3af">400 Gb/s per port · 50 GB/s · 1–5 μs · across the network fabric</text>
+
+      <!-- Labels on right -->
+      <text x="620" y="44" font-size="10" fill="#6366f1" font-weight="600">Fastest</text>
+      <text x="622" y="341" font-size="10" fill="#94a3b8" font-weight="600">Slowest</text>
+    </svg>
+    <figcaption>GPU memory hierarchy for the H100. Bandwidth drops by ~1,000× from registers to InfiniBand. A kernel that constantly spills to HBM instead of keeping data in L1/SRAM will run 100× slower. CUDA optimisation is largely about keeping data at the highest (fastest) level possible.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>High Bandwidth Memory (HBM)</h2>
+  <p>Conventional GDDR memory (used in gaming GPUs) achieves 500–700 GB/s by using many narrow channels at high frequency. HBM takes a different approach: stack multiple DRAM die vertically and connect them through-silicon vias (TSVs):</p>
+
+  <div class="eq">HBM3 structure (one stack):
+  - 12 DRAM die stacked vertically (12-Hi)
+  - Connected by TSVs (through-silicon vias): ~10,000 vias per stack
+  - 1,024-bit wide bus (LPDDR5: 64-bit; DDR5: 64-bit; HBM3: 1024-bit!)
+  - Per-stack bandwidth: 819 GB/s at 6.4 Gbps/pin
+  - H100 has 6 HBM3 stacks: 6 × 819 = 4,914 GB/s raw → ~3,350 GB/s actual
+
+The HBM stack sits adjacent to the GPU die on a silicon interposer (CoWoS packaging).
+The short, wide bus (TSV) is the key: it's like replacing one narrow pipe with 1,024 parallel pipes.
+Power per bit transferred: ~3× lower than GDDR (short distance, lower voltage).
+
+HBM evolution:
+  HBM1 (2015): 128 GB/s per stack
+  HBM2 (2016): 256 GB/s
+  HBM2e (2019): 460 GB/s (A100 uses 6 stacks = 2,000 GB/s)
+  HBM3 (2022): 819 GB/s (H100)
+  HBM3e (2024): 1,200 GB/s per stack (H200/B200 use 8 stacks)</div>
+</section>
+
+<section>
+  <h2>The CUDA Software Stack</h2>
+  <p>CUDA (Compute Unified Device Architecture), introduced by NVIDIA in 2006, is the programming model and runtime that makes GPUs programmable for general compute. It is the primary reason NVIDIA dominates AI — AMD's ROCm and Intel's oneAPI are years behind in ecosystem maturity.</p>
+
+  <h3>CUDA Programming Model</h3>
+  <div class="eq">CUDA thread hierarchy:
+  Thread: single execution unit, has private registers
+  Warp:   32 threads, executed in lockstep (SIMT)
+  Block:  up to 1,024 threads, share L1/SRAM, synchronise cheaply
+  Grid:   many blocks, distributed across all SMs automatically
+
+A CUDA kernel (GPU function) is written once and launched on a grid.
+The CUDA runtime schedules blocks to available SMs.
+
+Example: Matrix multiplication kernel for C = A × B
+  Launch grid: (M/32, N/32) blocks
+  Each block: 32×32 threads computing a 32×32 tile of C
+  Shared memory: load A-tile and B-tile into SRAM, reuse many times
+  → Reduces HBM accesses by factor of 32 (tile size)
+  → This tiling is why GPU matrix multiply can approach theoretical peak throughput</div>
+
+  <h3>Occupancy and Efficiency</h3>
+  <div class="eq">Occupancy = active warps / maximum resident warps
+
+Higher occupancy hides latency: while one warp waits for memory,
+the SM switches to another warp instantly (zero context-switch cost).
+
+Occupancy limited by:
+  - Register usage: 256K registers/SM, if kernel uses 128 registers/thread:
+    max threads = 256K/128 = 2,048 → full occupancy
+  - Shared memory: 228KB/SM, if kernel uses 50KB/block:
+    max blocks = 228/50 = 4 blocks × 1,024 threads = 4,096 threads → 2× oversubscribed, fine
+  - Instruction throughput: if compute-bound, occupancy above 50% gives diminishing returns</div>
+
+  <h3>Key Libraries in the CUDA Ecosystem</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Library</th><th>Function</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><strong>cuBLAS</strong></td><td>GPU-accelerated BLAS (Basic Linear Algebra Subprograms)</td><td>Optimised GEMM — the core of DNN compute. NVIDIA hand-tunes for each GPU generation.</td></tr>
+      <tr><td><strong>cuDNN</strong></td><td>Deep Neural Network primitives (conv, attention, pooling, norm)</td><td>Provides fused kernels, e.g. flash attention. Libraries use cuDNN to avoid re-implementing these.</td></tr>
+      <tr><td><strong>NCCL</strong></td><td>Collective communications (all-reduce, broadcast, scatter)</td><td>Used by PyTorch DDP and DeepSpeed for multi-GPU gradient synchronisation via NVLink and IB.</td></tr>
+      <tr><td><strong>TensorRT</strong></td><td>Model optimisation and inference runtime</td><td>Fuses ops, quantises weights, generates optimal CUDA kernels for a specific GPU. 2–5× inference speedup over PyTorch.</td></tr>
+      <tr><td><strong>Triton</strong></td><td>Python-based GPU kernel language</td><td>OpenAI-developed; allows writing custom GPU kernels in Python without CUDA C. FlashAttention-2 is written in Triton.</td></tr>
+      <tr><td><strong>CUTLASS</strong></td><td>CUDA templates for GEMM</td><td>Building block used by cuBLAS and TensorRT. Open-source, highly optimised GEMM templates.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Why AMD Cannot Displace NVIDIA</h3>
+  <p>AMD's ROCm provides CUDA-equivalent APIs (HIP — Heterogeneous Interface for Portability), and MI300X has competitive raw specs (192 GB HBM3, 5.3 TB/s bandwidth). The barrier is software: PyTorch, TensorRT, cuDNN, and thousands of operator kernels are deeply optimised for CUDA. Porting and re-optimising this ecosystem takes years. MI300X achieves ~80% of H100 performance on standard benchmarks but lags on custom operations that rely on NVIDIA-specific kernel tuning. The gap is narrowing but NVIDIA's ecosystem moat is substantial.</p>
+</section>
+
+<section>
+  <h2>Interconnects Summary</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Interconnect</th><th>Bandwidth</th><th>Scope</th><th>Latency</th><th>Protocol</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PCIe Gen5 x16</strong></td><td>64 GB/s bidirectional</td><td>CPU ↔ GPU</td><td>~1 μs</td><td>Standard</td></tr>
+      <tr><td><strong>NVLink 4.0</strong></td><td>900 GB/s</td><td>GPU ↔ GPU (same server)</td><td>&lt;1 μs</td><td>Proprietary</td></tr>
+      <tr><td><strong>NVLink-C2C</strong></td><td>900 GB/s (B200)</td><td>CPU ↔ GPU (Grace-Hopper)</td><td>&lt;1 μs</td><td>Proprietary</td></tr>
+      <tr><td><strong>InfiniBand NDR</strong></td><td>400 Gb/s = 50 GB/s</td><td>Server ↔ Server</td><td>0.5 μs</td><td>RDMA</td></tr>
+      <tr><td><strong>Ethernet 400GbE</strong></td><td>400 Gb/s = 50 GB/s</td><td>Server ↔ Server</td><td>5–50 μs</td><td>TCP/IP or RoCE</td></tr>
+      <tr><td><strong>TPU ICI</strong></td><td>4.8 TB/s (v5p)</td><td>TPU ↔ TPU (chip-to-chip)</td><td>&lt;1 μs</td><td>Google proprietary</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="inference-datacenter.html">← Inference DCs</a> · <a href="foundry.html">Next: Foundry →</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neural Networks | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html" class="active">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Foundation</div>
+    <h1>Neural Networks</h1>
+    <p>The mathematical machinery behind deep learning — from a single artificial neuron to the forward and backward passes that drive learning in networks with billions of parameters.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>The Artificial Neuron</h2>
+  <p>A biological neuron integrates electrical signals from thousands of dendrites and fires an output along its axon if the total input exceeds a threshold. The artificial neuron is an algebraic abstraction of this process. Given a vector of <em>n</em> inputs <strong>x</strong> = [x₁, x₂, …, xₙ], the neuron computes a scalar output <em>a</em> in two steps:</p>
+
+  <div class="eq">z = w₁x₁ + w₂x₂ + … + wₙxₙ + b   =   <span class="highlight">wᵀx + b</span>
+
+a = f(z)   where f is an activation function</div>
+
+  <p>Here <strong>w</strong> is the weight vector — the parameters the network learns — and <em>b</em> is the bias, a scalar offset that shifts the activation threshold. The pre-activation value <em>z</em> is a weighted sum: a dot product. The activation function <em>f</em> introduces nonlinearity; without it, a stack of neurons would collapse to a single linear transformation regardless of depth.</p>
+
+  <div class="callout">
+    <strong>Why nonlinearity matters</strong>
+    A composition of linear functions is itself linear: A(Bx) = (AB)x. No depth of purely linear layers can learn to classify XOR, fit a sine wave, or parse language. Nonlinear activations break this limitation, letting deep networks approximate any continuous function (by the Universal Approximation Theorem).
+  </div>
+
+  <h3>Activation Functions</h3>
+  <p>The choice of activation function profoundly affects training dynamics. The dominant activation in modern networks is ReLU and its variants:</p>
+
+  <div class="eq"><span class="highlight">ReLU(z)</span>    = max(0, z)
+
+<span class="highlight">Leaky ReLU(z)</span> = max(αz, z)   where α ≈ 0.01
+
+<span class="highlight">GELU(z)</span>    ≈ z · Φ(z)   where Φ is the CDF of N(0,1)
+             ≈ 0.5z(1 + tanh(√(2/π)(z + 0.044715z³)))
+
+<span class="highlight">SiLU(z)</span>    = z · σ(z) = z / (1 + e⁻ᶻ)     [used in LLaMA, Mistral]
+
+<span class="highlight">Sigmoid σ(z)</span> = 1 / (1 + e⁻ᶻ)   ∈ (0, 1)   [outputs/gates only]
+
+<span class="highlight">Softmax(z)ᵢ</span> = eᶻⁱ / Σⱼ eᶻʲ             [output layer, multiclass]</div>
+
+  <p>ReLU is computationally trivial (a single comparison), avoids the vanishing gradient problem of sigmoid/tanh at extremes, and empirically trains fast. GELU and SiLU are smooth approximations used in transformers because they empirically improve convergence on language tasks. Softmax converts a raw score vector (logits) into a probability distribution — the sum of all outputs equals 1.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Sigmoid / Tanh Problems</h4>
+      <p>For |z| &gt; 3, σ'(z) ≈ 0. When these near-zero gradients are multiplied through many layers via the chain rule, the gradient signal vanishes exponentially — parameters in early layers receive negligible updates. This is the <strong>vanishing gradient problem</strong> that prevented training deep networks until ReLU and residual connections arrived.</p>
+    </div>
+    <div>
+      <h4>ReLU Problems</h4>
+      <p>When z &lt; 0, ReLU outputs exactly 0 and its gradient is 0. If a neuron consistently receives negative input across all training examples, it never receives a gradient and stops learning — a "dead ReLU." Leaky ReLU, GELU, and SiLU mitigate this by allowing a small nonzero output for negative inputs.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Network Architecture</h2>
+  <p>Neurons are arranged into <strong>layers</strong>. The input layer holds the raw features. One or more <strong>hidden layers</strong> progressively transform the representation. The output layer produces the prediction. In a <em>fully connected</em> (dense) layer, every neuron in layer ℓ connects to every neuron in layer ℓ+1.</p>
+
+  <p>Using matrix notation, a single layer maps an input vector <strong>x</strong> ∈ ℝⁿ to an output vector <strong>a</strong> ∈ ℝᵐ:</p>
+
+  <div class="eq"><span class="highlight">a = f(Wx + b)</span>
+
+W ∈ ℝᵐˣⁿ   (weight matrix: m output neurons, n inputs each)
+b ∈ ℝᵐ     (bias vector)
+f applied elementwise</div>
+
+  <p>A network with L layers computes:</p>
+  <div class="eq">a⁽⁰⁾ = x                          (input)
+a⁽ˡ⁾ = f⁽ˡ⁾(W⁽ˡ⁾ a⁽ˡ⁻¹⁾ + b⁽ˡ⁾)    for l = 1, …, L
+ŷ = a⁽ᴸ⁾                          (output)</div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="700" height="390" fill="#f8fafc" rx="8"/>
+
+      <!-- Connections: Input(3) → H1(4) -->
+      <line x1="80" y1="95"  x2="240" y2="55"  stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="95"  x2="240" y2="145" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="95"  x2="240" y2="235" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="95"  x2="240" y2="325" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="190" x2="240" y2="55"  stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="190" x2="240" y2="145" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="190" x2="240" y2="235" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="190" x2="240" y2="325" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="285" x2="240" y2="55"  stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="285" x2="240" y2="145" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="285" x2="240" y2="235" stroke="#bfdbfe" stroke-width="1.2"/>
+      <line x1="80" y1="285" x2="240" y2="325" stroke="#bfdbfe" stroke-width="1.2"/>
+
+      <!-- Connections: H1(4) → H2(4) -->
+      <line x1="240" y1="55"  x2="420" y2="55"  stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="55"  x2="420" y2="145" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="55"  x2="420" y2="235" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="55"  x2="420" y2="325" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="145" x2="420" y2="55"  stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="145" x2="420" y2="145" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="145" x2="420" y2="235" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="145" x2="420" y2="325" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="235" x2="420" y2="55"  stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="235" x2="420" y2="145" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="235" x2="420" y2="235" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="235" x2="420" y2="325" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="325" x2="420" y2="55"  stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="325" x2="420" y2="145" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="325" x2="420" y2="235" stroke="#ddd6fe" stroke-width="1.2"/>
+      <line x1="240" y1="325" x2="420" y2="325" stroke="#ddd6fe" stroke-width="1.2"/>
+
+      <!-- Connections: H2(4) → Output(2) -->
+      <line x1="420" y1="55"  x2="600" y2="145" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="55"  x2="600" y2="235" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="145" x2="600" y2="145" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="145" x2="600" y2="235" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="235" x2="600" y2="145" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="235" x2="600" y2="235" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="325" x2="600" y2="145" stroke="#bbf7d0" stroke-width="1.2"/>
+      <line x1="420" y1="325" x2="600" y2="235" stroke="#bbf7d0" stroke-width="1.2"/>
+
+      <!-- Highlighted path: x₂ → H1[1] → H2[2] → ŷ₂ -->
+      <line x1="80" y1="190" x2="240" y2="145" stroke="#6366f1" stroke-width="2.8"/>
+      <line x1="240" y1="145" x2="420" y2="235" stroke="#6366f1" stroke-width="2.8"/>
+      <line x1="420" y1="235" x2="600" y2="235" stroke="#6366f1" stroke-width="2.8"/>
+
+      <!-- Input neurons -->
+      <circle cx="80" cy="95"  r="20" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+      <text x="80" y="100" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="700">x₁</text>
+      <circle cx="80" cy="190" r="20" fill="#dbeafe" stroke="#3b82f6" stroke-width="2.5"/>
+      <text x="80" y="195" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="700">x₂</text>
+      <circle cx="80" cy="285" r="20" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+      <text x="80" y="290" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="700">x₃</text>
+
+      <!-- H1 neurons -->
+      <circle cx="240" cy="55"  r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+      <circle cx="240" cy="145" r="20" fill="#ede9fe" stroke="#6366f1" stroke-width="2.5"/>
+      <circle cx="240" cy="235" r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+      <circle cx="240" cy="325" r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+
+      <!-- H2 neurons -->
+      <circle cx="420" cy="55"  r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+      <circle cx="420" cy="145" r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+      <circle cx="420" cy="235" r="20" fill="#ede9fe" stroke="#6366f1" stroke-width="2.5"/>
+      <circle cx="420" cy="325" r="20" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+
+      <!-- Output neurons -->
+      <circle cx="600" cy="145" r="20" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+      <text x="600" y="150" text-anchor="middle" font-size="12" fill="#065f46" font-weight="700">ŷ₁</text>
+      <circle cx="600" cy="235" r="20" fill="#d1fae5" stroke="#10b981" stroke-width="2.5"/>
+      <text x="600" y="240" text-anchor="middle" font-size="12" fill="#065f46" font-weight="700">ŷ₂</text>
+
+      <!-- Layer labels -->
+      <text x="80"  y="355" text-anchor="middle" font-size="12" fill="#475569" font-weight="600">Input Layer</text>
+      <text x="80"  y="370" text-anchor="middle" font-size="10" fill="#94a3b8">3 neurons</text>
+      <text x="240" y="358" text-anchor="middle" font-size="12" fill="#475569" font-weight="600">Hidden Layer 1</text>
+      <text x="240" y="373" text-anchor="middle" font-size="10" fill="#94a3b8">4 neurons</text>
+      <text x="420" y="358" text-anchor="middle" font-size="12" fill="#475569" font-weight="600">Hidden Layer 2</text>
+      <text x="420" y="373" text-anchor="middle" font-size="10" fill="#94a3b8">4 neurons</text>
+      <text x="600" y="355" text-anchor="middle" font-size="12" fill="#475569" font-weight="600">Output Layer</text>
+      <text x="600" y="370" text-anchor="middle" font-size="10" fill="#94a3b8">2 neurons</text>
+
+      <!-- Formula annotation -->
+      <rect x="290" y="8" width="120" height="28" rx="6" fill="#1e293b"/>
+      <text x="350" y="27" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">a = f(Wx + b)</text>
+
+      <!-- Legend -->
+      <rect x="10" y="10" width="180" height="24" rx="5" fill="white" stroke="#e2e8f0"/>
+      <line x1="18" y1="22" x2="42" y2="22" stroke="#6366f1" stroke-width="2.5"/>
+      <text x="50" y="26" font-size="10" fill="#64748b">Signal path example</text>
+    </svg>
+    <figcaption>A fully connected network with 3 input, two hidden layers of 4, and 2 output neurons. The highlighted path shows one signal path through the network. Each edge carries a learned weight.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>Loss Functions</h2>
+  <p>Training requires measuring how wrong the model's predictions are. A <strong>loss function</strong> L maps the model output <strong>ŷ</strong> and the true target <strong>y</strong> to a scalar. The network learns by minimising this scalar over the training set.</p>
+
+  <h3>Mean Squared Error (MSE) — regression</h3>
+  <div class="eq">L<sub>MSE</sub> = (1/n) Σᵢ (ŷᵢ − yᵢ)²
+
+∂L/∂ŷᵢ = (2/n)(ŷᵢ − yᵢ)    ← gradient fed into backprop</div>
+
+  <h3>Cross-Entropy — classification</h3>
+  <p>For a C-class problem with one-hot target vector <strong>y</strong> and softmax output <strong>ŷ</strong>:</p>
+  <div class="eq">L<sub>CE</sub> = − Σᶜ yᶜ · log(ŷᶜ)
+
+For the correct class c*: L<sub>CE</sub> = −log(ŷ<sub>c*</sub>)
+
+∂L/∂zᶜ = ŷᶜ − yᶜ           ← combined softmax + cross-entropy gradient</div>
+
+  <p>The elegance of pairing softmax with cross-entropy is that the combined gradient is simply (ŷ − y) — clean, numerically stable, and fast to compute.</p>
+
+  <h3>Next-Token Prediction Loss (Language Models)</h3>
+  <div class="eq">L = − (1/T) Σₜ log P(xₜ | x₁, x₂, …, x_{t-1}; θ)
+
+where P(·) is the model's softmax distribution over V vocabulary tokens
+T is the sequence length, θ are the model parameters</div>
+</section>
+
+<section>
+  <h2>Backpropagation</h2>
+  <p>The forward pass computes the loss. Backpropagation efficiently computes <em>every</em> partial derivative ∂L/∂wᵢⱼ using the <strong>chain rule of calculus</strong>. For parameter w in layer ℓ, the gradient depends on every computation that follows w in the forward pass:</p>
+
+  <div class="eq">∂L/∂W⁽ˡ⁾ = ∂L/∂a⁽ˡ⁾ · ∂a⁽ˡ⁾/∂z⁽ˡ⁾ · ∂z⁽ˡ⁾/∂W⁽ˡ⁾
+
+           = δ⁽ˡ⁾ · (a⁽ˡ⁻¹⁾)ᵀ
+
+where δ⁽ˡ⁾ = (W⁽ˡ⁺¹⁾)ᵀ δ⁽ˡ⁺¹⁾ ⊙ f'(z⁽ˡ⁾)   [error signal propagated back]
+      ⊙ denotes elementwise multiplication</div>
+
+  <p>The computational trick is that backprop reuses intermediate values computed during the forward pass. A modern autodiff framework (PyTorch, JAX) records the computation graph during the forward pass and traverses it in reverse to accumulate gradients. No symbolic differentiation is required — just recursive application of the chain rule on primitive operations.</p>
+
+  <div class="callout">
+    <strong>Memory cost of backprop</strong>
+    To compute gradients, the activations a⁽ˡ⁾ at every layer must be stored until that layer's backward pass runs. For a 70B-parameter model training on long sequences, this activation memory can exceed 100 GB per GPU — often larger than the parameter memory itself. Gradient checkpointing trades recomputation for memory: only a subset of activations are stored; the rest are recomputed on demand during the backward pass.
+  </div>
+
+  <h3>Vanishing and Exploding Gradients</h3>
+  <p>During backprop, the gradient at layer ℓ is multiplied by the Jacobian of every subsequent layer. If those Jacobians have spectral norm &lt; 1 (as sigmoid and tanh do at saturation), the gradient shrinks exponentially with depth — <strong>vanishing</strong>. If the norm exceeds 1, it grows exponentially — <strong>exploding</strong>. ReLU has a constant gradient of 1 for positive inputs, which helps. Residual connections (adding the input directly to the output of a layer) create gradient highways that bypass this multiplicative chain.</p>
+</section>
+
+<section>
+  <h2>Regularisation</h2>
+  <p>Without constraint, a network with enough parameters will memorise training data instead of generalising — <strong>overfitting</strong>. Key regularisation techniques:</p>
+
+  <h3>L2 Weight Decay</h3>
+  <div class="eq">L_total = L_task + (λ/2) Σᵢ wᵢ²
+
+∂L_total/∂wᵢ = ∂L_task/∂wᵢ + λwᵢ
+
+Effective update: w ← w(1 − ηλ) − η · ∂L_task/∂w</div>
+  <p>Weight decay penalises large weights, biasing the model toward simpler solutions. λ is a hyperparameter (typical value: 0.01–0.1 for large models).</p>
+
+  <h3>Dropout</h3>
+  <p>During training, each neuron's activation is set to zero with probability <em>p</em> (typically 0.1–0.5) and scaled by 1/(1−p) to maintain expected values. This prevents co-adaptation — neurons cannot rely on specific other neurons, forcing redundant representations. At inference, dropout is disabled.</p>
+
+  <h3>Batch Normalisation</h3>
+  <div class="eq">BN(x) = γ · (x − μ_B) / √(σ²_B + ε) + β
+
+μ_B = (1/m) Σᵢ xᵢ        (batch mean)
+σ²_B = (1/m) Σᵢ (xᵢ−μ_B)²   (batch variance)
+γ, β are learned scale and shift parameters
+ε ≈ 1e-5 for numerical stability</div>
+  <p>Batch norm re-centres activations to zero mean and unit variance at each layer, dramatically stabilising training of deep networks. Modern transformers use <strong>Layer Normalisation</strong> instead, which normalises across the feature dimension rather than the batch dimension — better suited to variable-length sequences and small batch sizes.</p>
+</section>
+
+<section>
+  <h2>Parameter Count and Computational Cost</h2>
+  <p>For a fully connected layer with <em>n</em> inputs and <em>m</em> outputs:</p>
+  <ul>
+    <li><strong>Parameters:</strong> m × n (weights) + m (biases) ≈ mn</li>
+    <li><strong>FLOPs per forward pass:</strong> 2mn (mn multiplications + mn additions)</li>
+  </ul>
+
+  <p>For a model with total parameter count <em>P</em>, training on <em>D</em> tokens:</p>
+  <div class="eq">Training compute ≈ 6PD   FLOPs
+
+6× = 2 (multiply-add) × 3 (forward + backward + parameter update)
+This is the Kaplan/Chinchilla approximation used to budget training runs.</div>
+
+  <p>A 70B parameter model (P = 7×10¹⁰) trained on 2 trillion tokens (D = 2×10¹²) requires approximately 8.4×10²³ FLOPs — 840 zettaFLOPs. An NVIDIA H100 delivers ~1,979 teraFLOPS at BF16, so this training run requires on the order of 12 million H100-hours — or roughly 1,400 H100-days at peak efficiency. Real clusters achieve 30–50% model FLOP utilisation (MFU), so actual time is 2–3× longer.</p>
+
+  <div class="callout fact">
+    <strong>Key insight: parameters vs activations</strong>
+    Inference requires loading model parameters once and computing activations per token. Training requires loading parameters AND storing all intermediate activations for backprop. At a batch size of 1,024 and sequence length of 4,096, activation memory can be 5–10× larger than parameter memory per GPU.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">Home</a> · <a href="training.html">Next: Training →</a></p>
+</footer>
+</body>
+</html>

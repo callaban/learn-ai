@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Foundational Models | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html" class="active">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Training</div>
+    <h1>Training Foundational AI Models</h1>
+    <p>How raw compute, data, and gradient descent produce a model with hundreds of billions of parameters that can reason, generate, and generalise — and why each design choice scales to the hardware limits of a 100,000-GPU cluster.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>The Training Objective</h2>
+  <p>Training is an optimisation problem. Given a dataset 𝒟 = {(xᵢ, yᵢ)} and a model fθ parameterised by weights θ, find θ* that minimises the empirical risk:</p>
+
+  <div class="eq"><span class="highlight">θ* = argmin_θ  (1/|𝒟|) Σᵢ L(fθ(xᵢ), yᵢ)</span>
+
+For language models, xᵢ is a token sequence and yᵢ is the next token.
+The loss is cross-entropy: L = −log P_θ(yᵢ | xᵢ)</div>
+
+  <p>The loss landscape is a high-dimensional surface — in a 70B-parameter model, a point in a 70-billion-dimensional space. Gradient descent navigates this surface by repeatedly moving in the direction of steepest descent.</p>
+</section>
+
+<section>
+  <h2>Optimisers: From SGD to Adam</h2>
+
+  <h3>Stochastic Gradient Descent (SGD)</h3>
+  <p>Rather than computing the gradient over the full dataset (prohibitively expensive), SGD estimates it from a random <em>mini-batch</em> B ⊂ 𝒟 of size m:</p>
+  <div class="eq">g = (1/m) Σᵢ∈B ∇_θ L(fθ(xᵢ), yᵢ)
+
+<span class="highlight">θ ← θ − η · g</span>
+
+η = learning rate (e.g. 3×10⁻⁴ for large models)</div>
+
+  <p>SGD with momentum adds a velocity term that accumulates past gradients, smoothing oscillations in the loss surface:</p>
+  <div class="eq">v ← μv + g         (μ = momentum coefficient, typically 0.9)
+θ ← θ − η · v</div>
+
+  <h3>Adam: Adaptive Moment Estimation</h3>
+  <p>Adam, introduced by Kingma &amp; Ba (2014), is the dominant optimiser for large model training. It maintains per-parameter first and second moment estimates:</p>
+  <div class="eq">m_t = β₁ m_{t-1} + (1 − β₁) g_t         [first moment: mean of gradient]
+v_t = β₂ v_{t-1} + (1 − β₂) g_t²        [second moment: uncentered variance]
+
+<span class="comment">Bias correction (moments start at 0, biased toward 0 at start):</span>
+m̂_t = m_t / (1 − β₁ᵗ)
+v̂_t = v_t / (1 − β₂ᵗ)
+
+<span class="highlight">θ_t = θ_{t-1} − η · m̂_t / (√v̂_t + ε)</span>
+
+Hyperparameters: β₁=0.9, β₂=0.95, ε=10⁻⁸, η=1–3×10⁻⁴</div>
+
+  <p>The denominator √v̂_t normalises the update by the historical root-mean-square of the gradient. Parameters with large, consistent gradients receive small steps; rarely-updated parameters with small gradients receive large steps. This adaptive learning rate is critical for models with diverse parameter types (embeddings, attention weights, layer norms) that have vastly different gradient scales.</p>
+
+  <div class="callout">
+    <strong>Memory cost of Adam</strong>
+    Adam stores two moment vectors (m and v) in addition to the parameters (θ) and gradients (g). For a 70B parameter model in float32, that is 4 × 70B × 4 bytes ≈ 1.1 TB of optimizer state alone. This is why distributed training uses sharded optimizer states (ZeRO Stage 2/3 or FSDP).
+  </div>
+
+  <h3>Learning Rate Scheduling</h3>
+  <p>A fixed learning rate is rarely optimal. Modern LLM training uses a two-phase schedule:</p>
+  <div class="eq"><span class="comment">Phase 1: Linear warm-up over W steps</span>
+η(t) = η_max · t/W        for t ≤ W
+
+<span class="comment">Phase 2: Cosine decay from step W to total steps T</span>
+η(t) = η_min + 0.5(η_max − η_min)(1 + cos(π(t−W)/(T−W)))
+
+Typical: η_max=3e-4, η_min=3e-5, W=2000 steps, T=1M steps</div>
+
+  <p>Warm-up prevents large initial updates before moment estimates stabilise. Cosine decay is empirically superior to step decay because it smoothly reduces the learning rate, allowing fine-grained fitting near convergence.</p>
+</section>
+
+<section>
+  <h2>Data: Scale, Quality, and Preprocessing</h2>
+
+  <p>A foundational model's capability is bounded by the quality and diversity of its training data. GPT-3 was trained on 300B tokens; LLaMA 3 on 15 trillion tokens. The primary corpus for language models is the web — Common Crawl alone is hundreds of terabytes of compressed text.</p>
+
+  <h3>Data Pipeline</h3>
+  <ol class="steps">
+    <li data-n="1"><strong>Crawl and download</strong> — Raw HTML from web crawls, books, code repositories, academic papers, Wikipedia. Raw Common Crawl dumps are ~80 TB/year.</li>
+    <li data-n="2"><strong>Extraction and cleaning</strong> — Strip HTML, deduplicate near-identical documents using MinHash LSH, remove boilerplate (menus, footers), filter low-quality pages using a classifier trained on high-quality reference data.</li>
+    <li data-n="3"><strong>Deduplication</strong> — Exact and fuzzy deduplication dramatically improves model quality. A document seen 100× during training receives 100× the gradient signal — the model memorises it rather than generalising from it.</li>
+    <li data-n="4"><strong>Tokenisation</strong> — Text is split into subword tokens using Byte-Pair Encoding (BPE) or SentencePiece. The vocabulary size V is typically 32,000–130,000. The average English word tokenises to 1.3–1.5 tokens.</li>
+    <li data-n="5"><strong>Packing</strong> — Individual documents are concatenated and split into fixed-length context windows (e.g. 4,096 or 8,192 tokens), with a special end-of-document token at boundaries. GPUs require fixed-size inputs; this avoids padding waste.</li>
+    <li data-n="6"><strong>Shuffling</strong> — Documents are shuffled globally so each mini-batch contains a diverse mix of sources, preventing the model from learning batch-level correlations.</li>
+  </ol>
+
+  <h3>Tokenisation in Detail</h3>
+  <p>BPE starts from a character-level vocabulary and iteratively merges the most frequent adjacent pair of symbols. After 32,000 merges, common words are single tokens, rare words are decomposed into familiar subwords. The model never encounters an unknown token — any byte sequence is representable.</p>
+  <div class="eq">Example BPE tokenisation (GPT-4 tokeniser):
+"Backpropagation"  →  ["Back", "prop", "ag", "ation"]
+"CUDA"             →  ["CUD", "A"]
+"NVLink"           →  ["NV", "Link"]</div>
+</section>
+
+<section>
+  <h2>Mixed-Precision Training</h2>
+  <p>Full float32 (FP32) requires 4 bytes per parameter. For a 70B parameter model, parameters alone consume 280 GB. Modern training uses <strong>mixed precision</strong> to reduce memory and accelerate compute on tensor cores:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Format</th><th>Bits</th><th>Range</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>FP32</strong></td><td>32</td><td>±3.4×10³⁸</td><td>Master weights, gradient accumulation, loss scaling</td></tr>
+      <tr><td><strong>BF16</strong></td><td>16</td><td>±3.4×10³⁸</td><td>Forward/backward activations, gradient computation (preferred)</td></tr>
+      <tr><td><strong>FP16</strong></td><td>16</td><td>±65,504</td><td>Activations — requires loss scaling to prevent underflow</td></tr>
+      <tr><td><strong>FP8 (E4M3/E5M2)</strong></td><td>8</td><td>varies</td><td>Forward pass only in Hopper/Ada GPUs; 2× throughput</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The standard AMP (Automatic Mixed Precision) pattern: maintain a <strong>master copy of weights in FP32</strong>, perform forward/backward in BF16, cast gradients back to FP32 for the optimizer step, then cast updated weights back to BF16 for the next forward pass. BF16 shares its exponent range with FP32 (8-bit exponent), so overflow is rare — unlike FP16 which requires manual loss scaling to prevent underflow of small gradients.</p>
+
+  <div class="eq">Memory per parameter (70B model):
+
+BF16 weights   :  70B × 2B = 140 GB
+FP32 master    :  70B × 4B = 280 GB
+FP32 gradients :  70B × 4B = 280 GB
+Adam m, v      :  70B × 4B × 2 = 560 GB
+─────────────────────────────────────
+Total optimizer :  ~1,260 GB  (across all GPUs)
+With ZeRO-3 sharding across 512 GPUs: ~2.5 GB/GPU</div>
+</section>
+
+<section>
+  <h2>Distributed Training</h2>
+  <p>A single GPU cannot hold a 70B-parameter model in training mode. Modern training distributes across thousands of GPUs using three parallelism strategies, often combined (3D parallelism):</p>
+
+  <h3>Data Parallelism</h3>
+  <p>Each GPU holds a full copy of the model. Different GPUs process different batches. After each backward pass, gradients are averaged across all GPUs with an <strong>all-reduce</strong> collective operation before updating weights. Scales to arbitrary batch sizes; requires each GPU to hold the full model — infeasible for very large models.</p>
+
+  <h3>Tensor Parallelism (Megatron-style)</h3>
+  <p>Individual weight matrices are sharded across GPUs. A matrix multiplication W × x is split into column-wise or row-wise shards, computed in parallel, and results combined with all-reduce or all-gather. For a transformer attention layer:</p>
+  <div class="eq">Q, K, V projection weights split column-wise across P GPUs.
+GPU i holds W_i ∈ ℝ^{d×(d/P)}
+Each GPU computes Q_i = x W_i, K_i = x W_i, V_i = x W_i
+Results are gathered and attention computed across heads.</div>
+
+  <h3>Pipeline Parallelism</h3>
+  <p>The model is partitioned into L sequential stages across groups of GPUs. Stage 0 processes layer 0–15, stage 1 processes layers 16–31, etc. Micro-batches pipeline through stages, keeping all GPUs busy. Introduces a pipeline bubble (idle time at start/end of a batch) — minimised by using many micro-batches per macro-batch (1F1B schedule).</p>
+
+  <h3>ZeRO Optimizer (Zero Redundancy Optimizer)</h3>
+  <p>Microsoft's ZeRO partitions optimizer state, gradients, and parameters across data-parallel ranks, eliminating redundancy:</p>
+  <div class="eq">ZeRO Stage 1: Partition optimizer state    → 4× memory reduction
+ZeRO Stage 2: + Partition gradients         → 8× memory reduction
+ZeRO Stage 3: + Partition parameters        → 16× memory reduction (for data-parallel degree 16)
+
+At 1024-GPU data parallelism with ZeRO-3:
+Memory per GPU ≈ Total_training_memory / 1024</div>
+</section>
+
+<section>
+  <h2>Scaling Laws</h2>
+  <p>The <strong>Chinchilla scaling laws</strong> (Hoffmann et al., DeepMind, 2022) empirically determined the optimal relationship between model size P, training tokens D, and compute budget C:</p>
+
+  <div class="eq"><span class="highlight">Optimal: D ≈ 20 × P</span>
+
+If C = 6PD  FLOPs  (6 for fwd+bwd+update)
+Then: C = 6P(20P) = 120P²
+→ P_opt = √(C/120)
+→ D_opt = 20 × √(C/120)
+
+Example: C = 10²³ FLOPs
+P_opt ≈ 9.1B parameters, D_opt ≈ 182B tokens
+
+Loss as function of P and D (power law):
+L(P,D) = E + A/P^α + B/D^β
+E ≈ 1.69 nats (irreducible entropy of natural language)
+A ≈ 406.4, B ≈ 410.7, α ≈ 0.34, β ≈ 0.28</div>
+
+  <p>The key finding: prior work (GPT-3 etc.) dramatically undertrained large models. A 70B model trained on 1T tokens is suboptimal compared to a 35B model trained on 2T tokens at the same compute budget — the latter achieves lower loss. This led to LLaMA and Mistral's strategy of training smaller models longer, producing models that are cheaper to <em>run</em> while achieving comparable quality.</p>
+
+  <div class="callout fact">
+    <strong>Practical implication</strong>
+    Training compute is paid once. Inference compute is paid for every query, forever. The Chinchilla insight justifies training a model 2–4× longer than naive scaling would suggest, if the model will be served millions of times. Smaller, well-trained models are cheaper to deploy.
+  </div>
+</section>
+
+<section>
+  <h2>The Training Loop</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="800" height="240" fill="#f8fafc" rx="8"/>
+
+      <!-- Arrow marker -->
+      <defs>
+        <marker id="arr2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 Z" fill="#6366f1"/>
+        </marker>
+        <marker id="arr3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,1 L7,4 L0,7 Z" fill="#94a3b8"/>
+        </marker>
+      </defs>
+
+      <!-- Boxes Row 1 -->
+      <!-- 1. Load Batch -->
+      <rect x="10" y="55" width="135" height="55" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="77" y="79" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Load Batch</text>
+      <text x="77" y="97" text-anchor="middle" font-size="10" fill="#3b82f6">mini-batch from 𝒟</text>
+
+      <!-- Arrow → -->
+      <line x1="145" y1="82" x2="162" y2="82" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+      <!-- 2. Forward Pass -->
+      <rect x="162" y="55" width="135" height="55" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="230" y="79" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95">Forward Pass</text>
+      <text x="230" y="97" text-anchor="middle" font-size="10" fill="#7c3aed">ŷ = f_θ(x)</text>
+
+      <!-- Arrow → -->
+      <line x1="297" y1="82" x2="315" y2="82" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+      <!-- 3. Compute Loss -->
+      <rect x="315" y="55" width="135" height="55" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="382" y="79" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Compute Loss</text>
+      <text x="382" y="97" text-anchor="middle" font-size="10" fill="#dc2626">L(ŷ, y)</text>
+
+      <!-- Arrow → -->
+      <line x1="450" y1="82" x2="468" y2="82" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+      <!-- 4. Backward Pass -->
+      <rect x="468" y="55" width="135" height="55" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="535" y="79" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">Backward Pass</text>
+      <text x="535" y="97" text-anchor="middle" font-size="10" fill="#d97706">∇_θ L via chain rule</text>
+
+      <!-- Arrow → -->
+      <line x1="603" y1="82" x2="621" y2="82" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+      <!-- 5. Update Weights -->
+      <rect x="621" y="55" width="160" height="55" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="701" y="79" text-anchor="middle" font-size="12" font-weight="700" fill="#064e3b">Update Weights</text>
+      <text x="701" y="97" text-anchor="middle" font-size="10" fill="#059669">θ ← θ − η·Adam(g)</text>
+
+      <!-- Feedback arrow at bottom -->
+      <path d="M 701 110 Q 701 180 500 190 Q 300 200 77 190 Q 77 180 77 110"
+            fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#arr3)"/>
+      <text x="400" y="215" text-anchor="middle" font-size="11" fill="#64748b">Next iteration (repeat ~10⁶ times)</text>
+
+      <!-- Gradient flow label -->
+      <text x="400" y="48" text-anchor="middle" font-size="11" fill="#6366f1" font-weight="600">→ Forward direction (data flow)</text>
+    </svg>
+    <figcaption>The training loop. Each forward pass produces predictions, the loss measures error, backpropagation computes gradients via the chain rule, and Adam updates all parameters. This repeats for millions of steps across thousands of GPUs simultaneously.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>Pretraining, Fine-Tuning, and RLHF</h2>
+
+  <h3>Pretraining: Next-Token Prediction</h3>
+  <p>A foundation model is pretrained on a massive, diverse text corpus with the <strong>causal language modelling</strong> objective: predict the next token given all preceding tokens. This is self-supervised — no human labels needed. The model implicitly learns grammar, facts, reasoning patterns, and world knowledge to minimise prediction loss.</p>
+
+  <h3>Supervised Fine-Tuning (SFT)</h3>
+  <p>The pretrained model is then fine-tuned on a curated dataset of (instruction, response) pairs written or curated by humans. SFT teaches the model the format of helpful responses and aligns output style with human expectations. Typically involves 10,000–100,000 high-quality examples, trained for 1–3 epochs at a lower learning rate (~5×10⁻⁶).</p>
+
+  <h3>Reinforcement Learning from Human Feedback (RLHF)</h3>
+  <ol class="steps">
+    <li data-n="1"><strong>Collect preference data:</strong> For a given prompt, sample K responses from the SFT model. Human raters rank the responses (e.g. preferred / not preferred).</li>
+    <li data-n="2"><strong>Train a reward model:</strong> A separate neural network r_φ(prompt, response) → scalar is trained to predict human preference rankings. Loss: r(preferred) > r(not preferred).</li>
+    <li data-n="3"><strong>Optimise with PPO:</strong> Use Proximal Policy Optimisation (PPO) to update the language model (policy) to maximise expected reward, with a KL-divergence penalty to prevent the model from deviating too far from the SFT initialisation:
+      <div class="eq">Objective = E[r_φ(x, y)] − β · KL[π_θ(y|x) ‖ π_SFT(y|x)]
+
+β controls the tradeoff between reward maximisation and staying close to the SFT policy.
+Too small β → reward hacking (model finds adversarial inputs that fool the reward model).
+Too large β → model barely changes from SFT.</div>
+    </li>
+  </ol>
+
+  <p><strong>Direct Preference Optimisation (DPO)</strong>, introduced in 2023, sidesteps the reward model entirely and directly optimises the language model on preference data using a closed-form loss derived from the Bradley-Terry preference model. DPO is simpler to implement and increasingly preferred over PPO for alignment.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="neural-networks.html">← Neural Networks</a> · <a href="inference.html">Next: Inference →</a></p>
+</footer>
+</body>
+</html>

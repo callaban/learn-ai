@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inference Data Centers | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html" class="active">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Infrastructure</div>
+    <h1>Data Centers for Consumer AI Inference</h1>
+    <p>Serving a frontier LLM to millions of concurrent users is a fundamentally different engineering problem from training it. Inference data centers are optimised for throughput, cost per token, and strict latency SLOs — not for massive parallel compute.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Training vs Inference: Two Different Worlds</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Dimension</th><th>Training</th><th>Inference</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Workload</strong></td><td>Single long-running job, known upfront</td><td>Millions of short, unpredictable requests</td></tr>
+      <tr><td><strong>GPU requirement</strong></td><td>Maximise TFLOPS (compute-bound)</td><td>Maximise memory bandwidth + utilisation (memory-bound during decode)</td></tr>
+      <tr><td><strong>Memory profile</strong></td><td>Model + activations + optimizer state</td><td>Model + KV cache only. No gradient storage.</td></tr>
+      <tr><td><strong>Batch size</strong></td><td>Fixed, large (1024–4096 tokens per GPU)</td><td>Dynamic, variable; must be tuned per SLO</td></tr>
+      <tr><td><strong>Parallelism</strong></td><td>3D: data + tensor + pipeline</td><td>Tensor parallelism within a group; request-level parallelism across groups</td></tr>
+      <tr><td><strong>Precision</strong></td><td>BF16 / FP8 with FP32 master weights</td><td>INT4 / INT8 / FP8 — quantised for bandwidth</td></tr>
+      <tr><td><strong>Fault model</strong></td><td>Checkpoint + restart acceptable</td><td>No downtime; rolling updates, health checks</td></tr>
+      <tr><td><strong>Networking</strong></td><td>All-reduce every step: IB critical</td><td>Load balancing to GPU groups; Ethernet often sufficient</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>The Serving Architecture</h2>
+  <p>A production LLM serving system has multiple layers between the user and the GPU:</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 760 430" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="760" height="430" fill="#f8fafc" rx="8"/>
+      <defs>
+        <marker id="arrS" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0.5 L6.5,3.5 L0,6.5 Z" fill="#6366f1"/>
+        </marker>
+        <marker id="arrSr" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0.5 L6.5,3.5 L0,6.5 Z" fill="#10b981"/>
+        </marker>
+      </defs>
+
+      <!-- Users (left) -->
+      <circle cx="45" cy="215" r="28" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+      <text x="45" y="211" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="700">Users</text>
+      <text x="45" y="225" text-anchor="middle" font-size="9" fill="#3b82f6">millions</text>
+
+      <line x1="73" y1="215" x2="93" y2="215" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+
+      <!-- CDN / Edge -->
+      <rect x="93" y="185" width="105" height="60" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="145" y="207" text-anchor="middle" font-size="11" font-weight="700" fill="#4c1d95">CDN / Edge</text>
+      <text x="145" y="222" text-anchor="middle" font-size="9" fill="#7c3aed">TLS termination</text>
+      <text x="145" y="236" text-anchor="middle" font-size="9" fill="#7c3aed">rate limiting</text>
+
+      <line x1="198" y1="215" x2="218" y2="215" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+
+      <!-- Load Balancer -->
+      <rect x="218" y="185" width="110" height="60" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="273" y="207" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Load Balancer</text>
+      <text x="273" y="222" text-anchor="middle" font-size="9" fill="#92400e">route by capacity</text>
+      <text x="273" y="236" text-anchor="middle" font-size="9" fill="#92400e">+ model version</text>
+
+      <!-- Prompt Cache -->
+      <rect x="218" y="280" width="110" height="50" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="273" y="301" text-anchor="middle" font-size="11" font-weight="700" fill="#064e3b">Prompt Cache</text>
+      <text x="273" y="315" text-anchor="middle" font-size="9" fill="#059669">KV cache of common</text>
+      <text x="273" y="327" text-anchor="middle" font-size="9" fill="#059669">system prompts</text>
+
+      <line x1="273" y1="245" x2="273" y2="280" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrSr)"/>
+
+      <line x1="328" y1="215" x2="350" y2="215" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+
+      <!-- Inference Scheduler -->
+      <rect x="350" y="180" width="120" height="70" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+      <text x="410" y="200" text-anchor="middle" font-size="11" font-weight="700" fill="#7f1d1d">Inference</text>
+      <text x="410" y="214" text-anchor="middle" font-size="11" font-weight="700" fill="#7f1d1d">Scheduler</text>
+      <text x="410" y="230" text-anchor="middle" font-size="9" fill="#dc2626">continuous batching</text>
+      <text x="410" y="243" text-anchor="middle" font-size="9" fill="#dc2626">KV cache management</text>
+
+      <!-- GPU Pods -->
+      <line x1="470" y1="200" x2="493" y2="175" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+      <line x1="470" y1="215" x2="493" y2="215" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+      <line x1="470" y1="230" x2="493" y2="255" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrS)"/>
+
+      <!-- GPU Pod 1 -->
+      <rect x="493" y="140" width="130" height="55" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="558" y="160" text-anchor="middle" font-size="11" fill="white" font-weight="700">GPU Pod A</text>
+      <text x="558" y="175" text-anchor="middle" font-size="9" fill="#94a3b8">8× H100 · TP=8</text>
+      <text x="558" y="187" text-anchor="middle" font-size="9" fill="#94a3b8">vLLM + PagedAttn</text>
+
+      <!-- GPU Pod 2 -->
+      <rect x="493" y="205" width="130" height="55" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="558" y="225" text-anchor="middle" font-size="11" fill="white" font-weight="700">GPU Pod B</text>
+      <text x="558" y="240" text-anchor="middle" font-size="9" fill="#94a3b8">8× H100 · TP=8</text>
+      <text x="558" y="252" text-anchor="middle" font-size="9" fill="#94a3b8">vLLM + PagedAttn</text>
+
+      <!-- GPU Pod 3 -->
+      <rect x="493" y="270" width="130" height="55" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="558" y="290" text-anchor="middle" font-size="11" fill="white" font-weight="700">GPU Pod C</text>
+      <text x="558" y="305" text-anchor="middle" font-size="9" fill="#94a3b8">8× H100 · TP=8</text>
+      <text x="558" y="317" text-anchor="middle" font-size="9" fill="#94a3b8">vLLM + PagedAttn</text>
+
+      <text x="558" y="345" text-anchor="middle" font-size="10" fill="#6366f1">↕ more pods…</text>
+
+      <!-- Result arrows back -->
+      <line x1="623" y1="167" x2="700" y2="215" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <line x1="623" y1="232" x2="700" y2="215" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <line x1="623" y1="297" x2="700" y2="215" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+      <!-- Response collector -->
+      <rect x="700" y="190" width="50" height="50" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="725" y="210" text-anchor="middle" font-size="9" fill="#064e3b" font-weight="700">Stream</text>
+      <text x="725" y="223" text-anchor="middle" font-size="9" fill="#059669">tokens</text>
+      <text x="725" y="236" text-anchor="middle" font-size="9" fill="#059669">→ user</text>
+
+      <!-- Labels -->
+      <text x="380" y="25" text-anchor="middle" font-size="13" fill="#1e293b" font-weight="700">LLM Inference Serving Architecture</text>
+      <text x="145" y="170" text-anchor="middle" font-size="10" fill="#94a3b8">Geographic PoPs</text>
+      <text x="410" y="165" text-anchor="middle" font-size="10" fill="#94a3b8">Region scheduler</text>
+      <text x="558" y="120" text-anchor="middle" font-size="10" fill="#94a3b8">GPU pods (tensor parallel groups)</text>
+
+      <!-- SLO annotation -->
+      <rect x="20" y="360" width="320" height="55" rx="8" fill="white" stroke="#e2e8f0"/>
+      <text x="30" y="378" font-size="10" fill="#475569" font-weight="700">SLOs (typical production):</text>
+      <text x="30" y="393" font-size="10" fill="#64748b">TTFT: &lt;300 ms p95   ITL: &lt;30 ms p95</text>
+      <text x="30" y="408" font-size="10" fill="#64748b">Availability: 99.9%+   Error rate: &lt;0.1%</text>
+    </svg>
+    <figcaption>Production LLM serving architecture. Requests flow from CDN → load balancer → scheduler → GPU pods. Tokens stream back. The scheduler manages KV cache and batching across all active pods.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>Tensor Parallelism for Serving</h2>
+  <p>A 70B-parameter model at INT4 quantisation requires 35 GB just for weights. An H100 has 80 GB HBM — it fits. But at BF16, 70B requires 140 GB — needs 2 GPUs minimum. At FP32, 280 GB — needs 4+ GPUs. More importantly, a single H100 running decode for a batch of 1 at 70B is memory-bandwidth-limited at a low token rate.</p>
+
+  <p><strong>Tensor parallelism</strong> shards model weights across multiple GPUs within a serving pod. Each GPU holds a fraction of each weight matrix; they collaborate on every forward pass via all-reduce:</p>
+
+  <div class="eq">Tensor parallel degree TP:
+  Each GPU holds 1/TP of each weight matrix.
+  Each forward step requires 2 all-reduce calls per layer.
+  All-reduce cost: 2 × hidden_dim / TP bytes per GPU × (TP−1)/TP
+  With NVLink (900 GB/s): all-reduce of 8GB over TP=8 GPUs takes ~8 ms
+
+Throughput vs latency tradeoff:
+  TP=1 (1 GPU): low throughput (memory-bandwidth bound), low cost/request
+  TP=8 (8 GPU): 8× weight-read bandwidth → 8× faster decode → 8× tokens/sec
+                but 8× hardware cost per request at same batch size
+
+Sweet spot for 70B: TP=4 or TP=8 depending on latency SLO and cost target.</div>
+</section>
+
+<section>
+  <h2>Continuous Batching and PagedAttention</h2>
+
+  <h3>The Problem with Static Batching</h3>
+  <p>Naive inference servers process a fixed batch of N requests together, wait for all N to complete, then accept the next batch. This "static batching" wastes GPU time: a request that finishes early leaves its GPU slot idle until the longest request in the batch completes.</p>
+
+  <h3>Continuous Batching (Orca, 2022)</h3>
+  <p>Each decode step, the scheduler inserts new requests into available batch slots as existing ones complete — at token granularity, not request granularity. This keeps all GPU batch slots occupied. GPU utilisation improves from 30–50% (static) to 70–90% (continuous batching) on typical traffic distributions.</p>
+
+  <h3>PagedAttention Memory Management</h3>
+  <div class="eq">KV cache for a single request: sequence_len × n_layers × n_heads × d_head × 2 bytes
+For LLaMA-3 70B, max context 8K, BF16:
+  = 8192 × 80 × 64 × 128 × 2 ≈ 10.7 GB per request at max length
+
+Static allocation: reserve max_length × KV_per_token for each request at start.
+Problem: most requests are much shorter than max length → wasted reserved memory.
+At batch=50 with max=8K: 50 × 10.7 GB = 535 GB needed — 7× an H100's capacity.
+
+PagedAttention: allocate KV cache in pages (blocks of 16 tokens).
+Each request grows its page table as it generates tokens.
+Freed at completion; pages immediately reusable.
+Result: supports 50+ concurrent requests on a single H100, not 5.</div>
+</section>
+
+<section>
+  <h2>Prompt Prefix Caching</h2>
+  <p>Many API users prepend a long system prompt to every request (e.g., "You are a customer service agent for Company X…"). Without caching, the prefill phase recomputes the KV vectors for this system prompt on every request — wasteful.</p>
+
+  <p><strong>Prefix caching</strong> (implemented in vLLM, TensorRT-LLM, OpenAI's API) stores the KV cache for common prefixes. When a new request starts with a cached prefix, the stored KV tensors are reused — prefill starts mid-sequence, dramatically reducing TTFT and GPU compute:</p>
+
+  <div class="eq">Without prefix cache:
+  TTFT = prefill(system_prompt + user_message)
+       = prefill(200 tokens + 50 tokens) = prefill(250 tokens)
+
+With prefix cache hit on system_prompt:
+  TTFT = prefill(50 tokens only)
+  Speedup: 250/50 = 5× lower TTFT
+  Compute saved: 80% of prefill FLOPs for that request
+
+Cache key: SHA-256 hash of tokenised prefix → maps to a set of KV pages
+Eviction policy: LRU (Least Recently Used) across all requests in the serving pool</div>
+</section>
+
+<section>
+  <h2>Geographic Distribution</h2>
+  <p>Inference latency has a physical speed-of-light floor. Light travels ~200 km/ms in fibre (with switching overhead). A user in Tokyo querying a server in Virginia adds ~75 ms one-way round-trip before the first token arrives — violating TTFT SLOs.</p>
+
+  <p>Inference is deployed across <strong>Points of Presence (PoPs)</strong> in major population centres. Model weights are replicated to each PoP — for a 70B model at INT4, that is 35 GB per PoP. A global deployment might have 8–12 PoPs:</p>
+
+  <div class="eq">Approximate network RTT by region:
+  North America (same coast):  5–15 ms
+  Cross-continental US:        60–80 ms
+  US to Europe:                80–100 ms
+  US to Asia-Pacific:          150–200 ms
+
+Target TTFT of &lt;300 ms → PoPs needed in NA, EU, APAC at minimum.
+
+Model replication cost:
+  70B INT4 model: 35 GB × 10 PoPs = 350 GB of distributed storage
+  Each PoP: 2–8 GPU pods for redundancy (16–64 H100s minimum)
+  Global serving fleet: 100–1,000 H100s for a mid-scale consumer LLM</div>
+
+  <h3>Traffic Routing</h3>
+  <p>Anycast DNS routes users to the geographically nearest PoP. If a PoP is at capacity, requests overflow to the next-nearest. Health checks detect GPU pod failures within seconds and remove unhealthy pods from the routing pool. Blue/green deployments push model version updates to one PoP at a time, rolling forward only if metrics remain healthy.</p>
+</section>
+
+<section>
+  <h2>Cost Modeling</h2>
+  <p>The economics of inference determine pricing and profitability. Key cost driver: GPU hours per token.</p>
+
+  <div class="eq">Cost per 1M output tokens (rough estimates, 2024):
+
+H100 cloud spot price:  ~$2.50–3.00/GPU-hour
+70B model, TP=8: 8 GPUs per pod
+Decode throughput (batch=32, INT4): ~2,000 tokens/sec per pod = 7.2M tokens/hour
+
+GPU cost per 1M tokens: 8 × $2.75 / 7.2M × 1M = $3.06/M tokens
+
+Anthropic Claude 3.5 Sonnet API:  $3.00/M output tokens (mid-2024)
+→ Roughly at-cost compute for output tokens at this price level
+
+OpenAI GPT-4o:    $15.00/M output tokens → ~5× markup (larger model, less efficient)
+GPT-4o mini:       $0.60/M output → smaller model, ~5× cheaper than 70B size
+Groq (LPU):        ~$0.27/M → specialised inference hardware, extremely efficient</div>
+
+  <div class="callout fact">
+    <strong>Hardware choice for inference</strong>
+    GPUs are general-purpose and dominate due to availability and software ecosystem. Purpose-built inference accelerators like Groq's LPU (Language Processing Unit) and AWS Trainium/Inferentia sacrifice training flexibility for 10–50× better tokens/watt and tokens/dollar. As model architectures stabilise, more inference will shift to fixed-function hardware.
+  </div>
+
+  <h3>Dedicated Inference Chips</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Chip</th><th>Company</th><th>Tokens/sec (70B)</th><th>Approach</th></tr></thead>
+    <tbody>
+      <tr><td><strong>H100 SXM5</strong></td><td>NVIDIA</td><td>~1,200 (batch 512)</td><td>General GPU, CUDA ecosystem</td></tr>
+      <tr><td><strong>LPU</strong></td><td>Groq</td><td>~800 (single request)</td><td>SRAM-only, no HBM, deterministic</td></tr>
+      <tr><td><strong>Inferentia2</strong></td><td>AWS</td><td>~600</td><td>Custom ASIC, tight AWS integration</td></tr>
+      <tr><td><strong>TPU v5e</strong></td><td>Google</td><td>~800</td><td>Matrix engine, Google-only</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="training-datacenter.html">← Training DCs</a> · <a href="hardware.html">Next: Hardware →</a></p>
+</footer>
+</body>
+</html>

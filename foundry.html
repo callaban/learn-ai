@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semiconductor Foundries | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html" class="active">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Manufacturing</div>
+    <h1>Semiconductor Foundries: Where AI Chips Are Born</h1>
+    <p>Every NVIDIA GPU, every Google TPU, every Apple Neural Engine originates in one of three facilities in the world capable of manufacturing cutting-edge chips. Understanding chip fabrication explains why AI hardware is expensive, scarce, and geopolitically critical.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>What a Foundry Does</h2>
+  <p>A <strong>semiconductor foundry</strong> (or fab) manufactures integrated circuits from silicon wafers based on designs provided by fabless chip companies. The foundry business model separates chip design (NVIDIA, AMD, Qualcomm) from manufacturing (TSMC, Samsung, GlobalFoundries), allowing design companies to focus on silicon architecture rather than process technology.</p>
+
+  <p>The manufacturing process transforms a bare silicon wafer into a chip containing billions of transistors through hundreds of sequential steps — photolithography, etching, doping, deposition, polishing — repeated many times at different layers. A modern process (e.g. TSMC N3E, "3nm") involves 1,000+ individual process steps and takes 3–4 months from wafer to finished chip.</p>
+
+  <div class="callout">
+    <strong>Fabless vs IDM vs Foundry</strong>
+    NVIDIA, AMD, ARM, Qualcomm, and Apple are <em>fabless</em> — they design chips but own no fabs. Intel is an <em>IDM</em> (Integrated Device Manufacturer) — it designs and manufactures its own chips, and now also offers foundry services (Intel Foundry). TSMC is a <em>pure-play foundry</em> — it manufactures chips for others but does not design its own.
+  </div>
+</section>
+
+<section>
+  <h2>Process Nodes: What "3nm" Actually Means</h2>
+  <p>Process node names (3nm, 5nm, 7nm) are marketing designations, not physical measurements of any single transistor dimension. The gate length of a transistor in a "3nm" process is actually ~12–15nm. The naming convention became decoupled from physical dimensions starting around 2016.</p>
+
+  <p>What the node name actually tracks is <strong>transistor density</strong> — how many transistors fit per square millimeter:</p>
+
+  <div class="eq">Transistor density by node (TSMC):
+
+Node    Year   Density (MTr/mm²)   Example chip
+N7      2018    91.2               AMD Zen 2, NVIDIA Turing (partial)
+N5      2020   171.3               Apple M1, AMD Zen 4 (partial)
+N4P     2023   ~190               NVIDIA H100 (N4H variant)
+N3E     2023    ~172              Apple A17 Pro
+N2      2025   ~295 (est.)        Apple A18 (planned)
+
+The H100 GPU die:
+  - Process: TSMC N4H (custom 4nm variant for HPC)
+  - Die size: 814 mm²
+  - Transistor count: ~80 billion
+  - Density: ~98 MTr/mm²</div>
+
+  <p>Higher density means more transistors per mm², allowing either more capability in the same die size, or the same capability in a smaller (cheaper) die. Each node transition historically delivered ~40–50% density improvement, ~20% performance gain at the same power, and ~30% power reduction at the same performance.</p>
+</section>
+
+<section>
+  <h2>Photolithography: Printing Transistors with Light</h2>
+  <p>Transistors are patterned onto silicon using <strong>photolithography</strong> — the same principle as photography, scaled to molecular dimensions. A photosensitive material (photoresist) is coated on the wafer. A light source exposes it through a mask (a glass plate carrying the circuit pattern). Where light hits, the resist changes chemical properties. Developer solution removes the exposed or unexposed resist, leaving a precise pattern that guides subsequent etching or deposition.</p>
+
+  <div class="eq">Resolution limit (Rayleigh criterion):
+  CD = k₁ × λ / NA
+
+  CD  = critical dimension (minimum feature size)
+  k₁  = process factor (~0.35 for advanced nodes)
+  λ   = light wavelength
+  NA  = numerical aperture of the lens system (typically 0.33 for EUV)
+
+For EUV: λ=13.5 nm, NA=0.33:
+  CD = 0.35 × 13.5 / 0.33 = 14.3 nm → consistent with "3nm" marketing node
+
+For DUV ArF (ArF laser): λ=193 nm, NA=1.35 (immersion lithography):
+  CD = 0.35 × 193 / 1.35 = 50 nm → requires multiple patterning to reach 7nm</div>
+
+  <h3>Multiple Patterning</h3>
+  <p>Before EUV, foundries used 193nm ArF lasers with <strong>multiple patterning</strong>: expose a layer two, three, or four times with slightly different masks and etch steps to achieve features finer than the single-exposure resolution limit. TSMC's 7nm node used SADP (Self-Aligned Double Patterning), effectively halving the pitch. The 5nm node used SAQP (quadruple patterning) and LELE (Litho-Etch Litho-Etch) — adding cycle time and defect risk. EUV replaced much of this complexity.</p>
+</section>
+
+<section>
+  <h2>EUV: The Critical Chokepoint</h2>
+  <p>Extreme Ultraviolet (EUV) lithography uses 13.5nm wavelength light — 14× shorter than ArF — enabling single-exposure patterning of features that required quadruple patterning with ArF. TSMC began using EUV at 7nm (partially) and it is essential at 5nm and below.</p>
+
+  <h3>How EUV Light Is Generated</h3>
+  <div class="eq">EUV light generation sequence:
+
+1. A tin (Sn) droplet, ~30 μm diameter, falls through the chamber at 50 kHz.
+2. A pulsed pre-pulse laser heats and deforms the tin droplet into a thin disc.
+3. A high-power CO₂ laser (~25 kW) strikes the disc, vaporising it into a plasma.
+4. The plasma emits EUV light at 13.5 nm wavelength.
+5. Collector mirror (multilayer Mo/Si) reflects and focuses EUV light toward the wafer.
+
+EUV light is absorbed by virtually everything (including air).
+→ The entire optical path is in high vacuum (~10⁻⁷ mbar).
+→ Traditional glass lenses absorb EUV; only multilayer reflective mirrors work.
+→ EUV mirrors reflect only ~67% of light; a 6-mirror optical train passes only ~10% of source light.
+
+ASML EUV machine (NXE:3600D):
+  Source power: 500W EUV at wafer
+  Wafer throughput: 170 wafers/hour
+  Machine price: ~$200–250M USD per unit
+  Weight: 180,000 kg (shipped in 40 shipping containers)</div>
+
+  <div class="callout danger">
+    <strong>ASML's global monopoly</strong>
+    ASML (Netherlands) is the sole manufacturer of EUV lithography machines. There are no alternatives. The machine contains parts from 5,000 suppliers across 40+ countries. Key subsystems: the CO₂ laser (Trumpf, Germany), beam delivery optics (Zeiss, Germany), and the precision positioning stage. A leading-edge chip fab without ASML EUV access cannot manufacture below ~7nm. This is the primary lever of US export controls: ASML is prohibited from selling EUV machines to China (policy in force since 2019).
+  </div>
+
+  <h3>High-NA EUV</h3>
+  <p>The next generation — High-NA EUV (ASML EXE:5000) — increases the numerical aperture from 0.33 to 0.55, improving resolution by 40%. Planned for Intel 14A and TSMC N2 successor nodes:</p>
+  <div class="eq">High-NA EUV: NA=0.55
+  CD = 0.35 × 13.5 / 0.55 = 8.6 nm
+  Machine price: ~$380M per unit (estimated)
+  Wafer throughput: ~100 wafers/hour (slower due to smaller field size)</div>
+</section>
+
+<section>
+  <h2>From Wafer to Finished Chip</h2>
+
+  <div class="diagram">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="760" height="300" fill="#f8fafc" rx="8"/>
+      <defs>
+        <marker id="arrF" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0.5 L6.5,3.5 L0,6.5 Z" fill="#6366f1"/>
+        </marker>
+      </defs>
+
+      <!-- Step 1: Silicon Ingot -->
+      <rect x="10" y="105" width="80" height="65" rx="6" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="50" y="132" text-anchor="middle" font-size="10" fill="white" font-weight="700">Silicon</text>
+      <text x="50" y="147" text-anchor="middle" font-size="10" fill="#94a3b8">Ingot</text>
+      <text x="50" y="162" text-anchor="middle" font-size="9" fill="#64748b">Czochralski</text>
+      <text x="50" y="175" text-anchor="middle" font-size="9" fill="#64748b">crystal growth</text>
+      <text x="50" y="95" text-anchor="middle" font-size="9" fill="#6366f1" font-weight="600">① Growth</text>
+
+      <line x1="90" y1="137" x2="103" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 2: Wafer -->
+      <rect x="103" y="105" width="80" height="65" rx="6" fill="#334155" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="143" y="132" text-anchor="middle" font-size="10" fill="white" font-weight="700">300mm</text>
+      <text x="143" y="147" text-anchor="middle" font-size="10" fill="#c4b5fd">Wafer</text>
+      <text x="143" y="162" text-anchor="middle" font-size="9" fill="#94a3b8">Sliced, polished</text>
+      <text x="143" y="175" text-anchor="middle" font-size="9" fill="#94a3b8">~700μm thick</text>
+      <text x="143" y="95" text-anchor="middle" font-size="9" fill="#8b5cf6" font-weight="600">② Wafer Prep</text>
+
+      <line x1="183" y1="137" x2="196" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 3: Lithography -->
+      <rect x="196" y="90" width="90" height="80" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+      <text x="241" y="117" text-anchor="middle" font-size="10" fill="white" font-weight="700">EUV Litho</text>
+      <text x="241" y="132" text-anchor="middle" font-size="9" fill="#a5b4fc">13.5nm light</text>
+      <text x="241" y="147" text-anchor="middle" font-size="9" fill="#a5b4fc">mask → resist</text>
+      <text x="241" y="162" text-anchor="middle" font-size="9" fill="#a5b4fc">pattern transfer</text>
+      <text x="241" y="80" text-anchor="middle" font-size="9" fill="#6366f1" font-weight="600">③ Lithography (×40+ layers)</text>
+
+      <line x1="286" y1="130" x2="299" y2="130" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 4: Etch/Deposit -->
+      <rect x="299" y="105" width="80" height="65" rx="6" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="339" y="127" text-anchor="middle" font-size="10" fill="white" font-weight="700">Etch &amp;</text>
+      <text x="339" y="142" text-anchor="middle" font-size="10" fill="#c7d2fe">Deposit</text>
+      <text x="339" y="157" text-anchor="middle" font-size="9" fill="#94a3b8">Remove or add</text>
+      <text x="339" y="170" text-anchor="middle" font-size="9" fill="#94a3b8">material layers</text>
+      <text x="339" y="95" text-anchor="middle" font-size="9" fill="#818cf8" font-weight="600">④ Etch/CVD</text>
+
+      <line x1="379" y1="137" x2="392" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 5: Ion Implant/CMP -->
+      <rect x="392" y="105" width="80" height="65" rx="6" fill="#0f3460" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="432" y="127" text-anchor="middle" font-size="10" fill="white" font-weight="700">Doping &amp;</text>
+      <text x="432" y="142" text-anchor="middle" font-size="10" fill="#93c5fd">CMP</text>
+      <text x="432" y="157" text-anchor="middle" font-size="9" fill="#7dd3fc">Ion implant</text>
+      <text x="432" y="170" text-anchor="middle" font-size="9" fill="#7dd3fc">planarize</text>
+      <text x="432" y="95" text-anchor="middle" font-size="9" fill="#3b82f6" font-weight="600">⑤ Doping/Polish</text>
+
+      <line x1="472" y1="137" x2="485" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 6: Metallization -->
+      <rect x="485" y="105" width="80" height="65" rx="6" fill="#164e63" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="525" y="127" text-anchor="middle" font-size="10" fill="white" font-weight="700">Metal</text>
+      <text x="525" y="142" text-anchor="middle" font-size="10" fill="#67e8f9">Layers</text>
+      <text x="525" y="157" text-anchor="middle" font-size="9" fill="#a5f3fc">Cu interconnects</text>
+      <text x="525" y="170" text-anchor="middle" font-size="9" fill="#a5f3fc">15+ metal layers</text>
+      <text x="525" y="95" text-anchor="middle" font-size="9" fill="#06b6d4" font-weight="600">⑥ Interconnect</text>
+
+      <line x1="565" y1="137" x2="578" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 7: Test + Dice -->
+      <rect x="578" y="105" width="80" height="65" rx="6" fill="#14532d" stroke="#10b981" stroke-width="1.5"/>
+      <text x="618" y="127" text-anchor="middle" font-size="10" fill="white" font-weight="700">Test &amp;</text>
+      <text x="618" y="142" text-anchor="middle" font-size="10" fill="#6ee7b7">Dice</text>
+      <text x="618" y="157" text-anchor="middle" font-size="9" fill="#a7f3d0">Electrical test</text>
+      <text x="618" y="170" text-anchor="middle" font-size="9" fill="#a7f3d0">wafer dicing</text>
+      <text x="618" y="95" text-anchor="middle" font-size="9" fill="#10b981" font-weight="600">⑦ Test</text>
+
+      <line x1="658" y1="137" x2="671" y2="137" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrF)"/>
+
+      <!-- Step 8: Package -->
+      <rect x="671" y="105" width="80" height="65" rx="6" fill="#7c3aed" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="711" y="127" text-anchor="middle" font-size="10" fill="white" font-weight="700">Package</text>
+      <text x="711" y="142" text-anchor="middle" font-size="10" fill="#ddd6fe">(CoWoS)</text>
+      <text x="711" y="157" text-anchor="middle" font-size="9" fill="#ede9fe">+ HBM attach</text>
+      <text x="711" y="170" text-anchor="middle" font-size="9" fill="#ede9fe">on interposer</text>
+      <text x="711" y="95" text-anchor="middle" font-size="9" fill="#a78bfa" font-weight="600">⑧ Package</text>
+
+      <!-- Duration labels -->
+      <text x="380" y="235" text-anchor="middle" font-size="11" fill="#475569" font-weight="700">Total: 3–4 months, ~1,000 process steps, ~$20B fab cost to build</text>
+
+      <!-- Litho loop indicator -->
+      <path d="M 241 170 Q 241 215 339 220 Q 432 225 432 170" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrF)"/>
+      <text x="340" y="248" text-anchor="middle" font-size="9" fill="#6366f1">Steps ③–⑤ repeated 40–50 times for each chip layer</text>
+    </svg>
+    <figcaption>The wafer-to-chip journey. Steps 3–5 (lithography, etch, doping) are repeated for each of the 15+ metal layers and multiple transistor layers, accounting for most of the 3–4 month cycle time.</figcaption>
+  </div>
+
+  <h3>The FEOL/BEOL Distinction</h3>
+  <div class="eq">FEOL (Front-End of Line): transistor fabrication
+  - Gate oxide growth, gate stack deposition
+  - Source/drain ion implantation (adds n-type or p-type dopants)
+  - Anneal to activate dopants
+  Result: transistors exist in the silicon surface
+
+BEOL (Back-End of Line): metal interconnect wiring
+  - Depositing interlayer dielectric (ILD: SiO₂ or low-k dielectric)
+  - Etching vias (vertical holes) and trenches (horizontal wires)
+  - Copper electroplating to fill vias and trenches (Damascene process)
+  - CMP (Chemical Mechanical Planarization) to flatten each layer
+  15–20 metal layers total for a modern chip
+  Result: all transistors are wired together into circuits</div>
+</section>
+
+<section>
+  <h2>Yield: The Economics of Imperfection</h2>
+  <p>A 300mm silicon wafer contains hundreds of die. Not every die works — random defects (particles, crystal imperfections, process variation) kill transistors. <strong>Yield</strong> is the fraction of dies that pass electrical testing:</p>
+
+  <div class="eq">Defect density D (defects/cm²) and die area A (cm²):
+  Yield ≈ (1 + D×A/α)^{−α}   [negative binomial model, α≈2–3]
+
+For H100 (die area = 814 mm² = 8.14 cm²):
+  If D = 0.1 defects/cm²:
+  Yield ≈ (1 + 0.1 × 8.14/2)^{−2} = (1.407)^{−2} ≈ 50.6%
+
+Dies per 300mm wafer (approximate):
+  Wafer area: π × 150² = 70,686 mm²
+  H100 die area: 814 mm²
+  Theoretical dies: ~86 (minus edge loss: ~72 usable)
+  At 50% yield: ~36 good dies per wafer
+
+A good wafer of H100s: ~36 GPUs
+TSMC charges: ~$16,000–20,000 per N4H wafer
+Cost per good H100 die: $16,000 / 36 ≈ $444 in silicon alone
+
+Add HBM stacks (~$300), CoWoS packaging (~$200), testing, margin:
+H100 module manufacturing cost: ~$3,000–4,000
+OEM price: $25,000–35,000 → ~8–10× markup reflects R&D, scarcity, and demand</div>
+
+  <p>This is why larger dies are disproportionately more expensive: doubling the die area more than doubles yield loss. This is also why AMD's "chiplet" strategy (multiple small dies instead of one large die) dramatically improves yield — a 300mm² chiplet has far higher yield than an 800mm² monolithic die.</p>
+
+  <h3>Binning</h3>
+  <p>Not all good dies are equal. Defects that don't kill a die may disable some functional units. Foundries and chip companies <strong>bin</strong> dies by testing performance and functionality:</p>
+  <ul>
+    <li><strong>NVIDIA H100 SXM5:</strong> Full 132 SM, 80 GB HBM — premium tier</li>
+    <li><strong>NVIDIA H800</strong> (export-restricted version): H100 die with NVLink disabled in firmware — created to comply with US export rules to China</li>
+    <li><strong>NVIDIA A800</strong>: A100 die with reduced NVLink bandwidth — same mechanism</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Advanced Packaging: CoWoS and HBM Integration</h2>
+  <p>The H100's 80 GB HBM is not on the GPU die — it would be impossibly large. Instead, the GPU die and 6 HBM stacks are co-packaged on a large silicon <strong>interposer</strong> using TSMC's <strong>CoWoS</strong> (Chip on Wafer on Substrate) technology:</p>
+
+  <div class="eq">CoWoS structure (H100 SXM5):
+
+       ┌──────────────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐
+       │  H100 GPU    │ │HBM │ │HBM │ │HBM │ │HBM │ │HBM │ │HBM │
+       │  Die (814mm²)│ │ #1 │ │ #2 │ │ #3 │ │ #4 │ │ #5 │ │ #6 │
+       └──────────────┘ └────┘ └────┘ └────┘ └────┘ └────┘ └────┘
+       ═══════════════════ Silicon Interposer (~3000mm²) ═══════════
+       ─────────────────── Organic Substrate ────────────────────
+       ─────────────────── PCB / Server Board ───────────────────
+
+Interposer: manufactured on a wafer (TSMC N12 node), contains:
+  - Dense metal routing (1μm pitch, far finer than PCB's 100μm pitch)
+  - ~10,000 TSVs connecting top to bottom
+  - Short, wide signal buses: 5,120-bit bus per HBM stack
+  - Microbumps: 40μm pitch between interposer and GPU die
+
+Without CoWoS (old approach, PCB routing):
+  Bus width: limited to ~256 bits at reasonable distance
+  HBM bandwidth: 256-bit × 3.2 Gbps = ~100 GB/s (vs 819 GB/s via interposer)
+
+CoWoS interposer enables 1,024-bit bus to each HBM stack at short distance.
+The B200 uses a larger CoWoS-S (S for substrate) interposer to accommodate the dual-die GPU + 8 HBM stacks.</div>
+
+  <div class="callout warn">
+    <strong>CoWoS as a bottleneck</strong>
+    TSMC's CoWoS capacity became the critical constraint during the 2023–2024 GPU shortage — not GPU die manufacturing. Each CoWoS interposer is itself manufactured on a full TSMC wafer (N12 node), and the packaging process requires dedicated TSMC OSAT (Outsourced Semiconductor Assembly and Test) capacity. NVIDIA's H100 ramp was delayed by CoWoS supply, not GPU die supply. TSMC has since tripled CoWoS capacity, but it remains constrained relative to demand.
+  </div>
+</section>
+
+<section>
+  <h2>Key Foundry Players</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Company</th><th>Country</th><th>Leading Node (2025)</th><th>AI Chip Customers</th><th>Market Share (revenue)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TSMC</strong></td><td>Taiwan</td><td>N2 (2nm, 2025)</td><td>NVIDIA, AMD, Google, Apple, Qualcomm</td><td>~60%</td></tr>
+      <tr><td><strong>Samsung Foundry</strong></td><td>South Korea</td><td>SF3 (3nm, GAA)</td><td>Qualcomm, NVIDIA (some), IBM</td><td>~12%</td></tr>
+      <tr><td><strong>Intel Foundry</strong></td><td>USA</td><td>Intel 18A (2025)</td><td>Microsoft (planned), Intel products</td><td>~3%</td></tr>
+      <tr><td><strong>GlobalFoundries</strong></td><td>USA/Singapore</td><td>22nm (mature node)</td><td>AMD (mature products), defence</td><td>~8%</td></tr>
+      <tr><td><strong>SMIC</strong></td><td>China</td><td>7nm (unverified)</td><td>Huawei HiSilicon (domestic)</td><td>~6%</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>TSMC's Advantages</h3>
+  <p>TSMC has maintained process leadership for over a decade due to:</p>
+  <ul>
+    <li><strong>Process R&D investment:</strong> $36B capex in 2023 alone — more than Samsung Foundry and Intel Foundry combined.</li>
+    <li><strong>Customer concentration:</strong> Serving dozens of major fabless companies builds deep process expertise across diverse chip types.</li>
+    <li><strong>Talent:</strong> TSMC employs ~75,000 engineers with deep process specialisation accumulated over 37 years.</li>
+    <li><strong>ASML relationship:</strong> TSMC was the launch customer for both EUV (2019) and High-NA EUV (2025), receiving earliest access and preferential allocation.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Geopolitical Significance</h2>
+  <p>The global AI compute stack has extraordinary geographic concentration: nearly all leading-edge AI chips are manufactured at a single company (TSMC) on a small island (Taiwan, 180km from mainland China). The consequences:</p>
+
+  <h3>Export Control Regime</h3>
+  <div class="eq">US export control escalation for AI chips to China:
+
+Oct 2022: NVIDIA A100, H100 exports restricted (threshold: 600 TFLOPS FP16)
+          NVIDIA response: A800 (reduced NVLink), H800 (reduced interconnect)
+
+Oct 2023: Thresholds tightened further (to block A800/H800)
+          Also restricts resale through third countries
+
+Nov 2024: BIS "AI Diffusion Rule" expands controls:
+          - Restricts ≥50 TFLOPS at FP8 or equivalent
+          - Requires export licences for cloud computing access to restricted chips
+          - "Tier 1" countries (allies): no restrictions
+          - "Tier 2" countries: country-level quotas
+          - "Tier 3" (China, Russia): prohibited
+
+Effect: China cannot purchase H100/H200/B200 through legal channels.
+Chinese response: domestic alternatives (Huawei Ascend 910B, Biren GPU)
+  - Ascend 910B: ~256 TFLOPS BF16 vs H100's 1,979 TFLOPS → ~8× gap
+  - Manufacturing at SMIC 7nm (not TSMC), limited by EUV denial</div>
+
+  <div class="callout danger">
+    <strong>Taiwan risk</strong>
+    A military conflict over Taiwan would disrupt global semiconductor supply instantly. No company could substitute TSMC capacity in under 5–10 years — building a leading-edge fab requires $20–30B, 4–5 years of construction, and a decade of process development. The CHIPS Act (US), European Chips Act, and TSMC's Arizona/Japan expansions are efforts to reduce this concentration, but leading-edge manufacturing will remain Taiwan-dominant through 2030 at minimum.
+  </div>
+
+  <h3>TSMC Arizona</h3>
+  <p>TSMC is building two N4P (4nm) fabs and one N2 (2nm) fab in Phoenix, Arizona with $65B total planned investment and significant US government subsidies under the CHIPS Act ($6.6B). The first N4P fab began production in late 2024. Challenges: construction costs are ~2× higher than Taiwan, and experienced process engineers are scarce outside Taiwan. Arizona fabs will provide some geographic diversification but not full independence — key equipment, chemicals, and technical expertise still flow from Taiwan.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="hardware.html">← Hardware</a> · <a href="glossary.html">Next: Glossary →</a></p>
+</footer>
+</body>
+</html>

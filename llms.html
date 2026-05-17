@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Large Language Models | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html" class="active">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Architecture</div>
+    <h1>Large Language Models</h1>
+    <p>The transformer architecture that underpins every major LLM — the self-attention mechanism in full mathematical detail, positional encoding, scaling effects, and the alignment stack that makes models safe to deploy.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>From RNNs to Transformers</h2>
+  <p>Prior to 2017, language models used Recurrent Neural Networks (RNNs). An RNN processes tokens sequentially, maintaining a hidden state hₜ:</p>
+  <div class="eq">h_t = tanh(W_h h_{t-1} + W_x x_t + b)   [RNN cell]</div>
+  <p>The problem: this sequential computation is inherently serial — you cannot compute h₄₀ before h₃₉. Training is slow. Worse, gradients must flow backwards through hundreds of time steps — they vanish. Long-range dependencies (a pronoun referring to a subject 500 words earlier) are essentially unlearnable.</p>
+
+  <p>The <strong>Transformer</strong> (Vaswani et al., "Attention Is All You Need", 2017) eliminated recurrence entirely. Every position in a sequence attends to every other position simultaneously via the self-attention mechanism. Training is fully parallelisable. Long-range dependencies are modelled in a single attention step regardless of distance.</p>
+</section>
+
+<section>
+  <h2>Scaled Dot-Product Attention</h2>
+  <p>The core operation of a transformer. Given a sequence of token representations packed into a matrix X ∈ ℝ^{n×d} (n tokens, d dimensions), three linear projections produce Query, Key, and Value matrices:</p>
+
+  <div class="eq">Q = X W_Q       W_Q ∈ ℝ^{d × d_k}
+K = X W_K       W_K ∈ ℝ^{d × d_k}
+V = X W_V       W_V ∈ ℝ^{d × d_v}
+
+<span class="highlight">Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V</span>
+
+Dimensions:
+  QKᵀ      ∈ ℝ^{n × n}      (n²-size attention matrix — cost at long contexts)
+  √d_k     scales raw dot products to prevent softmax saturation at large d_k
+  softmax  row-wise → each row sums to 1 (weights over values)
+  Output   ∈ ℝ^{n × d_v}</div>
+
+  <p>Intuition: Q encodes "what I'm looking for," K encodes "what I contain," and V encodes "what I contribute." The dot product QKᵀ scores how relevant each key is to each query. Softmax normalises into weights. The output is a weighted sum of values — each token's new representation is an attention-weighted blend of all other tokens' value projections.</p>
+
+  <div class="callout">
+    <strong>Why divide by √d_k ?</strong>
+    With large d_k (e.g. 128), dot products QᵢKⱼ have variance proportional to d_k. Without scaling, these large values push softmax into near-zero gradient regions — the largest logit dominates with probability ≈1, all others ≈0, and gradients vanish. Dividing by √d_k keeps dot product variance constant at 1 regardless of d_k.
+  </div>
+
+  <h3>Causal Masking</h3>
+  <p>During training (and in decoder-only models like GPT/LLaMA/Claude), each token may only attend to previous tokens — not future ones. This is implemented by adding −∞ to the upper triangle of QKᵀ before softmax, so e^{−∞} = 0 after softmax:</p>
+  <div class="eq">Masked_Score(i,j) = QᵢKⱼᵀ / √d_k   if j ≤ i
+                    = −∞               if j > i
+
+After softmax, future positions receive attention weight 0.</div>
+</section>
+
+<section>
+  <h2>Multi-Head Attention</h2>
+  <p>A single attention head can only model one type of relationship at a time. Multi-head attention runs H independent attention operations in parallel, each with its own projection matrices, then concatenates and projects results:</p>
+
+  <div class="eq">head_h = Attention(Q W_Q^h, K W_K^h, V W_V^h)     for h = 1, …, H
+
+W_Q^h ∈ ℝ^{d × d_k}   where d_k = d/H   (split model dimension across heads)
+W_K^h ∈ ℝ^{d × d_k}
+W_V^h ∈ ℝ^{d × d_v}   where d_v = d/H
+
+<span class="highlight">MultiHead(Q,K,V) = Concat(head₁, …, head_H) · W_O</span>
+
+W_O ∈ ℝ^{Hd_v × d}   (output projection combining all heads)
+
+Example (LLaMA-3 70B): d=8192, H=64, d_k=d_v=128
+Total parameters in MHA: 4d² = 4×8192² = 268M per layer</div>
+
+  <p>Different heads empirically specialise: some track syntactic dependencies, others co-reference, others domain-specific patterns. Head 3 in layer 15 of a large LLM might specialise in tracking which entity a pronoun refers to 200 tokens back.</p>
+
+  <h3>Grouped Query Attention (GQA)</h3>
+  <p>Standard MHA replicates K and V matrices for every head — expensive for KV cache. <strong>Grouped Query Attention</strong> (Ainslie et al., 2023, used in LLaMA-3, Mistral) groups Q heads and shares a single K, V per group:</p>
+  <div class="eq">G groups, H query heads, H/G key-value heads.
+
+KV cache size reduction: H/G × smaller  (G=8 → 8× smaller KV cache)
+Quality impact: minimal — KV sharing loses little information at scale
+
+LLaMA-3 70B: H=64 query heads, G=8 groups → 8 KV heads
+KV cache reduced from 64× to 8× (8× memory saving for long contexts)</div>
+</section>
+
+<section>
+  <h2>The Transformer Block</h2>
+  <p>Each of the L transformer layers (blocks) applies two sub-layers in sequence, each followed by residual addition and layer normalisation:</p>
+
+  <div class="eq"><span class="highlight">x' = x + Attention(LN(x))          [multi-head self-attention + residual]
+x'' = x' + FFN(LN(x'))             [feed-forward network + residual]</span>
+
+LN = Layer Normalisation (pre-norm variant, used in modern LLMs)
+This is the "pre-norm" formulation; original 2017 transformer used post-norm.</div>
+
+  <h3>Feed-Forward Network (FFN)</h3>
+  <p>The FFN applies two linear projections with a nonlinearity in between. It constitutes ~2/3 of parameters in a transformer:</p>
+  <div class="eq">FFN(x) = W₂ · SiLU(W₁x) ⊙ (W₃x)     [SwiGLU variant, used in LLaMA]
+
+W₁ ∈ ℝ^{4d × d}, W₂ ∈ ℝ^{d × 4d}, W₃ ∈ ℝ^{4d × d}
+Intermediate dim = 4d (or ≈2.67d for SwiGLU with same parameter count)
+
+FFN parameters per layer: 3 × d × 4d ≈ 12d²   (SwiGLU has 3 weight matrices)
+Attention parameters per layer: 4d²
+Ratio: FFN ≈ 3× attention parameters</div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="400" height="520" fill="#f8fafc" rx="8"/>
+      <defs>
+        <marker id="arrT" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0.5 L6.5,3.5 L0,6.5 Z" fill="#6366f1"/>
+        </marker>
+      </defs>
+
+      <!-- Input Embeddings + Pos Encoding -->
+      <rect x="100" y="460" width="200" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+      <text x="200" y="478" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="700">Input Embeddings</text>
+      <text x="200" y="494" text-anchor="middle" font-size="10" fill="#64748b">+ Positional Encoding</text>
+
+      <line x1="200" y1="460" x2="200" y2="443" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <!-- Layer Norm 1 -->
+      <rect x="130" y="410" width="140" height="33" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5"/>
+      <text x="200" y="431" text-anchor="middle" font-size="11" fill="#475569" font-weight="600">Layer Norm</text>
+
+      <line x1="200" y1="410" x2="200" y2="393" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <!-- MHA -->
+      <rect x="90" y="330" width="220" height="63" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="200" y="352" text-anchor="middle" font-size="12" fill="#4c1d95" font-weight="700">Multi-Head Attention</text>
+      <text x="200" y="368" text-anchor="middle" font-size="10" fill="#7c3aed">Attention(QWQ, KWK, VWV)</text>
+      <text x="200" y="384" text-anchor="middle" font-size="10" fill="#7c3aed">H=64 heads (LLaMA-3 70B)</text>
+
+      <!-- Residual addition -->
+      <line x1="200" y1="330" x2="200" y2="315" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+      <!-- Residual skip line -->
+      <path d="M 80 410 Q 55 410 55 360 Q 55 310 80 310" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="38" y="363" text-anchor="middle" font-size="10" fill="#94a3b8" transform="rotate(-90,38,363)">residual</text>
+
+      <!-- Add & Norm -->
+      <rect x="130" y="278" width="140" height="37" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="200" y="296" text-anchor="middle" font-size="11" fill="#064e3b" font-weight="600">Add &amp; Norm</text>
+      <text x="200" y="310" text-anchor="middle" font-size="10" fill="#059669">x' = LN(x + Attn(x))</text>
+
+      <line x1="200" y1="278" x2="200" y2="261" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <!-- FFN -->
+      <rect x="90" y="195" width="220" height="66" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+      <text x="200" y="217" text-anchor="middle" font-size="12" fill="#78350f" font-weight="700">Feed-Forward Network</text>
+      <text x="200" y="233" text-anchor="middle" font-size="10" fill="#92400e">SwiGLU: W₂·SiLU(W₁x) ⊙ W₃x</text>
+      <text x="200" y="249" text-anchor="middle" font-size="10" fill="#92400e">dim: d → 4d → d</text>
+      <text x="200" y="253" text-anchor="middle" font-size="10" fill="#92400e"/>
+
+      <!-- Residual skip 2 -->
+      <path d="M 80 278 Q 55 278 55 232 Q 55 187 80 187" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+      <line x1="200" y1="195" x2="200" y2="178" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <!-- Add & Norm 2 -->
+      <rect x="130" y="143" width="140" height="35" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="200" y="161" text-anchor="middle" font-size="11" fill="#064e3b" font-weight="600">Add &amp; Norm</text>
+      <text x="200" y="173" text-anchor="middle" font-size="10" fill="#059669">x'' = LN(x' + FFN(x'))</text>
+
+      <line x1="200" y1="143" x2="200" y2="120" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <!-- N× label -->
+      <rect x="30" y="130" width="340" height="315" rx="8" fill="none" stroke="#c7d2fe" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="50" y="148" font-size="11" fill="#6366f1" font-weight="700">× L layers (e.g. 80 for LLaMA-3 70B)</text>
+
+      <!-- Output arrow -->
+      <rect x="110" y="80" width="180" height="40" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="200" y="98" text-anchor="middle" font-size="11" fill="#1e40af" font-weight="700">Output Projection</text>
+      <text x="200" y="113" text-anchor="middle" font-size="10" fill="#3b82f6">→ logits over V tokens</text>
+
+      <line x1="200" y1="80" x2="200" y2="65" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrT)"/>
+
+      <rect x="110" y="30" width="180" height="35" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="200" y="48" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="700">Softmax → Token Probs</text>
+      <text x="200" y="61" text-anchor="middle" font-size="10" fill="#6366f1">Sample → next token</text>
+    </svg>
+    <figcaption>One transformer block (decoder-only). The dashed border repeats L times. Residual connections (dashed grey) allow gradients to flow directly from output to input, bypassing each sub-layer.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>Positional Encoding</h2>
+  <p>Self-attention is permutation-invariant — the same result regardless of token order. Positional encoding injects order information. Modern LLMs use <strong>Rotary Positional Embeddings (RoPE)</strong>:</p>
+
+  <div class="eq">RoPE rotates the Query and Key vectors for position m by angle mθᵢ:
+
+Q_m = R(m) · Q         where R(m) is a rotation matrix parameterised by position m
+K_n = R(n) · K
+
+After rotation: Q_m · K_nᵀ depends only on the relative position (m − n):
+  Q_m · K_nᵀ = (R(m)Q) · (R(n)K)ᵀ = Q · R(m−n) · K
+
+Rotation angles: θᵢ = 1 / 10000^{2i/d}     for dimension i
+
+Benefits:
+  - Attention scores naturally decay with distance (cos(mθᵢ) behaviour)
+  - Extrapolates to longer contexts than training (with YaRN or NTK scaling)
+  - No learned parameters — mathematically principled</div>
+</section>
+
+<section>
+  <h2>Scale and the Emergence of Capability</h2>
+  <p>Model capability scales as a smooth power law with parameters, data, and compute — until it doesn't. <strong>Emergent abilities</strong> are qualitative capability jumps that appear discontinuously at specific scale thresholds, not predicted by interpolating from smaller models:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Capability</th><th>Approximate emergence threshold</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>3-digit arithmetic</strong></td><td>~50M parameters</td><td>Near-zero accuracy below, high above</td></tr>
+      <tr><td><strong>Chain-of-thought reasoning</strong></td><td>~10B parameters</td><td>Improves dramatically with scale</td></tr>
+      <tr><td><strong>Multi-step word problems</strong></td><td>~30B parameters</td><td>GPT-3 175B still limited; GPT-4 capable</td></tr>
+      <tr><td><strong>Truthful calibration</strong></td><td>~50B+ parameters</td><td>Smaller models confidently hallucinate more</td></tr>
+      <tr><td><strong>In-context learning</strong></td><td>~1B+ parameters</td><td>Using examples in the prompt to solve new tasks</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Notable Model Scale</h3>
+  <div class="specs-grid">
+    <div class="spec-card"><span class="val">175B</span><div class="lbl">GPT-3 (2020) — 96 layers, 96 heads, d=12,288</div></div>
+    <div class="spec-card"><span class="val">70B</span><div class="lbl">LLaMA-3 70B — 80 layers, 64/8 GQA, RoPE, SwiGLU</div></div>
+    <div class="spec-card"><span class="val">~1T+</span><div class="lbl">GPT-4 (estimated MoE, ~1.8T total params, 8 experts × 220B)</div></div>
+    <div class="spec-card"><span class="val">15T</span><div class="lbl">Training tokens: LLaMA-3 (Meta, 2024)</div></div>
+  </div>
+
+  <h3>Mixture of Experts (MoE)</h3>
+  <p>MoE replaces each FFN with E independent expert networks. A learned router network selects the top-k experts (typically k=2) for each token:</p>
+  <div class="eq">Router:  g(x) = TopK(softmax(W_r · x), k)      scores each expert for token x
+
+MoE-FFN(x) = Σ_{i ∈ TopK} g(x)_i · Expert_i(x)
+
+Total parameters: E × FFN_params
+Active parameters per token: k × FFN_params   (only k experts fire)
+
+Mixtral 8×7B: 8 experts, 2 active → 46.7B total params, 12.9B active per token
+→ inference cost of a 13B model, quality approaching a 70B model</div>
+</section>
+
+<section>
+  <h2>Context Length and Its Challenges</h2>
+
+  <p>The attention matrix QKᵀ ∈ ℝ^{n×n} scales quadratically with sequence length n. Memory and compute cost of attention:</p>
+
+  <div class="eq">Attention memory: n² × n_heads × sizeof(float) per layer
+At n=128,000 tokens, H=64 heads, BF16:
+  = (128,000)² × 64 × 2 bytes ≈ 2.1 TB per layer  — clearly infeasible
+
+Solutions:
+  <span class="highlight">FlashAttention</span>: Tile attention computation to stay within L2/SRAM.
+    Does not reduce asymptotic complexity but avoids writing n×n matrix to HBM.
+    Memory complexity: O(n) instead of O(n²). Speeds up attention 2–4×.
+
+  Sliding window attention (Mistral): each token attends to W=4096 recent tokens only.
+    O(nW) complexity. Loses global context.
+
+  Ring attention: distribute the n×n attention matrix across GPUs in a ring.
+    Each GPU computes a local block; pass K,V between GPUs in a ring.
+    Scales to 1M+ tokens by adding GPUs.</div>
+
+  <div class="callout fact">
+    <strong>FlashAttention implementation insight</strong>
+    Standard attention materialises the full n×n attention score matrix to HBM (80 GB HBM at 3.35 TB/s). For n=32,768, this is 32,768² × 64 × 2 bytes ≈ 137 GB — far larger than HBM. FlashAttention-2 processes attention in tiles that fit in SRAM (20 MB on H100), never materialising the full matrix. The online softmax trick tracks the running normalisation across tiles without losing numerical stability.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="inference.html">← Inference</a> · <a href="training-datacenter.html">Next: Training Data Centers →</a></p>
+</footer>
+</body>
+</html>

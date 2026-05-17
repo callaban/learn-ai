@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inference | Learn AI</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html" class="active">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Inference</div>
+    <h1>AI Inference: Putting Models to Work</h1>
+    <p>Inference is the production workload: executing a trained model billions of times per day with tight latency requirements, at a fraction of the cost of training. The engineering challenges are fundamentally different from — and in many ways harder than — training.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>What Inference Is</h2>
+  <p>Training updates weights; inference uses them. Given fixed model parameters θ, inference computes fθ(x) for a new input x — a pure forward pass with no gradient computation. But for autoregressive language models, inference has a distinctive structure that creates unique engineering challenges.</p>
+
+  <h3>Autoregressive Generation</h3>
+  <p>A language model does not generate the full response in one shot. It generates one token at a time, each token conditioned on all previous tokens — including those it just generated:</p>
+
+  <div class="eq">Given prompt x₁, x₂, …, xₙ:
+
+Step 1: P(t_{n+1} | x₁…xₙ)           → sample token t_{n+1}
+Step 2: P(t_{n+2} | x₁…xₙ, t_{n+1}) → sample token t_{n+2}
+Step 3: P(t_{n+3} | x₁…xₙ, t_{n+1}, t_{n+2}) → ...
+
+Each step requires a full forward pass through all L transformer layers.
+A 500-token response = 500 sequential forward passes.</div>
+
+  <p>This sequential dependency — each token depends on the previous — is the fundamental bottleneck of LLM inference. It cannot be parallelised in the generation direction, unlike training where all positions in a sequence are processed simultaneously (the transformer processes all positions in a forward pass; during training we just mask future positions).</p>
+
+  <div class="callout">
+    <strong>Prefill vs Decode</strong>
+    Inference has two distinct phases. The <strong>prefill phase</strong> processes the entire input prompt in parallel (all tokens simultaneously, like training). It is compute-bound and typically takes 10–100 ms. The <strong>decode phase</strong> generates one token per step, sequentially. Each decode step processes a single token attending to the full context — it is <em>memory-bandwidth-bound</em>, not compute-bound, because GPU compute sits idle while waiting for model weights to be streamed from HBM.
+  </div>
+</section>
+
+<section>
+  <h2>KV Cache</h2>
+  <p>In the transformer's self-attention mechanism, every token attends to every previous token. Computing attention naively at every decode step would require recomputing the Key (K) and Value (V) vectors for all past tokens from scratch — O(n²) work per sequence of length n.</p>
+
+  <p>The <strong>KV cache</strong> stores the K and V tensors for all past tokens in GPU memory, so each decode step only computes K, V for the single new token and reads the cached vectors for context:</p>
+
+  <div class="eq">At decode step t, for attention head h:
+
+Recomputed:  Q_t = x_t W_Q             [1 query vector]
+Retrieved:   K_{1:t} from KV cache     [t cached key vectors]
+             V_{1:t} from KV cache     [t cached value vectors]
+
+Attention:   a_t = softmax(Q_t K_{1:t}ᵀ / √d_k) · V_{1:t}
+
+KV cache size per token = 2 × n_layers × n_heads × d_head × sizeof(dtype)
+
+For Llama-3 70B (80 layers, 64 heads, d_head=128, BF16):
+= 2 × 80 × 64 × 128 × 2 bytes = 2.62 MB per token
+
+For 4,096 context tokens: 2.62 MB × 4096 ≈ 10.7 GB of KV cache</div>
+
+  <p>The KV cache trades memory for compute — a fundamental tradeoff. Longer context windows require proportionally more KV cache memory, which is why serving very long contexts (128K+ tokens) at scale is expensive: the KV cache alone can dominate GPU memory.</p>
+
+  <h3>PagedAttention</h3>
+  <p>Standard KV caching allocates a contiguous block of memory per request at maximum context length — leading to severe internal fragmentation when requests have variable lengths. The vLLM framework introduced <strong>PagedAttention</strong> (2023), which manages KV cache in non-contiguous "pages" (blocks of ~16 tokens), analogous to virtual memory paging in an OS. Requests share physical pages, and pages are allocated on demand. This improves GPU memory utilisation from ~30% to ~90% on typical workloads, increasing throughput 2–4×.</p>
+</section>
+
+<section>
+  <h2>Sampling Strategies</h2>
+  <p>The model outputs a distribution over the vocabulary — a vector of logits zᵥ for each of V possible next tokens. The <strong>sampler</strong> converts this into a single token choice:</p>
+
+  <h3>Greedy Decoding</h3>
+  <div class="eq">token = argmax_v softmax(z_v)   [always picks the most probable token]</div>
+  <p>Fast and deterministic. Poor for open-ended generation — tends toward repetitive, bland text.</p>
+
+  <h3>Temperature Sampling</h3>
+  <div class="eq">P(token = v) = softmax(z_v / T)_v = e^{z_v/T} / Σ_w e^{z_w/T}
+
+T → 0  : greedy decoding (argmax)
+T = 1  : sample from model's distribution as trained
+T > 1  : flatten distribution, more random/creative
+T → ∞  : uniform distribution over all tokens</div>
+
+  <h3>Top-k and Top-p (Nucleus) Sampling</h3>
+  <div class="eq">Top-k: restrict sampling to the k highest-probability tokens, renormalise, sample.
+        Typical k = 40–100.
+
+Top-p: sort tokens by probability (descending).
+        Include tokens until cumulative probability ≥ p, renormalise, sample.
+        Typical p = 0.9–0.95.
+        Adaptive: automatically includes more tokens when distribution is flat (uncertainty high)
+        and fewer when it is peaked (clear best option).</div>
+
+  <p>Most production systems use top-p with temperature. A temperature of 0.7 and p=0.9 is a common default — creative enough to avoid repetition, constrained enough to avoid incoherence.</p>
+</section>
+
+<section>
+  <h2>Quantisation</h2>
+  <p>Model weights stored in FP16 or BF16 require 2 bytes per parameter. Quantisation compresses weights to lower precision, reducing both memory footprint and — critically — memory bandwidth consumption during decode (which is the primary bottleneck).</p>
+
+  <div class="eq">Quantisation maps floating-point values to integers:
+
+INT8 (W8A8): 8-bit weights AND 8-bit activations
+  x_q = round(x / scale + zero_point)
+  x_deq = (x_q − zero_point) × scale
+  Memory: 1 byte/parameter (2× over BF16)
+  Throughput: 2× increase on INT8 tensor cores
+
+INT4 (W4A16): 4-bit weights, 16-bit activations (dequantise at matmul)
+  Memory: 0.5 bytes/parameter (4× over BF16)
+  A 70B model: 70B × 0.5 = 35 GB — fits on a single H100 80GB!
+
+GPTQ / AWQ: group-wise quantisation, calibrated on small dataset.
+  Minimises quantisation error by finding optimal scale per group of 128 weights.</div>
+
+  <div class="callout warn">
+    <strong>Quality vs compression tradeoff</strong>
+    INT8 quantisation typically degrades model quality by 0.1–0.5% on benchmarks — often acceptable. INT4 can degrade by 1–3% on complex tasks. Careful calibration (AWQ, GPTQ, SmoothQuant) narrows this gap significantly. FP8 (8-bit floating point, E4M3 format) is now natively supported on H100/H200 GPUs and offers INT8 compression with FP16-comparable quality because the exponent representation is retained.
+  </div>
+
+  <h3>Activation-Weight vs Weight-Only Quantisation</h3>
+  <p>During decode, the bottleneck is reading weight matrices from HBM into the GPU's SMs — weight-only INT4 (W4A16) maximally reduces this read, then dequantises to FP16 for the actual matrix multiplication. During prefill, compute is the bottleneck, so W8A8 (both weights and activations in INT8) improves compute throughput on tensor cores.</p>
+</section>
+
+<section>
+  <h2>Speculative Decoding</h2>
+  <p>Speculative decoding (Leviathan et al., 2022) uses a small, fast <em>draft</em> model to generate K candidate tokens, which the large <em>target</em> model then verifies in a single batched forward pass:</p>
+
+  <div class="eq">Algorithm:
+
+1. Draft model (e.g. 7B) autoregressively generates K=4 tokens: d₁, d₂, d₃, d₄
+
+2. Target model (e.g. 70B) processes the full sequence [prompt, d₁, d₂, d₃, d₄]
+   in ONE forward pass (parallel, like prefill).
+   Produces: P_target(·|prompt), P_target(·|prompt,d₁), …, P_target(·|…,d₃)
+
+3. Accept/reject each draft token using:
+   Accept dᵢ with probability min(1, P_target(dᵢ|ctx) / P_draft(dᵢ|ctx))
+   If rejected: sample from corrected distribution and stop.
+
+4. On average, if draft acceptance rate α ≈ 0.7, we accept 0.7×4 = 2.8 tokens per step.
+   Total time ≈ 1 large model forward pass ≈ time of 4 draft steps.
+   Net speedup ≈ 2.8× (at constant hardware utilisation).</div>
+
+  <p>The key insight: the target model forward pass over K+1 tokens costs the same as 1-token decode on modern GPUs (memory bandwidth bound, not compute bound). Verifying K tokens at once is "free" compute if the GPU otherwise idles waiting for memory.</p>
+</section>
+
+<section>
+  <h2>Inference Metrics and Service-Level Objectives</h2>
+
+  <div class="specs-grid">
+    <div class="spec-card"><span class="val">TTFT</span><div class="lbl">Time to First Token — latency from request submission to first token appearing. Includes queueing + prefill. Target: &lt;200 ms for chat.</div></div>
+    <div class="spec-card"><span class="val">ITL</span><div class="lbl">Inter-Token Latency — time between consecutive generated tokens. Target: &lt;30 ms (33 tokens/sec) to feel real-time to users.</div></div>
+    <div class="spec-card"><span class="val">Throughput</span><div class="lbl">Tokens/second across all concurrent users. Often measured as output tokens per second per GPU.</div></div>
+    <div class="spec-card"><span class="val">MBU</span><div class="lbl">Memory Bandwidth Utilisation — decode is memory-bound; H100 peak is 3.35 TB/s. Good inference engines achieve 60–80% MBU.</div></div>
+  </div>
+
+  <h3>The Batching Tradeoff</h3>
+  <p>Processing multiple requests simultaneously (batching) increases throughput — the GPU is better utilised. But it adds latency for individual requests (requests wait in queue, longer decodes, larger KV caches). The optimal batch size maximises throughput while staying within latency SLOs. <strong>Continuous batching</strong> (Orca, 2022) dynamically adds new requests to a running batch as existing ones complete — rather than waiting for all requests in a batch to finish before accepting new ones. This dramatically improves GPU utilisation for variable-length workloads.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 780 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect width="780" height="200" fill="#f8fafc" rx="8"/>
+      <defs>
+        <marker id="arrI" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0.5 L6.5,3.5 L0,6.5 Z" fill="#6366f1"/>
+        </marker>
+      </defs>
+
+      <!-- Stages -->
+      <!-- 1 -->
+      <rect x="15" y="75" width="110" height="50" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="70" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">User Prompt</text>
+      <text x="70" y="112" text-anchor="middle" font-size="10" fill="#3b82f6">text input</text>
+
+      <line x1="125" y1="100" x2="143" y2="100" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrI)"/>
+
+      <!-- 2 -->
+      <rect x="143" y="75" width="110" height="50" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="198" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#4c1d95">Tokeniser</text>
+      <text x="198" y="112" text-anchor="middle" font-size="10" fill="#7c3aed">BPE → token IDs</text>
+
+      <line x1="253" y1="100" x2="271" y2="100" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrI)"/>
+
+      <!-- 3 Prefill -->
+      <rect x="271" y="55" width="150" height="90" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="346" y="78" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Prefill Phase</text>
+      <text x="346" y="95" text-anchor="middle" font-size="10" fill="#92400e">All prompt tokens</text>
+      <text x="346" y="110" text-anchor="middle" font-size="10" fill="#92400e">processed in parallel</text>
+      <text x="346" y="128" text-anchor="middle" font-size="10" fill="#92400e">→ fills KV cache</text>
+
+      <line x1="421" y1="100" x2="439" y2="100" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrI)"/>
+
+      <!-- 4 Decode -->
+      <rect x="439" y="55" width="150" height="90" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.8"/>
+      <text x="514" y="78" text-anchor="middle" font-size="11" font-weight="700" fill="#7f1d1d">Decode Phase</text>
+      <text x="514" y="95" text-anchor="middle" font-size="10" fill="#dc2626">One token / step</text>
+      <text x="514" y="110" text-anchor="middle" font-size="10" fill="#dc2626">reads KV cache</text>
+      <text x="514" y="128" text-anchor="middle" font-size="10" fill="#dc2626">memory-BW bound</text>
+
+      <line x1="589" y1="100" x2="607" y2="100" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arrI)"/>
+
+      <!-- 5 -->
+      <rect x="607" y="75" width="110" height="50" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="662" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#064e3b">Detokeniser</text>
+      <text x="662" y="112" text-anchor="middle" font-size="10" fill="#059669">IDs → text</text>
+
+      <!-- KV Cache box below -->
+      <rect x="439" y="155" width="150" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="514" y="175" text-anchor="middle" font-size="10" fill="#94a3b8" font-weight="600">KV Cache (HBM)</text>
+      <!-- Arrow from KV cache to decode -->
+      <line x1="514" y1="155" x2="514" y2="145" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrI)"/>
+
+      <!-- Labels -->
+      <text x="390" y="20" text-anchor="middle" font-size="11" fill="#64748b">TTFT = time to first token (prefill latency)</text>
+      <text x="514" y="40" text-anchor="middle" font-size="10" fill="#94a3b8">ITL per step</text>
+    </svg>
+    <figcaption>Inference pipeline showing prefill (parallel, compute-bound) and decode (sequential, memory-bandwidth-bound) phases. The KV cache persists in HBM between decode steps.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2>Compute vs Memory Bandwidth: The Core Tradeoff</h2>
+  <p>Whether inference is compute-bound or memory-bound determines which optimisations matter. The key ratio is the <strong>arithmetic intensity</strong> — FLOPs per byte of memory access:</p>
+
+  <div class="eq">Arithmetic intensity = FLOPs / Bytes accessed
+
+For matrix-vector multiplication (single decode step, batch size=1):
+  - Weight matrix W ∈ ℝ^{d×d}: d² parameters = d² × 2 bytes (BF16)
+  - FLOP count: 2d² (d multiplications + d additions per output element)
+  - Intensity = 2d² / (2d²) = 1 FLOP/byte
+
+H100 peak:
+  - Compute: 1,979 TFLOPS (BF16)
+  - Memory BW: 3,350 GB/s = 3,350 × 10⁹ bytes/s
+  - Machine balance: 1,979 × 10¹² / 3,350 × 10⁹ ≈ 591 FLOPs/byte
+
+For single decode step: intensity (1) << machine balance (591)
+→ GPU is >99% idle on compute; 100% bound by memory bandwidth</div>
+
+  <p>This is why throughput scales linearly with memory bandwidth, not TFLOPS, during single-request decode. Batching raises arithmetic intensity: with batch size B, each weight matrix element serves B queries — intensity ≈ B FLOPs/byte. At B ≈ 591, the workload becomes compute-bound. Production inference systems tune batch size to hit this crossover point.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="training.html">← Training</a> · <a href="llms.html">Next: LLMs →</a></p>
+</footer>
+</body>
+</html>
