@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Implementation with PyTorch | Learn AI</title>
+  <meta name="description" content="Practical AI implementation with PyTorch: tensors, autograd, training loops, LoRA fine-tuning, mixed precision, and production deployment.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
+    <a href="neural-networks.html">Neural Nets</a>
+    <a href="training.html">Training</a>
+    <a href="inference.html">Inference</a>
+    <a href="llms.html">LLMs</a>
+    <a href="training-datacenter.html">Training DCs</a>
+    <a href="inference-datacenter.html">Inference DCs</a>
+    <a href="hardware.html">Hardware</a>
+    <a href="foundry.html">Foundry</a>
+    <a href="implementation.html" class="active">Implementation</a>
+    <a href="glossary.html">Glossary</a>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Practical Engineering</div>
+    <h1>AI Implementation with PyTorch</h1>
+    <p>From tensors to production: the engineering behind building, training, fine-tuning, and deploying neural networks using PyTorch — the dominant framework for AI research and production.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Why PyTorch</h2>
+  <p>PyTorch was released by Meta AI in 2016 and has become the framework of choice for AI research and increasingly for production. Its core design principle is <em>define-by-run</em> (dynamic computation graphs): the graph is built at runtime as Python code executes, making debugging with standard Python tools natural. TensorFlow 1.x required a separate graph-construction phase; PyTorch eliminated this friction.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Research Dominance</h4>
+      <p>By 2023, over 80% of papers at top ML conferences (NeurIPS, ICML, ICLR) used PyTorch. Nearly every foundational model — GPT, LLaMA, Mistral, Stable Diffusion, Whisper — was first implemented in PyTorch. If a paper publishes code, it is almost certainly PyTorch.</p>
+    </div>
+    <div>
+      <h4>Production Adoption</h4>
+      <p><code>torch.compile()</code> closes the gap between research and production by compiling dynamic graphs into optimised static representations. Companies running PyTorch in production include Meta, OpenAI, Mistral, Stability AI, and many others.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Tensors: The Core Data Structure</h2>
+  <p>A <strong>tensor</strong> is an n-dimensional array, generalising scalars (rank 0), vectors (rank 1), matrices (rank 2), and higher-dimensional structures. PyTorch tensors are similar to NumPy arrays but can live on GPU memory and participate in automatic differentiation.</p>
+
+  <pre>import torch
+
+# Create tensors
+x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])  # shape (2, 2)
+y = torch.zeros(3, 4)                         # shape (3, 4), all zeros
+z = torch.randn(8, 512)                       # shape (8, 512), N(0,1) samples
+
+# Move to GPU
+device = "cuda" if torch.cuda.is_available() else "cpu"
+x = x.to(device)
+
+# Basic operations — all differentiable
+a = x @ x.T                          # matrix multiply, shape (2, 2)
+b = torch.softmax(x, dim=-1)
+c = x.mean(dim=1, keepdim=True)      # shape (2, 1)
+
+# Shape inspection
+print(x.shape)   # torch.Size([2, 2])
+print(x.dtype)   # torch.float32
+print(x.device)  # device(type='cuda', index=0)</pre>
+
+  <div class="callout">
+    <strong>Contiguous Memory and Strides</strong>
+    Tensors are stored as a flat buffer with a shape and stride. A stride tells PyTorch how many elements to skip in memory to move one position along each dimension. Operations like <code>.T</code> (transpose) don't copy data — they return a view with swapped strides. Calling <code>.contiguous()</code> forces a physical copy into C-contiguous order, which many CUDA kernels require for peak performance.
+  </div>
+
+  <h3>dtypes and Memory Cost</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>dtype</th><th>Bits</th><th>Range / Precision</th><th>Typical Use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>float32 (FP32)</strong></td><td>32</td><td>±3.4×10³⁸, ~7 decimal digits</td><td>Reference; optimizer state</td></tr>
+        <tr><td><strong>bfloat16 (BF16)</strong></td><td>16</td><td>Same range as FP32, 3 decimal digits</td><td>Training on Ampere/Hopper GPUs</td></tr>
+        <tr><td><strong>float16 (FP16)</strong></td><td>16</td><td>±6.5×10⁴, 3 decimal digits</td><td>Inference; older mixed-precision training</td></tr>
+        <tr><td><strong>int8</strong></td><td>8</td><td>−128 to 127</td><td>Post-training quantization</td></tr>
+        <tr><td><strong>int4</strong></td><td>4</td><td>−8 to 7</td><td>Aggressive weight quantization (bitsandbytes)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A 7B parameter model in FP32 requires 7×10⁹ × 4 bytes = 28 GB. In BF16 it is 14 GB. In INT8, 7 GB. In INT4 (GPTQ / bitsandbytes), 3.5 GB — fitting a 7B model on a consumer GPU with 4–6 GB VRAM.</p>
+</section>
+
+<section>
+  <h2>Autograd: Automatic Differentiation</h2>
+  <p>PyTorch's <code>autograd</code> engine implements <strong>reverse-mode automatic differentiation</strong>. Every tensor operation records itself into a <em>computation graph</em> (a directed acyclic graph of <code>Function</code> objects). Calling <code>.backward()</code> on a scalar loss traverses the graph in reverse, computing gradients via the chain rule.</p>
+
+  <pre>x = torch.tensor([[2.0, 3.0]], requires_grad=True)  # (1, 2)
+W = torch.tensor([[1.0, 0.0], [0.0, 2.0]], requires_grad=True)  # (2, 2)
+b = torch.tensor([0.5, -0.5], requires_grad=True)   # (2,)
+
+z    = x @ W + b          # linear layer: shape (1, 2)
+a    = torch.relu(z)      # activation
+loss = a.sum()            # scalar
+
+loss.backward()           # populates .grad for all leaf tensors
+
+print(x.grad)             # ∂loss/∂x
+print(W.grad)             # ∂loss/∂W
+print(b.grad)             # ∂loss/∂b</pre>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="arr-f" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/>
+        </marker>
+        <marker id="arr-b" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
+          <path d="M6,0 L0,3 L6,6 Z" fill="#f87171"/>
+        </marker>
+      </defs>
+
+      <text x="350" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">Forward Pass and Backward Pass (Autograd)</text>
+
+      <!-- Forward pass nodes -->
+      <rect x="20"  y="50" width="90" height="40" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="65"  y="75" text-anchor="middle" font-size="12" font-weight="700" fill="#1e3a8a">x, W, b</text>
+
+      <rect x="165" y="50" width="90" height="40" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="210" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="#4c1d95">MatMul+Add</text>
+      <text x="210" y="83" text-anchor="middle" font-size="10" fill="#6d28d9">z = xW+b</text>
+
+      <rect x="310" y="50" width="80" height="40" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="350" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="#064e3b">ReLU</text>
+      <text x="350" y="83" text-anchor="middle" font-size="10" fill="#065f46">a=max(0,z)</text>
+
+      <rect x="445" y="50" width="80" height="40" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="485" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Sum</text>
+      <text x="485" y="83" text-anchor="middle" font-size="10" fill="#92400e">loss=Σa</text>
+
+      <rect x="585" y="50" width="80" height="40" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="625" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">loss</text>
+
+      <!-- Forward arrows -->
+      <line x1="110" y1="70" x2="163" y2="70" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-f)"/>
+      <line x1="255" y1="70" x2="308" y2="70" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-f)"/>
+      <line x1="390" y1="70" x2="443" y2="70" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-f)"/>
+      <line x1="525" y1="70" x2="583" y2="70" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-f)"/>
+
+      <!-- Backward arrows (below) -->
+      <line x1="583" y1="110" x2="527" y2="110" stroke="#f87171" stroke-width="1.5" marker-end="url(#arr-b)"/>
+      <line x1="443" y1="110" x2="392" y2="110" stroke="#f87171" stroke-width="1.5" marker-end="url(#arr-b)"/>
+      <line x1="308" y1="110" x2="257" y2="110" stroke="#f87171" stroke-width="1.5" marker-end="url(#arr-b)"/>
+      <line x1="163" y1="110" x2="112" y2="110" stroke="#f87171" stroke-width="1.5" marker-end="url(#arr-b)"/>
+
+      <!-- Labels -->
+      <text x="350" y="155" text-anchor="middle" font-size="11" fill="#94a3b8">→ Forward pass builds graph</text>
+      <text x="350" y="172" text-anchor="middle" font-size="11" fill="#f87171">← .backward() traverses graph, accumulates ∂loss/∂·</text>
+    </svg>
+    <figcaption>The computation graph. The forward pass builds it left to right. Calling loss.backward() traverses it right to left, computing gradients at each node via the chain rule.</figcaption>
+  </div>
+
+  <h3>No-Grad Contexts</h3>
+  <p>During inference, gradient tracking wastes memory and compute. Wrap inference code in <code>torch.no_grad()</code> to disable the autograd engine:</p>
+  <pre>model.eval()
+with torch.no_grad():
+    logits = model(input_ids)
+    probs  = torch.softmax(logits, dim=-1)</pre>
+
+  <p>For fine-tuning, selectively freeze parameters by setting <code>requires_grad = False</code> on layers you don't want to update — for example, all layers except the final classification head.</p>
+</section>
+
+<section>
+  <h2>Building Models with nn.Module</h2>
+  <p>All neural networks in PyTorch inherit from <code>torch.nn.Module</code>. A Module encapsulates parameters, child modules, and a <code>forward()</code> method that defines the computation. Modules compose: a Module can contain other Modules, and PyTorch automatically discovers all nested parameters for the optimizer.</p>
+
+  <pre>import torch
+import torch.nn as nn
+
+class FeedForward(nn.Module):
+    def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1):
+        super().__init__()
+        self.linear1 = nn.Linear(d_model, d_ff)
+        self.linear2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.act     = nn.GELU()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.linear2(self.dropout(self.act(self.linear1(x))))
+
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, d_ff: int):
+        super().__init__()
+        self.attn  = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
+        self.ff    = FeedForward(d_model, d_ff)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Pre-norm transformer (used by GPT-2+, LLaMA)
+        attn_out, _ = self.attn(x, x, x)
+        x = self.norm1(x + attn_out)    # residual connection
+        x = self.norm2(x + self.ff(x))
+        return x
+
+
+model   = TransformerBlock(d_model=512, n_heads=8, d_ff=2048)
+n_params = sum(p.numel() for p in model.parameters())
+print(f"Parameters: {n_params:,}")   # Parameters: 3,152,384</pre>
+
+  <h3>Key nn Primitives</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Operation</th><th>Parameters</th></tr></thead>
+      <tbody>
+        <tr><td><code>nn.Linear(in, out)</code></td><td>y = xWᵀ + b</td><td>in×out weights + out biases</td></tr>
+        <tr><td><code>nn.Embedding(V, d)</code></td><td>Token ID → dense vector</td><td>V×d lookup table</td></tr>
+        <tr><td><code>nn.LayerNorm(d)</code></td><td>Normalise over feature dim</td><td>2d (scale γ + shift β)</td></tr>
+        <tr><td><code>nn.MultiheadAttention(d, h)</code></td><td>Scaled dot-product attention</td><td>4d² (Q, K, V, out projections)</td></tr>
+        <tr><td><code>nn.Conv2d(Cin, Cout, k)</code></td><td>2D convolution</td><td>Cout×Cin×k×k + Cout</td></tr>
+        <tr><td><code>nn.Dropout(p)</code></td><td>Zero activations with prob p</td><td>0 (no parameters)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>The Training Loop</h2>
+  <p>A complete PyTorch training loop has five components: the <strong>dataset</strong> (raw data), the <strong>DataLoader</strong> (batching/shuffling), the <strong>model</strong>, the <strong>loss function</strong>, and the <strong>optimizer</strong>. Each training step follows the same four-step pattern:</p>
+
+  <ol class="steps">
+    <li data-n="1">Forward pass — run the model to get predictions</li>
+    <li data-n="2">Compute loss — measure prediction error</li>
+    <li data-n="3">Backward pass — <code>loss.backward()</code> computes ∂loss/∂W for all W</li>
+    <li data-n="4">Optimizer step — <code>optimizer.step()</code> updates weights; <code>optimizer.zero_grad()</code> clears stale gradients</li>
+  </ol>
+
+  <pre>import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
+# --- Synthetic dataset ---
+X = torch.randn(1000, 128)
+y = (X[:, 0] > 0).long()
+
+dataset = TensorDataset(X, y)
+loader  = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
+
+# --- Model and optimizer ---
+model     = nn.Sequential(nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 2))
+optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
+criterion = nn.CrossEntropyLoss()
+
+# --- Training loop ---
+model.train()
+for epoch in range(10):
+    total_loss = 0.0
+    for batch_X, batch_y in loader:
+        logits = model(batch_X)                # forward pass
+        loss   = criterion(logits, batch_y)    # compute loss
+
+        optimizer.zero_grad()                  # clear stale gradients
+        loss.backward()                        # compute gradients
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()                       # update weights
+
+        total_loss += loss.item()
+    print(f"Epoch {epoch+1}  loss={total_loss/len(loader):.4f}")</pre>
+
+  <div class="callout warn">
+    <strong>Common Mistake: Forgetting zero_grad()</strong>
+    PyTorch accumulates gradients by default — calling <code>loss.backward()</code> without first calling <code>optimizer.zero_grad()</code> adds to existing gradients. This causes incorrect, diverging updates. Always zero gradients before the backward pass, not after.
+  </div>
+
+  <h3>Gradient Clipping</h3>
+  <p><code>clip_grad_norm_</code> caps the global gradient norm to <code>max_norm</code> before the optimizer step, preventing the exploding gradient problem that can destabilise training on long sequences. The norm is computed across all parameters:</p>
+  <div class="eq">‖g‖₂ = √(Σᵢ gᵢ²)
+
+If ‖g‖₂ > max_norm:  g ← g · (max_norm / ‖g‖₂)</div>
+
+  <h3>Learning Rate Schedulers</h3>
+  <pre>from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
+
+# Linear warmup for 100 steps then cosine decay to 5% of base LR
+warmup    = LinearLR(optimizer, start_factor=0.01, total_iters=100)
+cosine    = CosineAnnealingLR(optimizer, T_max=900, eta_min=1.5e-5)
+scheduler = SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[100])
+
+# Call after each optimizer step:
+scheduler.step()</pre>
+  <p>Cosine annealing with linear warmup is the de-facto schedule for large-scale pretraining. Warmup prevents large early gradient updates when the optimizer's momentum estimates are unreliable.</p>
+</section>
+
+<section>
+  <h2>Mixed Precision Training</h2>
+  <p>Training in BF16 halves memory use and doubles throughput on Ampere/Hopper GPUs versus FP32, because tensor cores run at 2× the FLOP rate for 16-bit operations. PyTorch's <code>torch.amp</code> module handles this automatically — the forward and backward passes run in BF16, while the master weights and optimizer state stay in FP32.</p>
+
+  <pre>from torch.amp import autocast, GradScaler
+
+scaler = GradScaler()    # needed for FP16; BF16 does not require loss scaling
+
+for batch_X, batch_y in loader:
+    optimizer.zero_grad()
+
+    with autocast(device_type="cuda", dtype=torch.bfloat16):
+        logits = model(batch_X)
+        loss   = criterion(logits, batch_y)
+
+    scaler.scale(loss).backward()
+    scaler.unscale_(optimizer)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    scaler.step(optimizer)
+    scaler.update()</pre>
+
+  <div class="callout fact">
+    <strong>BF16 vs FP16</strong>
+    BF16 and FP32 share the same 8-bit exponent, so BF16 can represent the same dynamic range as FP32. FP16 has only a 5-bit exponent — large activations or gradients can overflow. This is why large-scale LLM training switched from FP16 (GPT-3 era) to BF16 (LLaMA, GPT-4 era): BF16 eliminates loss scaling and is more numerically stable.
+  </div>
+</section>
+
+<section>
+  <h2>Fine-Tuning Pretrained Models</h2>
+  <p>Training a large model from scratch requires millions of GPU-hours. For most applications, the practical path is to <strong>fine-tune</strong> a pretrained model on task-specific data. The Hugging Face <code>transformers</code> library provides pretrained models and tokenizers for thousands of architectures.</p>
+
+  <h3>Full Fine-Tuning</h3>
+  <pre>from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id  = "meta-llama/Llama-3.2-1B"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model     = AutoModelForCausalLM.from_pretrained(
+    model_id, torch_dtype=torch.bfloat16, device_map="auto"
+)
+
+# All parameters trainable by default
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
+# ... standard training loop ...</pre>
+
+  <h3>LoRA: Low-Rank Adaptation</h3>
+  <p>Fine-tuning all weights of a 7B model requires ~14 GB for weights plus ~56 GB for FP32 optimizer state — impractical on most hardware. <strong>LoRA</strong> (Hu et al., 2021) freezes the original weights and injects low-rank trainable update matrices into attention projection layers.</p>
+
+  <div class="eq">Original weight: W ∈ ℝᵈˣᵏ    (frozen during fine-tuning)
+
+LoRA update:  ΔW = BA     where B ∈ ℝᵈˣʳ, A ∈ ℝʳˣᵏ, r ≪ min(d,k)
+
+Modified forward:  h = Wx + <span class="highlight">BAx · (α/r)</span>
+
+Trainable parameters: r(d+k)  vs  d·k for full fine-tuning
+At rank r=8, d=k=4096: 65,536 vs 16,777,216 — a 256× reduction</div>
+
+  <pre>from peft import get_peft_model, LoraConfig, TaskType
+
+lora_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=8,                                   # rank — higher r = more capacity
+    lora_alpha=32,                         # scaling factor α
+    target_modules=["q_proj", "v_proj"],   # which weight matrices to adapt
+    lora_dropout=0.05,
+)
+
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+# trainable params: 2,097,152 || all params: 1,235,814,400 || trainable%: 0.17</pre>
+
+  <div class="callout">
+    <strong>QLoRA</strong>
+    QLoRA (Dettmers et al., 2023) combines 4-bit NF4 quantisation of the frozen base model with LoRA adapters in BF16. A 65B model normally requires ~130 GB; QLoRA reduces this to ~35 GB — fitting on a single A100-80GB. The NF4 data type is optimised for normally-distributed weight values, minimising quantisation error versus INT4.
+  </div>
+
+  <h3>When to Use Each Approach</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>GPU RAM (7B model)</th><th>Trainable Params</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Full fine-tuning</strong></td><td>~80–160 GB</td><td>100%</td><td>Max accuracy, sufficient hardware</td></tr>
+        <tr><td><strong>LoRA (BF16)</strong></td><td>~16–20 GB</td><td>0.1–1%</td><td>Task adaptation with 1–2 GPUs</td></tr>
+        <tr><td><strong>QLoRA (INT4 + LoRA)</strong></td><td>~6–10 GB</td><td>0.1–1%</td><td>Consumer GPU fine-tuning</td></tr>
+        <tr><td><strong>Prompt tuning</strong></td><td>~14 GB (inference only)</td><td>&lt;0.01%</td><td>Frozen model, soft prefix tokens</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Datasets and DataLoaders</h2>
+  <p>The <code>torch.utils.data</code> module provides the contract for streaming training data efficiently. A <code>Dataset</code> implements <code>__len__</code> and <code>__getitem__</code>. A <code>DataLoader</code> wraps it with batching, shuffling, and multi-process prefetching.</p>
+
+  <pre>from torch.utils.data import Dataset, DataLoader
+from pathlib import Path
+import json, torch
+
+class TextDataset(Dataset):
+    def __init__(self, path: str, tokenizer, max_len: int = 512):
+        self.tokenizer = tokenizer
+        self.max_len   = max_len
+        self.records   = [json.loads(l) for l in Path(path).read_text().splitlines()]
+
+    def __len__(self) -> int:
+        return len(self.records)
+
+    def __getitem__(self, idx: int) -> dict:
+        text = self.records[idx]["text"]
+        enc  = self.tokenizer(text, max_length=self.max_len,
+                               truncation=True, padding="max_length",
+                               return_tensors="pt")
+        return {k: v.squeeze(0) for k, v in enc.items()}
+
+
+loader = DataLoader(
+    TextDataset("data/train.jsonl", tokenizer),
+    batch_size=8,
+    shuffle=True,
+    num_workers=4,        # parallel preprocessing on CPU
+    pin_memory=True,      # faster CPU→GPU transfer via pinned memory
+    prefetch_factor=2,    # prefetch 2 batches per worker
+)</pre>
+
+  <div class="callout fact">
+    <strong>DataLoader Bottlenecks</strong>
+    A GPU training a 7B model can consume data faster than a single CPU core can tokenize and batch it. Use <code>num_workers ≥ 4</code> to parallelize preprocessing. Set <code>pin_memory=True</code> to allocate CPU tensors in pinned (non-pageable) memory, enabling faster DMA transfers to GPU. For very large datasets, the Hugging Face <code>datasets</code> library supports memory-mapped Arrow files that avoid loading all data into RAM.
+  </div>
+</section>
+
+<section>
+  <h2>Production Deployment</h2>
+  <p>Research code uses Python's dynamism freely. Production code must be fast, portable, and able to run without the full Python runtime. PyTorch offers several compilation paths.</p>
+
+  <h3>torch.compile (PyTorch 2.0+)</h3>
+  <p>The simplest path to faster inference. Wrapping a model with <code>torch.compile()</code> triggers Dynamo (a Python bytecode interpreter) to capture the computation graph and hand it to Inductor (the default backend), which generates optimised Triton or C++/CUDA kernels.</p>
+  <pre>model = torch.compile(model, mode="reduce-overhead")
+# Options: "default", "reduce-overhead" (stable shapes), "max-autotune"
+
+# First call triggers JIT compilation (slow); subsequent calls use compiled kernel
+with torch.no_grad():
+    out = model(input_ids)   # typically 1.5–3× speedup over eager mode</pre>
+
+  <h3>ONNX Export</h3>
+  <p>ONNX (Open Neural Network Exchange) is a portable IR for models. Export once, run anywhere — ONNX Runtime, TensorRT, CoreML, OpenVINO. Essential for deploying to mobile, edge, or non-NVIDIA hardware.</p>
+  <pre>dummy = torch.zeros(1, 128, dtype=torch.long)
+torch.onnx.export(
+    model, dummy, "model.onnx",
+    input_names=["input_ids"],
+    output_names=["logits"],
+    dynamic_axes={"input_ids": {0: "batch", 1: "seq_len"}},
+    opset_version=17,
+)
+
+import onnxruntime as ort
+sess   = ort.InferenceSession("model.onnx", providers=["CUDAExecutionProvider"])
+logits = sess.run(None, {"input_ids": dummy.numpy()})[0]</pre>
+
+  <h3>TorchServe</h3>
+  <p>TorchServe is PyTorch's model serving framework. It handles REST/gRPC endpoints, batching, multiple model versions, and metrics out of the box.</p>
+  <pre># Package model artifact
+torch-model-archiver --model-name mymodel --version 1.0 \
+  --model-file model.py --serialized-file model.pt \
+  --handler text_classifier
+
+# Start server
+torchserve --start --model-store ./model_store --models mymodel=mymodel.mar
+# Endpoint: http://localhost:8080/predictions/mymodel</pre>
+</section>
+
+<section>
+  <h2>The PyTorch Ecosystem</h2>
+  <p>PyTorch's value extends well beyond the core library. A rich ecosystem of libraries handles data, training orchestration, model hubs, and production serving.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Hugging Face Transformers</h4>
+      <p>The de-facto hub for pretrained models. Provides tokenizers, model architectures, the <code>Trainer</code> API, and the <code>datasets</code> library for thousands of public models. Almost every open-source LLM is available here in PyTorch format.</p>
+    </div>
+    <div>
+      <h4>PyTorch Lightning</h4>
+      <p>Abstracts boilerplate (device placement, gradient clipping, mixed precision, distributed training) into a <code>LightningModule</code>. Useful for research experiments that need to scale to multi-GPU without rewriting the training loop.</p>
+    </div>
+    <div>
+      <h4>torchvision / torchaudio</h4>
+      <p>Domain-specific datasets, transforms, and pretrained models for computer vision (ResNet, ViT, CLIP) and audio (wav2vec, Whisper wrappers). Maintained by the PyTorch core team.</p>
+    </div>
+    <div>
+      <h4>vLLM</h4>
+      <p>High-throughput inference server built on PyTorch with PagedAttention and continuous batching. Standard choice for self-hosted LLM inference. Up to 24× higher throughput than naive implementations on the same hardware.</p>
+    </div>
+    <div>
+      <h4>bitsandbytes</h4>
+      <p>Library for 8-bit/4-bit quantization and optimizers. Powers QLoRA. Its <code>AdamW8bit</code> optimizer cuts optimizer state memory by 4× with near-identical convergence to FP32 Adam.</p>
+    </div>
+    <div>
+      <h4>Triton (OpenAI)</h4>
+      <p>Python-embedded DSL for writing GPU kernels. FlashAttention, many quantization kernels, and torch.compile's Inductor backend all use Triton. Lets researchers write custom, hardware-efficient CUDA kernels without raw CUDA C.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Distributed Training with PyTorch</h2>
+  <p>Single-GPU training is insufficient for models beyond a few billion parameters. PyTorch provides several distributed strategies through <code>torch.distributed</code>.</p>
+
+  <h3>Data Parallel (DDP)</h3>
+  <p><code>DistributedDataParallel</code> replicates the full model on each GPU. Each GPU processes a different micro-batch; gradients are all-reduced (summed and averaged) across GPUs at the end of the backward pass. Scales efficiently to ~8–16 GPUs; communication overhead grows at higher GPU counts.</p>
+  <pre>import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+dist.init_process_group("nccl")   # NCCL backend for GPU-to-GPU comms
+model = DDP(model.to(local_rank), device_ids=[local_rank])
+
+# Launch with: torchrun --nproc_per_node=8 train.py</pre>
+
+  <h3>Model Parallel and Pipeline Parallel</h3>
+  <p>When a model doesn't fit on a single GPU, its layers are split across devices. Pipeline parallelism splits the model into stages — GPU 0 runs layers 0–11, GPU 1 runs layers 12–23, etc. — and uses micro-batches to keep all stages active simultaneously. PyTorch's <code>torch.distributed.pipelining</code> module automates this.</p>
+
+  <div class="callout">
+    <strong>3D Parallelism</strong>
+    Large-scale training (GPT-4, LLaMA 3 405B) combines three strategies simultaneously: <strong>Data Parallelism</strong> (replicate across nodes), <strong>Tensor Parallelism</strong> (split individual weight matrices across GPUs within a node, using Megatron-LM column/row splits), and <strong>Pipeline Parallelism</strong> (split layers across nodes). This 3D decomposition is the state of the art for frontier model training and is covered in depth on the Training Data Centers page.
+  </div>
+
+  <h3>FSDP: Fully Sharded Data Parallel</h3>
+  <p>FSDP (PyTorch 1.12+) shards model parameters, gradients, and optimizer state across all GPUs, rather than replicating them. Each GPU holds only 1/N of each tensor. During forward and backward passes, FSDP all-gathers the full parameter shard just in time for each layer, then immediately discards it. This enables training models far larger than a single GPU's memory while approaching DDP throughput.</p>
+  <pre>from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+model = FSDP(
+    model,
+    auto_wrap_policy=transformer_auto_wrap_policy,
+    mixed_precision=MixedPrecision(param_dtype=torch.bfloat16),
+)</pre>
+</section>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">Home</a> · <a href="neural-networks.html">← Neural Networks</a> · <a href="glossary.html">Glossary →</a></p>
+</footer>
+</body>
+</html>
