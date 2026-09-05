@@ -4,454 +4,748 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Glossary | Learn AI</title>
+  <meta name="description" content="Glossary — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html" class="active">Glossary</a>
+<nav id="site-nav" data-page="glossary"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
     <div class="page-tag">Reference</div>
     <h1>Glossary</h1>
-    <p>Concise definitions for 75+ technical terms used throughout this guide. Click any term in the other pages to search here.</p>
+    <p>Concise definitions for the technical vocabulary used across this guide — from the mathematics of attention to the economics of vendor financing. Filter the list below, or press <kbd>/</kbd> to search the whole site.</p>
   </div>
 </header>
 
 <main>
+
+<div id="toc"></div>
+
+<input type="search" id="gloss-filter" class="gloss-filter" placeholder="Filter these definitions — try &quot;cache&quot;, &quot;agent&quot;, &quot;lithography&quot;…" autocomplete="off" spellcheck="false" aria-label="Filter glossary terms">
+<p class="gloss-count" id="gloss-count"></p>
+
 <div class="gloss-letter">A</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-action-chunking">
+  <div class="gloss-term">Action Chunking</div>
+  <div class="gloss-def">Predicting a short sequence of future actions in one shot — typically half a second to two seconds of motion — rather than one action per control step. Produces smoother, more decisive robot behaviour and decouples a slow policy network (5–50 Hz) from a fast control loop (200–1000 Hz). Standard in modern vision-language-action models.</div>
+</div>
+
+<div class="gloss-entry" id="term-activation-function">
   <div class="gloss-term">Activation Function</div>
   <div class="gloss-def">A nonlinear function applied to a neuron's weighted sum before passing the result to the next layer. Common examples: ReLU, GELU, SiLU, sigmoid, softmax. Without activations, a network of any depth reduces to a single linear transformation.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-adam-adaptive-moment-estimation">
   <div class="gloss-term">Adam (Adaptive Moment Estimation)</div>
   <div class="gloss-def">The dominant optimiser for deep learning. Maintains a first-moment estimate (exponential moving average of gradients) and second-moment estimate (EMA of squared gradients) per parameter. Divides the update by the root of the second moment, giving adaptive per-parameter learning rates. Hyperparameters: β₁=0.9, β₂=0.95, ε=1e-8.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-agent">
+  <div class="gloss-term">Agent</div>
+  <div class="gloss-def">A system in which a language model directs its own control flow: it chooses the next action, observes the result, and repeats, with the number of steps unknown in advance. Distinguished from a workflow, whose path is fixed by an engineer. Requires a model trained for tool use, a set of tools, and a loop that maintains context.</div>
+</div>
+
+<div class="gloss-entry" id="term-agent-loop">
+  <div class="gloss-term">Agent Loop</div>
+  <div class="gloss-def">The core cycle of an agent: the model reasons over the full transcript and emits a tool call; the harness validates permissions and executes it; the result is appended to the context; the model runs again. Continues until a stop condition — goal met, budget spent, human needed, or stuck.</div>
+</div>
+
+<div class="gloss-entry" id="term-alignment">
+  <div class="gloss-term">Alignment</div>
+  <div class="gloss-def">The problem of making a model's behaviour match what its designers and users actually intended, as opposed to what the training objective literally rewarded. Splits into outer misalignment (the specified objective is wrong) and inner misalignment (the model learned a strategy that scores well for unintended reasons).</div>
+</div>
+
+<div class="gloss-entry" id="term-all-reduce">
   <div class="gloss-term">All-Reduce</div>
   <div class="gloss-def">A collective communication operation where every node sends its local data, the data is summed across all nodes, and every node receives the global sum. Used in data-parallel training to average gradients across GPUs. Implemented via ring-all-reduce or tree-all-reduce algorithms by NCCL.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-attention-self-attention">
   <div class="gloss-term">Attention (Self-Attention)</div>
   <div class="gloss-def">The core mechanism of the transformer. Each token generates Query, Key, and Value vectors. Attention weights are computed as softmax(QKᵀ/√d_k), then applied to values to produce new representations. Allows every token to attend to every other token in O(n²) time and memory.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-autoregressive-generation">
   <div class="gloss-term">Autoregressive Generation</div>
   <div class="gloss-def">Generating a sequence one token at a time, each token conditioned on all previously generated tokens. LLMs are autoregressive: a 500-token response requires 500 sequential forward passes through the model. This is inherently serial and cannot be parallelised in the generation direction.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-awq-activation-aware-weight-quantisation">
   <div class="gloss-term">AWQ (Activation-Aware Weight Quantisation)</div>
   <div class="gloss-def">A post-training quantisation technique that identifies which weights are most important (those activated by large inputs) and protects them from quantisation error by scaling. Achieves near-lossless INT4 quantisation on LLMs.</div>
 </div>
 
 <div class="gloss-letter">B</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-backpropagation">
   <div class="gloss-term">Backpropagation</div>
   <div class="gloss-def">The algorithm that computes gradients of the loss with respect to all model parameters. Applies the chain rule of calculus in reverse through the computation graph. Each layer's gradient is computed using the gradient of the next layer (the downstream error signal). Enables efficient gradient computation without symbolic differentiation.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-backside-power-delivery">
+  <div class="gloss-term">Backside Power Delivery</div>
+  <div class="gloss-def">Moving a chip's power distribution network to the underside of the wafer, connected through the substrate, so that the metal stack above the transistors carries only signal routing. Improves density and reduces resistive voltage droop. Intel ships it as PowerVia; TSMC introduces it at the A16 node.</div>
+</div>
+
+<div class="gloss-entry" id="term-batch-normalisation-batchnorm">
   <div class="gloss-term">Batch Normalisation (BatchNorm)</div>
   <div class="gloss-def">Normalises activations within a mini-batch to zero mean and unit variance, then applies learned scale (γ) and shift (β). Dramatically stabilises training of deep networks. Replaced by Layer Normalisation in transformers because LayerNorm normalises across features rather than the batch, making it suitable for variable-length sequences and small batches.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-benchmark-contamination">
+  <div class="gloss-term">Benchmark Contamination</div>
+  <div class="gloss-def">The presence of benchmark questions or their answers in a model's training data, whether by direct inclusion, paraphrase, or discussion. Inflates scores by converting a reasoning test into a recall test. Countered with private held-out sets, tasks drawn after the training cutoff, and perturbation tests.</div>
+</div>
+
+<div class="gloss-entry" id="term-bf16-bfloat16">
   <div class="gloss-term">BF16 (BFloat16)</div>
   <div class="gloss-def">A 16-bit floating-point format with 8 exponent bits and 7 mantissa bits. Same exponent range as FP32 (±3.4×10³⁸), lower precision. Preferred over FP16 for AI training because overflow is rare — critical for stability with large gradients. All major AI accelerators (H100, TPU v4+, AMD MI300) support BF16 natively in tensor cores.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-bpe-byte-pair-encoding">
   <div class="gloss-term">BPE (Byte-Pair Encoding)</div>
   <div class="gloss-def">A subword tokenisation algorithm that starts with a character vocabulary and iteratively merges the most frequent adjacent pairs. After V merge operations, the vocabulary has ~V entries. Used by GPT-2, GPT-4, and many other LLMs. Produces compact representations of common words and gracefully handles rare words by decomposing them into familiar subwords.</div>
 </div>
 
 <div class="gloss-letter">C</div>
 
-<div class="gloss-entry">
-  <div class="gloss-term">CUDA (Compute Unified Device Architecture)</div>
-  <div class="gloss-def">NVIDIA's proprietary GPU programming platform, introduced 2006. Extends C/C++ with GPU-specific constructs: kernels (GPU functions), thread hierarchy (thread/warp/block/grid), and memory spaces (global, shared, registers). The de facto standard for AI compute; AMD ROCm provides a compatible alternative (HIP) but has a smaller ecosystem.</div>
+<div class="gloss-entry" id="term-chain-of-thought-cot">
+  <div class="gloss-term">Chain of Thought (CoT)</div>
+  <div class="gloss-def">Intermediate reasoning text a model generates before its final answer. Substantially improves accuracy on multi-step problems. Important caveat: the visible chain does not reliably describe the computation that produced the answer — models can reach conclusions by routes their stated reasoning omits.</div>
 </div>
 
-<div class="gloss-entry">
-  <div class="gloss-term">cuDNN</div>
-  <div class="gloss-def">NVIDIA's library of optimised GPU primitives for deep learning: convolution, attention, pooling, normalisation, activation functions. Provides hand-tuned CUDA kernels that exploit each GPU's specific architecture. PyTorch and TensorFlow call cuDNN internally for most heavy compute operations.</div>
-</div>
-
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-chinchilla-scaling-law">
   <div class="gloss-term">Chinchilla Scaling Law</div>
   <div class="gloss-def">Empirical law from Hoffmann et al. (DeepMind, 2022) relating compute budget C, optimal model size P, and optimal training tokens D: D ≈ 20×P at equal loss. Prior work undertrained large models relative to this optimum. The loss follows a power law: L(P,D) = E + A/Pᵅ + B/Dᵝ with specific fitted constants.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-circular-financing">
+  <div class="gloss-term">Circular Financing</div>
+  <div class="gloss-def">A capital arrangement in which a supplier invests in a customer who then uses the investment to buy the supplier's products, which the supplier books as revenue. Legal and commonplace along supply chains; contentious in AI because of its scale, and because the pattern preceded the collapse of late-1990s telecommunications vendor financing.</div>
+</div>
+
+<div class="gloss-entry" id="term-classifier-free-guidance">
+  <div class="gloss-term">Classifier-Free Guidance</div>
+  <div class="gloss-def">A sampling technique for conditional diffusion models. At each denoising step the model predicts noise both with and without the conditioning text, and the two are extrapolated apart. One scalar knob trades prompt adherence against output diversity; set too high it produces oversaturated, stereotyped images.</div>
+</div>
+
+<div class="gloss-entry" id="term-clip-contrastive-learning">
+  <div class="gloss-term">CLIP / Contrastive Learning</div>
+  <div class="gloss-def">Training an image encoder and a text encoder jointly so that matching image-caption pairs land close together in a shared embedding space and non-matching pairs land far apart. Produces zero-shot image classification and is the mechanism by which text can steer an image generator.</div>
+</div>
+
+<div class="gloss-entry" id="term-compaction">
+  <div class="gloss-term">Compaction</div>
+  <div class="gloss-def">Summarising the older portion of an agent's transcript when it approaches the context budget, and continuing from the summary. Lets an agent run far longer than its context window. Done badly it drops the constraint that mattered and the agent repeats completed work.</div>
+</div>
+
+<div class="gloss-entry" id="term-constitutional-ai">
+  <div class="gloss-term">Constitutional AI</div>
+  <div class="gloss-def">An alignment method in which a model critiques and revises its own outputs against an explicit written set of principles, reducing dependence on human preference labels. Makes the governing values inspectable and editable rather than implicit in a preference dataset.</div>
+</div>
+
+<div class="gloss-entry" id="term-context-engineering">
+  <div class="gloss-term">Context Engineering</div>
+  <div class="gloss-def">The discipline of curating what occupies a model's context window at each step of a multi-step task — what to retrieve, what to summarise, what to externalise to files, what to delegate to a sub-agent. Successor to prompt engineering as the central craft in agent building.</div>
+</div>
+
+<div class="gloss-entry" id="term-context-rot">
+  <div class="gloss-term">Context Rot</div>
+  <div class="gloss-def">The degradation of model performance as context fills, well before the stated limit. Attention is divided among more tokens and irrelevant material competes with relevant material, so a carefully curated 15K-token context often outperforms a 200K-token one containing the same answer.</div>
+</div>
+
+<div class="gloss-entry" id="term-continuous-batching">
   <div class="gloss-term">Continuous Batching</div>
   <div class="gloss-def">An inference scheduling technique that adds new requests to the active batch at each decode step as existing requests complete, rather than waiting for an entire batch to finish. Increases GPU utilisation from ~40% (static batching) to ~80%+ on typical workloads. Implemented in vLLM, TensorRT-LLM, and most production serving engines.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-cowos-chip-on-wafer-on-substrate">
   <div class="gloss-term">CoWoS (Chip on Wafer on Substrate)</div>
   <div class="gloss-def">TSMC's advanced 2.5D packaging technology. The GPU die and HBM stacks are placed on a large silicon interposer manufactured on a separate wafer, connected via microbumps. The interposer provides dense metal routing (1μm pitch) and short buses to HBM stacks, enabling the 1,024-bit wide HBM interface that delivers 3.35+ TB/s bandwidth. Required for H100, H200, and B200.</div>
 </div>
 
+<div class="gloss-entry" id="term-cuda-compute-unified-device-architecture">
+  <div class="gloss-term">CUDA (Compute Unified Device Architecture)</div>
+  <div class="gloss-def">NVIDIA's proprietary GPU programming platform, introduced 2006. Extends C/C++ with GPU-specific constructs: kernels (GPU functions), thread hierarchy (thread/warp/block/grid), and memory spaces (global, shared, registers). The de facto standard for AI compute; AMD ROCm provides a compatible alternative (HIP) but has a smaller ecosystem.</div>
+</div>
+
+<div class="gloss-entry" id="term-cudnn">
+  <div class="gloss-term">cuDNN</div>
+  <div class="gloss-def">NVIDIA's library of optimised GPU primitives for deep learning: convolution, attention, pooling, normalisation, activation functions. Provides hand-tuned CUDA kernels that exploit each GPU's specific architecture. PyTorch and TensorFlow call cuDNN internally for most heavy compute operations.</div>
+</div>
+
 <div class="gloss-letter">D</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-data-parallelism">
   <div class="gloss-term">Data Parallelism</div>
   <div class="gloss-def">A distributed training strategy where each GPU holds a full replica of the model and processes a different mini-batch. Gradients are averaged across all replicas via all-reduce after each backward pass. Scales easily to any number of GPUs if the full model fits on one GPU; requires ZeRO sharding when it doesn't.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-diffusion-model">
+  <div class="gloss-term">Diffusion Model</div>
+  <div class="gloss-def">A generative model trained to reverse a fixed noising process. Training: add a known amount of Gaussian noise to real data and learn to predict it. Generation: start from pure noise and repeatedly subtract predicted noise. Dominant for images, video and audio; training data is free by construction.</div>
+</div>
+
+<div class="gloss-entry" id="term-disaggregated-serving">
+  <div class="gloss-term">Disaggregated Serving</div>
+  <div class="gloss-def">Running the prefill and decode phases of inference on separate pools of hardware, passing the KV cache between them. Prefill is compute-bound and decode is memory-bandwidth-bound, so mixing them on the same accelerators makes each interfere with the other.</div>
+</div>
+
+<div class="gloss-entry" id="term-distillation">
+  <div class="gloss-term">Distillation</div>
+  <div class="gloss-def">Training a smaller student model to reproduce a larger teacher's outputs. Transfers much of the teacher's capability at a fraction of the size and serving cost, and is a principal reason capability diffuses from frontier models to open-weight models within months.</div>
+</div>
+
+<div class="gloss-entry" id="term-domain-randomisation">
+  <div class="gloss-term">Domain Randomisation</div>
+  <div class="gloss-def">Randomising simulation parameters — friction, mass, lighting, textures, sensor noise, latency — during robot policy training, so the policy cannot overfit to any single physics and must be robust across a distribution that reality is one sample from. The main technique for crossing the reality gap.</div>
+</div>
+
+<div class="gloss-entry" id="term-dpo-direct-preference-optimisation">
   <div class="gloss-term">DPO (Direct Preference Optimisation)</div>
   <div class="gloss-def">An alignment technique (Rafailov et al., 2023) that directly optimises the language model on human preference pairs (preferred vs rejected responses) without training a separate reward model. Derived from the RLHF objective but bypasses the RL training loop. Simpler than PPO-based RLHF and increasingly popular.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-dropout">
   <div class="gloss-term">Dropout</div>
   <div class="gloss-def">A regularisation technique that randomly sets neuron activations to zero with probability p during training (typically 0.1–0.5), scaling remaining activations by 1/(1−p). Prevents co-adaptation and reduces overfitting by forcing redundant representations. Disabled at inference. Common in transformer attention layers but not FFN layers in modern LLMs.</div>
 </div>
 
 <div class="gloss-letter">E</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-elicitation">
+  <div class="gloss-term">Elicitation</div>
+  <div class="gloss-def">In safety evaluation, actively trying to make a model exhibit a capability — through fine-tuning, scaffolding and best-effort prompting, sometimes with safety training removed. Rests on the premise that a capability present in the weights may be recoverable by a determined adversary, so the honest question is what a model can be made to do, not what it does by default.</div>
+</div>
+
+<div class="gloss-entry" id="term-embedding">
   <div class="gloss-term">Embedding</div>
   <div class="gloss-def">A learned lookup table that maps discrete tokens (integers) to dense continuous vectors. The input embedding matrix E ∈ ℝ^{V×d} has one row per vocabulary token. The same matrix (transposed) is often used for the final output projection (weight tying), reducing parameters and improving training stability.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-euv-extreme-ultraviolet-lithography">
   <div class="gloss-term">EUV (Extreme Ultraviolet Lithography)</div>
   <div class="gloss-def">Lithography using 13.5nm wavelength light, generated by tin plasma. Enables single-exposure patterning of features requiring quadruple DUV patterning. Essential for 5nm and below process nodes. Exclusively manufactured by ASML (Netherlands). Each machine costs ~$200–380M and is subject to US/Dutch export controls prohibiting sale to China.</div>
 </div>
 
 <div class="gloss-letter">F</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-fat-tree-topology">
   <div class="gloss-term">Fat-Tree Topology</div>
   <div class="gloss-def">A three-tier network topology (leaf/aggregation/core) where bandwidth increases toward the core, providing non-blocking any-to-any communication at full line rate. Used in AI training clusters to allow all-reduce collective operations between any pair of servers without congestion. Based on the Clos network architecture.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-fine-tuning">
   <div class="gloss-term">Fine-Tuning</div>
   <div class="gloss-def">Continuing the training of a pretrained model on a smaller, task-specific dataset at a lower learning rate. Adapts the model to a new domain or format without training from scratch. Supervised Fine-Tuning (SFT) for instruction following uses 10,000–1M (instruction, response) pairs. Full fine-tuning updates all parameters; LoRA fine-tuning updates only low-rank adapters.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-flash-attention">
   <div class="gloss-term">Flash Attention</div>
   <div class="gloss-def">An I/O-aware attention algorithm (Dao et al., 2022) that tiles the attention computation to stay within GPU SRAM, avoiding writing the O(n²) attention matrix to HBM. Reduces attention memory from O(n²) to O(n) and speeds up attention 2–4× on H100. Essential for training on long sequences. FlashAttention-2 and -3 further optimise for Hopper/Blackwell GPU features.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-flop-tflops-pflops">
   <div class="gloss-term">FLOP / TFLOPS / PFLOPS</div>
   <div class="gloss-def">Floating-Point Operation. TFLOPS = 10¹² FLOP/second. PFLOPS = 10¹⁵ FLOP/second. GPU performance is measured in TFLOPS at a given precision (FP32, BF16, FP8, INT8). A multiply-accumulate (MAC) counts as 2 FLOP. H100 SXM5: 1,979 TFLOPS at BF16 (tensor core peak).</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-flow-matching">
+  <div class="gloss-term">Flow Matching</div>
+  <div class="gloss-def">A generative modelling formulation that learns a velocity field transporting noise to data along near-straight paths, rather than learning to reverse a stochastic noising schedule. Simpler objective, faster sampling and better-behaved training than classical diffusion; the mainstream successor formulation.</div>
+</div>
+
+<div class="gloss-entry" id="term-fp8">
   <div class="gloss-term">FP8</div>
   <div class="gloss-def">8-bit floating-point format with two variants: E4M3 (4 exponent, 3 mantissa bits — higher precision, used for weights/activations) and E5M2 (5 exponent, 2 mantissa bits — higher range, used for gradients). Natively supported by H100/H200/B200 Tensor Cores, delivering 2× the throughput of BF16 at comparable quality with careful calibration.</div>
 </div>
 
 <div class="gloss-letter">G</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-gate-all-around-gaa-nanosheet">
+  <div class="gloss-term">Gate-All-Around (GAA) / Nanosheet</div>
+  <div class="gloss-def">A transistor structure in which the gate wraps completely around stacked horizontal silicon channels, giving electrostatic control on all four sides. Succeeds FinFET, which contacted three sides. Introduced at the 2nm generation; Intel's implementation is called RibbonFET.</div>
+</div>
+
+<div class="gloss-entry" id="term-gelu-gaussian-error-linear-unit">
   <div class="gloss-term">GELU (Gaussian Error Linear Unit)</div>
   <div class="gloss-def">Activation function: GELU(x) = x·Φ(x), where Φ is the Gaussian CDF. A smooth approximation: ≈ 0.5x(1 + tanh(√(2/π)(x + 0.044715x³))). Used in original BERT and GPT-2. Replaced by SiLU/SwiGLU in most modern LLMs (LLaMA, Mistral, Claude) because SwiGLU is slightly stronger empirically and has faster GPU kernels.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-gemm-general-matrix-multiply">
   <div class="gloss-term">GEMM (General Matrix Multiply)</div>
   <div class="gloss-def">The operation C = αAB + βC for matrices A, B, C and scalars α, β. The overwhelming majority of compute in neural network training and inference is GEMM: attention projections, FFN layers, and embedding lookups all reduce to matrix multiplication. GPU tensor cores are specifically designed to compute GEMM extremely fast.</div>
 </div>
 
-<div class="gloss-entry">
-  <div class="gloss-term">GQA (Grouped Query Attention)</div>
-  <div class="gloss-def">A variant of multi-head attention where multiple query heads share a single key-value head. With G groups, the KV cache is G× smaller than standard MHA. Used in LLaMA-3 (G=8), Mistral, and most post-2023 LLMs. Near-identical model quality to MHA with 8× KV cache reduction at G=8, critical for long-context serving.</div>
+<div class="gloss-entry" id="term-goodhart-s-law">
+  <div class="gloss-term">Goodhart's Law</div>
+  <div class="gloss-def">“When a measure becomes a target, it ceases to be a good measure.” The organising problem of both AI evaluation (benchmarks get optimised against) and AI alignment (a reward is a proxy, and a capable optimiser exploits the gap between the proxy and the intent).</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-gpu-graphics-processing-unit">
   <div class="gloss-term">GPU (Graphics Processing Unit)</div>
   <div class="gloss-def">A massively parallel processor originally designed for 3D graphics. Contains thousands of simpler cores optimised for data-parallel computation, plus tensor cores for matrix-multiply acceleration. H100: 16,896 CUDA cores, 528 Tensor Core units, 80 GB HBM3. Dominates AI training due to peak TFLOPS and ecosystem (CUDA/cuDNN).</div>
 </div>
 
+<div class="gloss-entry" id="term-gqa-grouped-query-attention">
+  <div class="gloss-term">GQA (Grouped Query Attention)</div>
+  <div class="gloss-def">A variant of multi-head attention where multiple query heads share a single key-value head. With G groups, the KV cache is G× smaller than standard MHA. Used in LLaMA-3 (G=8), Mistral, and most post-2023 LLMs. Near-identical model quality to MHA with 8× KV cache reduction at G=8, critical for long-context serving.</div>
+</div>
+
+<div class="gloss-entry" id="term-grpo-group-relative-policy-optimisation">
+  <div class="gloss-term">GRPO (Group Relative Policy Optimisation)</div>
+  <div class="gloss-def">A reinforcement learning algorithm that samples a group of attempts at a problem and computes each attempt's advantage relative to the group mean, eliminating the separately trained value network that PPO requires. Roughly halves the memory and complexity of the training loop; widely used for training reasoning models.</div>
+</div>
+
 <div class="gloss-letter">H</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-hbm-high-bandwidth-memory">
   <div class="gloss-term">HBM (High Bandwidth Memory)</div>
   <div class="gloss-def">A GPU memory technology that stacks multiple DRAM dies vertically and connects them with through-silicon vias (TSVs). Uses a very wide bus (1,024 bits per stack) at shorter distance than GDDR, delivering massive bandwidth. HBM3: 819 GB/s per stack; H100 has 6 stacks → 3.35 TB/s total. Sits adjacent to the GPU die on a silicon interposer (CoWoS).</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-hbm4">
+  <div class="gloss-term">HBM4</div>
+  <div class="gloss-def">The memory generation that doubles the HBM interface from 1,024 to 2,048 bits per stack — the first width change since HBM1 — targeting roughly 2 TB/s per stack. Sidesteps the signal-integrity and power limits that constrain raising transfer rates, at the cost of substantially harder packaging.</div>
+</div>
+
+<div class="gloss-entry" id="term-hpc-high-performance-computing">
   <div class="gloss-term">HPC (High Performance Computing)</div>
   <div class="gloss-def">Scientific supercomputing for simulations, climate modelling, genomics, etc. AI training clusters derive much of their architecture (InfiniBand, parallel file systems, job schedulers) from HPC. The Linpack benchmark (floating-point dense linear algebra) is how supercomputers are ranked in the Top500 list.</div>
 </div>
 
 <div class="gloss-letter">I</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-inference-time-compute">
+  <div class="gloss-term">Inference-Time Compute</div>
+  <div class="gloss-def">Improving answer quality by letting a model generate more reasoning tokens before committing to an answer. A third scaling axis alongside pretraining and post-training, and the only one paid on every query. Improves accuracy roughly log-linearly on verifiable problems and barely at all on open-ended ones.</div>
+</div>
+
+<div class="gloss-entry" id="term-infiniband-ib">
   <div class="gloss-term">InfiniBand (IB)</div>
   <div class="gloss-def">A high-speed, low-latency network protocol designed for HPC and AI clusters. Provides RDMA (Remote Direct Memory Access), allowing one GPU to read/write another GPU's memory over the network without CPU involvement. Current generation: NDR (400 Gb/s per port, ~0.5 μs latency). Maintained by NVIDIA (acquired Mellanox in 2020).</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-int4-int8-quantisation">
   <div class="gloss-term">INT4 / INT8 Quantisation</div>
   <div class="gloss-def">Representing model weights in 4-bit or 8-bit integers instead of 16-bit floats. Reduces memory footprint 2–4× and memory bandwidth requirements proportionally. W4A16 (4-bit weights, 16-bit activations) allows a 70B model to fit on a single 80 GB H100. Quality degradation: INT8 ~0.1–0.5%, INT4 ~1–3% on benchmarks, minimised by careful calibration.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-interpretability">
+  <div class="gloss-term">Interpretability</div>
+  <div class="gloss-def">Research into what computations a neural network actually performs, as opposed to what behaviour it exhibits. Strategically distinctive because it could in principle verify a safety property by inspection rather than by testing. Its central obstacle is superposition; its main current tool is the sparse autoencoder.</div>
+</div>
+
+<div class="gloss-entry" id="term-itl-inter-token-latency">
   <div class="gloss-term">ITL (Inter-Token Latency)</div>
   <div class="gloss-def">Time between consecutive generated tokens during the decode phase. Typically 20–50 ms for a 70B model at moderate batch sizes. Users perceive generation as "real-time" at ITL &lt;30 ms (≈33 tokens/sec). Primary bottleneck: memory bandwidth utilisation when reading model weights from HBM for each decode step.</div>
 </div>
 
+<div class="gloss-letter">J</div>
+
+<div class="gloss-entry" id="term-jailbreak">
+  <div class="gloss-term">Jailbreak</div>
+  <div class="gloss-def">A prompt that circumvents a model's safety training through framing, roleplay, encoding, or extended multi-turn manipulation. Distinct from prompt injection, where the malicious instruction arrives inside content the model reads rather than from the user.</div>
+</div>
+
 <div class="gloss-letter">K</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-kv-cache">
   <div class="gloss-term">KV Cache</div>
   <div class="gloss-def">Stores the Key and Value tensors computed for all past tokens during autoregressive generation, avoiding recomputation at each decode step. Size: 2 × n_layers × n_heads × d_head × 2 bytes per token. For LLaMA-3 70B: ~2.62 MB/token. Long context (128K tokens) requires ~336 GB of KV cache — more than 4× an H100's HBM capacity, requiring multi-GPU serving.</div>
 </div>
 
 <div class="gloss-letter">L</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-latent-diffusion">
+  <div class="gloss-term">Latent Diffusion</div>
+  <div class="gloss-def">Running the diffusion process in the compressed latent space of an autoencoder rather than on raw pixels. Compression of roughly 8× per spatial dimension reduces computation by about 64× with little perceptual loss — the change that made high-resolution image generation affordable.</div>
+</div>
+
+<div class="gloss-entry" id="term-layer-normalisation">
   <div class="gloss-term">Layer Normalisation</div>
   <div class="gloss-def">Normalises activations across the feature dimension (not the batch dimension) to zero mean and unit variance, then applies learned γ and β. Formula: LN(x) = γ·(x−μ)/√(σ²+ε) + β where μ,σ are computed per sample per layer. Standard in transformers; independent of batch size, making it suitable for online and streaming inference.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-learning-rate">
   <div class="gloss-term">Learning Rate</div>
   <div class="gloss-def">The step size η in gradient descent: θ ← θ − η·∇L. Too large → oscillation, divergence. Too small → slow convergence. Modern LLM training uses a cosine schedule: linear warm-up from 0 to η_max (~3×10⁻⁴), then cosine decay to η_min (~3×10⁻⁵) over the full training run. Finding the right η_max is empirical and critically affects final model quality.</div>
 </div>
 
-<div class="gloss-entry">
-  <div class="gloss-term">Loss Function</div>
-  <div class="gloss-def">Measures prediction error. Cross-entropy loss for classification: L = −Σ y_true·log(y_pred). MSE for regression: L = (1/n)Σ(ŷ−y)². LLMs use cross-entropy on next-token prediction: L = −(1/T)Σ log P(x_t|x_{&lt;t}). Measured in nats (natural log) or bits (log base 2). Irreducible entropy of English text ≈ 1.2–1.7 nats/token.</div>
+<div class="gloss-entry" id="term-lethal-trifecta">
+  <div class="gloss-term">Lethal Trifecta</div>
+  <div class="gloss-def">The combination that makes an agent genuinely dangerous: access to private data, exposure to untrusted content, and the ability to communicate externally. With all three, injected instructions can cause exfiltration. The practical defence is to break one leg — commonly by removing network egress or by requiring human approval at the boundary.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-llm-as-judge">
+  <div class="gloss-term">LLM-as-Judge</div>
+  <div class="gloss-def">Using a capable language model to grade another model's outputs against a rubric. Fast, cheap and reproducible, with correlation to human experts often in the 0.7–0.9 range. Carries known biases — position, self-preference, length — and must be calibrated against human labels before it is trusted.</div>
+</div>
+
+<div class="gloss-entry" id="term-lora-low-rank-adaptation">
   <div class="gloss-term">LoRA (Low-Rank Adaptation)</div>
   <div class="gloss-def">A parameter-efficient fine-tuning technique. Instead of updating full weight matrices W ∈ ℝ^{d×k}, trains low-rank delta matrices: ΔW = AB where A ∈ ℝ^{d×r}, B ∈ ℝ^{r×k}, r &lt;&lt; min(d,k). Typically r=8–64. Reduces trainable parameters 100–1,000× vs full fine-tuning while achieving 90%+ of full fine-tuning quality on most tasks.</div>
 </div>
 
+<div class="gloss-entry" id="term-loss-function">
+  <div class="gloss-term">Loss Function</div>
+  <div class="gloss-def">Measures prediction error. Cross-entropy loss for classification: L = −Σ y_true·log(y_pred). MSE for regression: L = (1/n)Σ(ŷ−y)². LLMs use cross-entropy on next-token prediction: L = −(1/T)Σ log P(x_t|x_{&lt;t}). Measured in nats (natural log) or bits (log base 2). Irreducible entropy of English text ≈ 1.2–1.7 nats/token.</div>
+</div>
+
 <div class="gloss-letter">M</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-mcp-model-context-protocol">
+  <div class="gloss-term">MCP (Model Context Protocol)</div>
+  <div class="gloss-def">An open standard, released in late 2024 and broadly adopted since, for connecting models to tools, data sources and prompts through a common interface. Turns an N×M integration problem into N+M: write one server per system, and every compatible agent can use it.</div>
+</div>
+
+<div class="gloss-entry" id="term-mfu-model-flop-utilisation">
   <div class="gloss-term">MFU (Model FLOP Utilisation)</div>
   <div class="gloss-def">The fraction of peak GPU TFLOPS actually used for model computation: MFU = (achieved FLOP/s) / (peak FLOP/s). Values of 30–50% are typical; 60%+ is excellent. Lost utilisation comes from communication overhead (all-reduce), data loading, pipeline bubbles, and memory-bound operations that do not saturate compute units.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-mixed-precision-training">
   <div class="gloss-term">Mixed Precision Training</div>
   <div class="gloss-def">Training with different precisions for different operations. Standard: BF16 activations and gradients, FP32 master weights and optimizer state. Reduces GPU memory ~2× vs pure FP32 and doubles throughput on BF16 tensor cores. FP8 mixed precision (H100+) offers further gains for forward pass compute.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-mla-multi-head-latent-attention">
+  <div class="gloss-term">MLA (Multi-head Latent Attention)</div>
+  <div class="gloss-def">An attention variant that compresses keys and values into a low-rank latent vector, caches that, and reconstructs per-head projections during computation. Shrinks the KV cache by roughly an order of magnitude versus standard multi-head attention while preserving more expressiveness than aggressive grouped-query attention.</div>
+</div>
+
+<div class="gloss-entry" id="term-moe-mixture-of-experts">
   <div class="gloss-term">MoE (Mixture of Experts)</div>
   <div class="gloss-def">A neural network architecture where each FFN layer is replaced by E independent "expert" networks, and a learned router sends each token to the top-k experts. Total parameters = E × FFN_size; active parameters per token = k × FFN_size. Enables very large model capacity (total params) at modest compute cost (active params). Used in GPT-4 (estimated), Mixtral 8×7B, Google Gemini.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-moravec-s-paradox">
+  <div class="gloss-term">Moravec's Paradox</div>
+  <div class="gloss-def">The observation that high-level reasoning requires little computation while low-level sensorimotor skill requires enormous amounts — because perception and movement were optimised over hundreds of millions of years and abstract reasoning is recent. The organising fact of robotics, and the reason AI automated analysis before it automated manual work.</div>
+</div>
+
+<div class="gloss-entry" id="term-multi-head-attention-mha">
   <div class="gloss-term">Multi-Head Attention (MHA)</div>
   <div class="gloss-def">H parallel self-attention operations, each with its own Q, K, V projection matrices of dimension d/H. Results are concatenated and projected. Allows the model to attend to different aspects of the input simultaneously — different heads specialise in different relationship types. H100 H=64 for a 70B model; d_head = 8192/64 = 128.</div>
 </div>
 
 <div class="gloss-letter">N</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-nccl-nvidia-collective-communications-library">
   <div class="gloss-term">NCCL (NVIDIA Collective Communications Library)</div>
   <div class="gloss-def">NVIDIA's library implementing collective operations (all-reduce, broadcast, scatter, gather) over NVLink and InfiniBand. Used by PyTorch DDP and DeepSpeed for gradient synchronisation. Automatically selects the optimal algorithm (ring, tree, direct) based on topology and message size. Essential for multi-GPU training efficiency.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-neural-audio-codec">
+  <div class="gloss-term">Neural Audio Codec</div>
+  <div class="gloss-def">A learned compressor that turns a waveform into a few hundred discrete tokens per second while retaining enough information to reconstruct natural speech. Brings audio into the same regime as text, so a transformer can generate sound by predicting tokens.</div>
+</div>
+
+<div class="gloss-entry" id="term-nvlink">
   <div class="gloss-term">NVLink</div>
   <div class="gloss-def">NVIDIA's proprietary GPU-to-GPU interconnect. NVLink 4.0 (H100): 900 GB/s bidirectional per GPU. Connects up to 8 GPUs within a server via NVSwitch crossbars (DGX H100). 14× faster than PCIe Gen5 for all-reduce operations. Critical for tensor parallelism: weight shards are spread across GPUs connected by NVLink.</div>
 </div>
 
 <div class="gloss-letter">O</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-open-weights">
+  <div class="gloss-term">Open Weights</div>
+  <div class="gloss-def">A model whose trained parameters are published, usually with inference code but without training data, data pipeline or training infrastructure. Frequently and inaccurately called “open source”: you can run and fine-tune the model but cannot reproduce or fully audit it, and some licences restrict commercial use.</div>
+</div>
+
+<div class="gloss-entry" id="term-over-refusal">
+  <div class="gloss-term">Over-refusal</div>
+  <div class="gloss-def">Declining benign requests that superficially resemble harmful ones. The mirror image of harmful compliance and a genuine failure mode in its own right, since it makes systems unusable in medicine, security research and law. Reducing one tends to increase the other.</div>
+</div>
+
+<div class="gloss-entry" id="term-overfitting">
   <div class="gloss-term">Overfitting</div>
   <div class="gloss-def">When a model learns to memorise training data rather than generalise to unseen examples. Symptoms: training loss continues decreasing while validation loss increases. Mitigated by: regularisation (dropout, weight decay), data augmentation, early stopping, or more training data. Large LLMs rarely overfit due to massive data; small models fine-tuned on small datasets commonly do.</div>
 </div>
 
 <div class="gloss-letter">P</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-pagedattention">
   <div class="gloss-term">PagedAttention</div>
   <div class="gloss-def">A KV cache memory management system (vLLM, 2023) inspired by OS virtual memory. Allocates KV cache in non-contiguous "pages" of ~16 tokens rather than contiguous max-length blocks. Eliminates internal fragmentation: a short request wastes no memory, and requests can share pages (prompt prefix caching). Increases GPU memory utilisation from ~30% to ~90%.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-pass-k-and-pass-k">
+  <div class="gloss-term">pass@k and pass^k</div>
+  <div class="gloss-def">Agent evaluation metrics. pass@k is the probability of succeeding at least once in k attempts — the commonly reported and flattering number. pass^k is the probability of succeeding in all k attempts — the number that reflects the reliability production requires. The gap between them is usually large.</div>
+</div>
+
+<div class="gloss-entry" id="term-patch-embedding">
+  <div class="gloss-term">Patch Embedding</div>
+  <div class="gloss-def">Turning an image into a token sequence by cutting it into fixed-size patches (typically 16×16 pixels), flattening each, projecting through a learned linear layer, and adding a positional embedding. Makes images processable by an unmodified transformer. Extends to spacetime patches for video.</div>
+</div>
+
+<div class="gloss-entry" id="term-pipeline-parallelism">
   <div class="gloss-term">Pipeline Parallelism</div>
   <div class="gloss-def">A distributed training strategy where the model is split into sequential stages, each running on a separate GPU group. Micro-batches flow through the pipeline in a 1F1B (one forward, one backward) schedule to minimise idle time. Allows training models too large for tensor parallelism alone. Introduces a "pipeline bubble" (idle time at start/end of each macro-batch) proportional to pipeline depth.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-positional-encoding">
   <div class="gloss-term">Positional Encoding</div>
   <div class="gloss-def">Information injected into token representations so the transformer knows the order of tokens. Original transformers used sinusoidal functions. Modern LLMs use RoPE (Rotary Positional Embedding): rotating Q and K vectors by position-dependent angles so that Q·Kᵀ depends only on relative position. RoPE extrapolates to longer contexts than training length.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-prefill-phase">
   <div class="gloss-term">Prefill Phase</div>
   <div class="gloss-def">The first phase of LLM inference: processing all input tokens simultaneously (in parallel, like training). Compute-bound; takes 10–500 ms depending on prompt length and model size. Produces the KV cache for the entire prompt, which is reused during decode. Time to first token (TTFT) is dominated by prefill latency.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-prefix-caching">
+  <div class="gloss-term">Prefix Caching</div>
+  <div class="gloss-def">Reusing the computed attention state for an identical prompt prefix across requests, so repeated content is billed and computed at a small fraction of its original cost. Structural for agents, which resend a growing but mostly stable transcript at every step. Requires the prefix to be byte-identical.</div>
+</div>
+
+<div class="gloss-entry" id="term-pretraining">
   <div class="gloss-term">Pretraining</div>
   <div class="gloss-def">Training a large model from scratch on a massive unlabelled corpus using a self-supervised objective (next-token prediction for LLMs). Requires the most compute — typically 10²³–10²⁵ FLOPs for frontier models. Produces a model with broad world knowledge and language ability, which is then fine-tuned for specific tasks or aligned with RLHF.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-process-node-nm">
   <div class="gloss-term">Process Node (nm)</div>
   <div class="gloss-def">A marketing label for a semiconductor manufacturing generation, nominally in nanometres. Not a direct physical measurement — TSMC's "3nm" (N3E) has transistor gate lengths of ~12–15nm. What matters is transistor density (million transistors per mm²): N3E achieves ~172 MTr/mm². Each node improves density ~40%, performance ~20%, and power ~30%.</div>
 </div>
 
+<div class="gloss-entry" id="term-prompt-injection">
+  <div class="gloss-term">Prompt Injection</div>
+  <div class="gloss-def">Instructions embedded in content a model reads — a web page, a document, a code comment, a database row — which the model then follows. Structural rather than a bug: there is no channel separation between data and instructions in a context window. Mitigated by narrowing permissions, not by filtering alone.</div>
+</div>
+
 <div class="gloss-letter">Q</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-quantisation">
   <div class="gloss-term">Quantisation</div>
   <div class="gloss-def">Representing model weights and/or activations in lower-precision integer formats (INT8, INT4) instead of floating-point. Reduces memory footprint and memory bandwidth requirements proportionally. W4A16 (4-bit weights, 16-bit activations) allows a 70B model to fit on a single H100 80GB GPU. Calibrated quantisation (AWQ, GPTQ) minimises quality loss.</div>
 </div>
 
 <div class="gloss-letter">R</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-rdma-remote-direct-memory-access">
   <div class="gloss-term">RDMA (Remote Direct Memory Access)</div>
   <div class="gloss-def">Network technology allowing one server to read or write another server's memory without involving either CPU. Used with InfiniBand in AI clusters to achieve sub-microsecond GPU-to-GPU communication across the network. Eliminates PCIe and CPU copying overhead. RDMA over Converged Ethernet (RoCE) brings this to Ethernet networks.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-react">
+  <div class="gloss-term">ReAct</div>
+  <div class="gloss-def">The pattern of interleaving reasoning and acting — think, act, observe, repeat — formalised in 2022. Outperformed both pure chain-of-thought, which never checks reality, and pure action selection, which never plans. The structural ancestor of essentially every agent architecture since.</div>
+</div>
+
+<div class="gloss-entry" id="term-reality-gap">
+  <div class="gloss-term">Reality Gap</div>
+  <div class="gloss-def">The mismatch between a physics simulator and the real world, which a policy trained purely in simulation will exploit. Small for rigid-body dynamics such as locomotion, large for contact-rich and deformable manipulation — which is why robots learned to walk in simulation but not to fold laundry.</div>
+</div>
+
+<div class="gloss-entry" id="term-reasoning-model">
+  <div class="gloss-term">Reasoning Model</div>
+  <div class="gloss-def">A model trained, typically through reinforcement learning on verifiable tasks, to generate an extended chain of reasoning before answering. Delivers large gains on mathematics, code and logic, little gain on open-ended tasks, and multiplies output tokens — and therefore cost — per request.</div>
+</div>
+
+<div class="gloss-entry" id="term-relu-rectified-linear-unit">
   <div class="gloss-term">ReLU (Rectified Linear Unit)</div>
   <div class="gloss-def">The most widely used activation function: ReLU(x) = max(0, x). Computationally trivial (one comparison), avoids vanishing gradients in the positive region, and empirically trains fast and well. "Dead ReLU" problem: neurons receiving consistently negative input permanently output 0. Variants (Leaky ReLU, GELU, SiLU) address this.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-responsible-scaling-policy">
+  <div class="gloss-term">Responsible Scaling Policy</div>
+  <div class="gloss-def">A published framework defining capability thresholds tied to concrete dangerous capabilities, the safeguards required at each tier, the evaluations that determine which tier a model has reached, and a commitment to pause if safeguards are not ready. Voluntary and self-assessed; also called a Preparedness or Frontier Safety Framework.</div>
+</div>
+
+<div class="gloss-entry" id="term-reward-hacking">
+  <div class="gloss-term">Reward Hacking</div>
+  <div class="gloss-def">A model satisfying the measurement rather than the goal — deleting a failing test, special-casing a grader's inputs, exploiting an environment bug. Not an occasional defect but the default behaviour of a capable optimiser given a proxy reward, and the reason environment design is safety work.</div>
+</div>
+
+<div class="gloss-entry" id="term-rlhf-reinforcement-learning-from-human-feedback">
   <div class="gloss-term">RLHF (Reinforcement Learning from Human Feedback)</div>
   <div class="gloss-def">An alignment pipeline: (1) Train a reward model on human preference data (ranked response pairs). (2) Use PPO (Proximal Policy Optimisation) to update the LLM to maximise reward while staying close to the SFT model (KL penalty). Produces models that follow instructions and are helpful, harmless, and honest. Used by OpenAI (ChatGPT), Anthropic (Claude), and Google (Gemini).</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-rlvr-rl-from-verifiable-rewards">
+  <div class="gloss-term">RLVR (RL from Verifiable Rewards)</div>
+  <div class="gloss-def">Reinforcement learning on tasks whose success a program can check — tests passing, proofs verifying, answers matching. Removes humans from the reward loop, so training scales with compute rather than with labelling hours. The method that produced reasoning models and practical agentic competence.</div>
+</div>
+
+<div class="gloss-entry" id="term-rope-rotary-positional-embedding">
   <div class="gloss-term">RoPE (Rotary Positional Embedding)</div>
   <div class="gloss-def">Encodes token position by rotating the Q and K vectors in attention by a position-dependent angle. After rotation: Q_m · K_nᵀ depends only on relative position (m−n), not absolute positions. Used in LLaMA, Mistral, Gemma, and most modern open LLMs. Extrapolates to longer context lengths than training with appropriate frequency scaling.</div>
 </div>
 
 <div class="gloss-letter">S</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-scalable-oversight">
+  <div class="gloss-term">Scalable Oversight</div>
+  <div class="gloss-def">The problem of supervising systems whose capability exceeds the supervisor's in the relevant domain. Human preference feedback degrades once people cannot reliably tell which of two outputs is better. Approaches include debate between models, recursive decomposition into checkable pieces, and automated verification.</div>
+</div>
+
+<div class="gloss-entry" id="term-scaling-laws">
   <div class="gloss-term">Scaling Laws</div>
   <div class="gloss-def">Empirical power-law relationships between model size P, training data D, compute C, and loss L. Kaplan et al. (2020) first quantified: L ∝ P^{−0.076}. Chinchilla (2022) refined: optimal D ≈ 20P at fixed compute. These laws allow predicting model quality and compute cost for models not yet trained, enabling compute budget planning for frontier labs.</div>
 </div>
 
-<div class="gloss-entry">
-  <div class="gloss-term">SM (Streaming Multiprocessor)</div>
-  <div class="gloss-def">The basic compute unit of an NVIDIA GPU. Each SM contains 128 FP32 CUDA cores, 4 tensor core units, 256 KB register file, and 228 KB L1/shared memory. CUDA thread blocks are scheduled to SMs; each SM runs up to 64 warps concurrently. H100 SXM5 has 132 SMs. The SM is the GPU's equivalent of a CPU core, though far simpler.</div>
-</div>
-
-<div class="gloss-entry">
-  <div class="gloss-term">Softmax</div>
-  <div class="gloss-def">Converts a vector of real values (logits) to a probability distribution: softmax(z)_i = e^{z_i} / Σ_j e^{z_j}. Used in attention (row-wise) and output layer (to produce next-token probabilities). Numerically stabilised by subtracting max(z) before exponentiation. The Flash Attention algorithm maintains a running softmax normaliser to avoid materialising the full n×n attention matrix.</div>
-</div>
-
-<div class="gloss-entry">
-  <div class="gloss-term">Speculative Decoding</div>
-  <div class="gloss-def">An inference speedup technique where a small draft model generates K candidate tokens, then the large target model verifies all K in one parallel forward pass. Accepted tokens are output; on rejection, the target model samples a corrected token. Effective speedup: ~2–4× when the draft acceptance rate is ~70–80%. First proposed by Leviathan et al. (Google, 2022).</div>
-</div>
-
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-sft-supervised-fine-tuning">
   <div class="gloss-term">SFT (Supervised Fine-Tuning)</div>
   <div class="gloss-def">Fine-tuning a pretrained LLM on labelled instruction-response pairs. Typically uses 10,000–500,000 human-written or curated examples, trained for 1–3 epochs at a lower learning rate (~5×10⁻⁶). Produces a model that follows instructions and matches the style of the training examples. Prerequisite for RLHF alignment.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-sim-to-real-transfer">
+  <div class="gloss-term">Sim-to-Real Transfer</div>
+  <div class="gloss-def">Deploying a policy trained in simulation onto physical hardware. Enabled by domain randomisation, system identification, real-to-sim-to-real reconstruction and co-training on real data. Works well for locomotion and poorly for dexterous manipulation, for reasons rooted in what simulators model accurately.</div>
+</div>
+
+<div class="gloss-entry" id="term-sm-streaming-multiprocessor">
+  <div class="gloss-term">SM (Streaming Multiprocessor)</div>
+  <div class="gloss-def">The basic compute unit of an NVIDIA GPU. Each SM contains 128 FP32 CUDA cores, 4 tensor core units, 256 KB register file, and 228 KB L1/shared memory. CUDA thread blocks are scheduled to SMs; each SM runs up to 64 warps concurrently. H100 SXM5 has 132 SMs. The SM is the GPU's equivalent of a CPU core, though far simpler.</div>
+</div>
+
+<div class="gloss-entry" id="term-softmax">
+  <div class="gloss-term">Softmax</div>
+  <div class="gloss-def">Converts a vector of real values (logits) to a probability distribution: softmax(z)_i = e^{z_i} / Σ_j e^{z_j}. Used in attention (row-wise) and output layer (to produce next-token probabilities). Numerically stabilised by subtracting max(z) before exponentiation. The Flash Attention algorithm maintains a running softmax normaliser to avoid materialising the full n×n attention matrix.</div>
+</div>
+
+<div class="gloss-entry" id="term-spacetime-patch">
+  <div class="gloss-term">Spacetime Patch</div>
+  <div class="gloss-def">A patch spanning both spatial extent and several adjacent video frames, used as the token unit for video generation. Lets one model handle variable durations, resolutions and aspect ratios, since the sequence length simply varies with the clip.</div>
+</div>
+
+<div class="gloss-entry" id="term-sparse-autoencoder-sae">
+  <div class="gloss-term">Sparse Autoencoder (SAE)</div>
+  <div class="gloss-def">A wide, sparsely activating layer trained to reconstruct a network's internal activations, forcing each learned feature onto a single interpretable direction. The principal tool against superposition, and the source of large dictionaries of named, steerable features in production-scale models.</div>
+</div>
+
+<div class="gloss-entry" id="term-speculative-decoding">
+  <div class="gloss-term">Speculative Decoding</div>
+  <div class="gloss-def">An inference speedup technique where a small draft model generates K candidate tokens, then the large target model verifies all K in one parallel forward pass. Accepted tokens are output; on rejection, the target model samples a corrected token. Effective speedup: ~2–4× when the draft acceptance rate is ~70–80%. First proposed by Leviathan et al. (Google, 2022).</div>
+</div>
+
+<div class="gloss-entry" id="term-superposition">
+  <div class="gloss-term">Superposition</div>
+  <div class="gloss-def">The encoding of far more concepts than a layer has dimensions, as overlapping nearly-orthogonal directions in activation space. Efficient for the network and disastrous for interpretation: any individual neuron participates in many unrelated concepts, so reading neurons directly yields nonsense.</div>
+</div>
+
+<div class="gloss-entry" id="term-swiglu">
   <div class="gloss-term">SwiGLU</div>
   <div class="gloss-def">The FFN variant used in LLaMA, PaLM, and most modern LLMs: SwiGLU(x) = W₂(SiLU(W₁x) ⊙ W₃x). Uses three weight matrices (vs two for standard FFN) with a smaller hidden dimension, keeping parameter count equal while improving quality. The gating mechanism (W₃x) allows the network to selectively suppress information, improving expressivity.</div>
 </div>
 
+<div class="gloss-entry" id="term-sycophancy">
+  <div class="gloss-term">Sycophancy</div>
+  <div class="gloss-def">A model agreeing with the user against the evidence, or abandoning a correct answer under mild pushback. A direct consequence of optimising for human approval, since people approve of agreement. A measurement failure before it is a behaviour failure, and the clearest everyday example of misalignment.</div>
+</div>
+
 <div class="gloss-letter">T</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-task-horizon">
+  <div class="gloss-term">Task Horizon</div>
+  <div class="gloss-def">The length of task — measured by how long a skilled human would take — that a model can complete unaided at a given success rate. A more informative measure of agent progress than benchmark accuracy, and one that has been improving rapidly.</div>
+</div>
+
+<div class="gloss-entry" id="term-teleoperation">
+  <div class="gloss-term">Teleoperation</div>
+  <div class="gloss-def">A human directly driving a robot through a task, using a VR rig or puppet controller, to record demonstration data. The highest-quality source of robot training data and the least scalable, being bounded by human hours and physical hardware.</div>
+</div>
+
+<div class="gloss-entry" id="term-temperature-sampling">
   <div class="gloss-term">Temperature (Sampling)</div>
   <div class="gloss-def">A hyperparameter that scales the logits before softmax: P(v) ∝ exp(z_v/T). T&lt;1: sharper distribution (more deterministic, less creative). T=1: model's trained distribution. T&gt;1: flatter distribution (more random). T→0: greedy decoding (argmax). Common production values: T=0.7–1.0 for chat, T=0 for code completion.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tensor-core">
   <div class="gloss-term">Tensor Core</div>
   <div class="gloss-def">Specialised execution unit in NVIDIA Volta+ GPUs (2017–present) that computes D = A×B+C on small matrices (e.g. 16×8×16) in a single instruction. H100 4th-gen Tensor Cores support BF16, FP16, FP8, INT8, INT4 inputs. Peak BF16 throughput: 1,979 TFLOPS. 6–16× faster than CUDA cores for GEMM workloads. The primary reason modern AI training uses NVIDIA GPUs.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tensor-parallelism">
   <div class="gloss-term">Tensor Parallelism</div>
   <div class="gloss-def">A distributed training/inference strategy that shards individual weight matrices across multiple GPUs. Each GPU holds a fraction of each matrix; they synchronise via all-reduce within each transformer layer. Requires high-bandwidth interconnect (NVLink) — inter-server InfiniBand is too slow. Used within DGX nodes (TP=8) for large model inference.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tokenisation">
   <div class="gloss-term">Tokenisation</div>
   <div class="gloss-def">Converting raw text into a sequence of integer IDs (tokens) from a fixed vocabulary. Modern LLMs use subword tokenisation (BPE, SentencePiece): common words are single tokens, rare words decompose into subwords. Vocabulary size V: 32,000–130,000 tokens. Average English: ~1.3 tokens/word, ~4 characters/token. All tokens in a sequence are processed in parallel during prefill.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tool-use-function-calling">
+  <div class="gloss-term">Tool Use / Function Calling</div>
+  <div class="gloss-def">Presenting a model with typed schemas describing available functions, so it can emit a structured request that a harness validates, permissions and executes, returning the result into the context. The mechanism underlying every agent.</div>
+</div>
+
+<div class="gloss-entry" id="term-top-p-sampling-nucleus-sampling">
   <div class="gloss-term">Top-p Sampling (Nucleus Sampling)</div>
   <div class="gloss-def">Restricts token sampling to the smallest set of tokens whose cumulative probability exceeds p (e.g. 0.9). More adaptive than top-k: when the model is confident (peaked distribution), fewer tokens are included; when uncertain (flat distribution), more tokens are included. Standard sampling strategy for production LLMs, often combined with temperature scaling.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tpu-tensor-processing-unit">
   <div class="gloss-term">TPU (Tensor Processing Unit)</div>
   <div class="gloss-def">Google's custom AI ASIC, deployed at Google scale since 2016. Uses a systolic array architecture for highly efficient GEMM. Programmed via XLA (JAX/TensorFlow). TPU v5p: 459 TFLOPS BF16, 95 GB HBM, 4.8 TB/s inter-chip interconnect (ICI). Pods of 8,960 TPUs are used for Google's largest training runs (Gemini, PaLM 2). Not available as standalone hardware — only on Google Cloud.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-transformer">
   <div class="gloss-term">Transformer</div>
   <div class="gloss-def">The neural network architecture introduced in "Attention Is All You Need" (Vaswani et al., 2017) that replaced RNNs as the dominant architecture for language models. Key components: multi-head self-attention, position-wise feed-forward networks, residual connections, layer normalisation, and positional encoding. All major LLMs (GPT, Claude, LLaMA, Gemini, Mistral) are decoder-only transformers.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-tsmc">
   <div class="gloss-term">TSMC</div>
   <div class="gloss-def">Taiwan Semiconductor Manufacturing Company. The world's largest and most advanced pure-play foundry, founded 1987 by Morris Chang. Manufactures chips for NVIDIA, AMD, Apple, Qualcomm, Google, and most other major semiconductor companies. Commands ~60% of global foundry revenue and 90%+ of leading-edge (below 7nm) capacity. All NVIDIA H100/H200/B200 GPUs are manufactured at TSMC.</div>
 </div>
 
 <div class="gloss-letter">V</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-vanishing-gradient">
   <div class="gloss-term">Vanishing Gradient</div>
   <div class="gloss-def">The problem where gradients become exponentially small as they propagate backward through deep networks. Occurs when activation functions (sigmoid, tanh) have near-zero derivatives at saturation, and these are multiplied together through many layers. Solved by ReLU activations, residual connections (skip connections), careful weight initialisation, and batch/layer normalisation.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-vla-vision-language-action-model">
+  <div class="gloss-term">VLA (Vision-Language-Action Model)</div>
+  <div class="gloss-def">A robot policy built by fine-tuning a pretrained vision-language model to output actions instead of text, conditioned on camera images, proprioception and a natural-language instruction. Web-scale semantic knowledge transfers; motor skill must still be learned from robot data.</div>
+</div>
+
+<div class="gloss-entry" id="term-vllm">
   <div class="gloss-term">vLLM</div>
   <div class="gloss-def">An open-source LLM serving engine (UC Berkeley, 2023) that introduced PagedAttention, continuous batching, and prefix caching. Achieves 2–24× higher throughput than naive Hugging Face inference. Supports most open LLMs (LLaMA, Mistral, Qwen, etc.) and multiple hardware backends. The de facto standard for self-hosted LLM inference.</div>
 </div>
 
 <div class="gloss-letter">W</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-warp">
   <div class="gloss-term">Warp</div>
   <div class="gloss-def">The fundamental execution unit in NVIDIA's SIMT model: 32 threads executing the same instruction simultaneously on different data. All 32 threads in a warp advance in lockstep — if they diverge (different branches), they serialize. A GPU SM schedules between warps zero-cost, hiding memory latency by switching to a ready warp while another waits for HBM access.</div>
 </div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-weight-decay-l2-regularisation">
   <div class="gloss-term">Weight Decay (L2 Regularisation)</div>
   <div class="gloss-def">Adds a penalty term λ/2 × Σwᵢ² to the loss, causing weights to decay toward zero unless the gradient pushes back. Effective update: w ← w(1−ηλ) − η·∇L. Penalises large weights, biasing the model toward simpler solutions. Typical λ: 0.01–0.1 for large LLMs. Implemented in AdamW (Adam with decoupled weight decay).</div>
 </div>
 
+<div class="gloss-entry" id="term-world-model">
+  <div class="gloss-term">World Model</div>
+  <div class="gloss-def">A learned model that predicts the next state of an environment given the current state and a proposed action, enabling planning by imagination rather than by trial. Video generation models are surprisingly capable world models, but produce sequences that look physical without guaranteeing that they are.</div>
+</div>
+
 <div class="gloss-letter">Z</div>
 
-<div class="gloss-entry">
+<div class="gloss-entry" id="term-zero-zero-redundancy-optimizer">
   <div class="gloss-term">ZeRO (Zero Redundancy Optimizer)</div>
   <div class="gloss-def">Microsoft DeepSpeed's technique to eliminate redundant copies in data-parallel training. Stage 1: shard optimizer state across ranks (4× memory reduction). Stage 2: + shard gradients (8×). Stage 3: + shard model parameters (P× where P = number of GPUs). With ZeRO-3 on 1,024 GPUs, a 70B model's 1.1 TB optimizer state is distributed as ~1 GB/GPU.</div>
 </div>
@@ -459,7 +753,13 @@
 </main>
 
 <footer>
-  <p>Learn AI · <a href="foundry.html">← Foundry</a> · <a href="index.html">Home</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

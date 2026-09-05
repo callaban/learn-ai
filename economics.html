@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Economics of AI | Learn AI</title>
+  <meta name="description" content="How AI gets paid for: venture and sovereign capital, staying private, IPOs, circular vendor financing, open versus closed models, and how the US, Europe and China each fund and operate the industry.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="economics"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Consequences</div>
+    <h1>The Economics of AI</h1>
+    <p>Every technical decision on this site has a bill attached. This page follows the money: who is funding the largest private capital deployment in the history of computing, what they expect in return, and the arguments over whether the arithmetic works.</p>
+    <div class="page-meta">
+      <span>Prerequisites: none — but Hardware and Data Centers add depth</span>
+      <span>Reading time ~30 min</span>
+      <span>Figures current to early 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<div class="callout warn">
+  <strong>How to read the numbers on this page</strong>
+  Financial details in this industry change monthly, and many of the most-quoted figures come from company announcements, leaks, or reporting rather than audited filings. Private companies disclose what flatters them. Treat every number here as an <em>order of magnitude with a date attached</em>, not a fact — and check current sources before relying on any of it. The structures and incentives described are the durable part; the specific figures are the perishable part.
+</div>
+
+<section>
+  <h2 id="why-ai-needs-so-much-money">Why AI Needs So Much Money</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Most software costs very little to build a second copy of. AI breaks that rule twice over: training a frontier model costs a fortune before you have anything to sell, and then <em>every single answer</em> the model gives consumes real electricity on real hardware. AI companies have the capital intensity of an airline with the growth expectations of a software startup, and that combination is what makes their financing so unusual.</p>
+  </div>
+
+  <p>Classical software economics are close to magical: near-zero marginal cost, gross margins of 80–90%, and a product that gets cheaper to serve per user as it grows. Frontier AI has a different shape entirely, with costs falling into three buckets that behave nothing alike.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Cost</th><th>Scale</th><th>Behaviour</th><th>Analogy</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Training a frontier model</strong></td><td>Hundreds of millions to low billions of dollars per flagship run, including failed attempts</td><td>Sunk before any revenue. Rising per generation. Obsolete within roughly 12–24 months</td><td>A pharmaceutical trial — expensive, risky, with a patent clock already running</td></tr>
+      <tr><td><strong>Serving inference</strong></td><td>Fractions of a cent to cents per thousand tokens, times billions of tokens daily</td><td>Scales directly with usage. Genuine variable cost. Falling fast per unit of capability</td><td>An electric utility — you meter it because it really is consumption</td></tr>
+      <tr><td><strong>Research and talent</strong></td><td>Individual compensation packages reported in the millions; entire teams acquired for far more</td><td>A bidding war among a handful of buyers for a few thousand people</td><td>Elite sport — a tiny labour pool, enormous leverage per person</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The pattern that follows is unavoidable: enormous capital must be committed <em>in advance</em> of the revenue it is meant to produce, and committed against a depreciating asset. A data centre full of accelerators is not a factory that runs for thirty years. It is closer to a fleet of aircraft that may be superseded in four — which is precisely the assumption that the sceptics on this page dispute, and the bulls defend.</p>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>Imagine a publishing house where writing a book costs $500 million, printing each copy costs three cents, and a rival may publish a strictly better book in fourteen months. You would need extraordinary confidence in demand to start writing — and you would need to raise the $500 million from someone who shares that confidence. Now imagine that the printing press manufacturer, who benefits from every book printed, offers to fund your advance. That is the AI capital cycle in one image, and the second half of it is the part people argue about.</p>
+  </div>
+</section>
+
+<section>
+  <h2 id="startup-financing-the-ladder">Startup Financing: the Ladder</h2>
+
+  <p>AI startups raise on a scale that would have been implausible in any earlier software cycle, and the reason is structural rather than exuberant: a company intending to train frontier models needs the compute budget before it can demonstrate anything. Traditional venture rounds simply cannot write those cheques, so the capital stack has reorganised itself.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Stage</th><th>Typical size</th><th>Who funds it</th><th>What it buys</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Application layer seed</strong></td><td>$1M–$20M</td><td>Classic venture funds, angels</td><td>Product built on someone else's model API. Normal software economics — this is where most AI companies live, and where most of them should live</td></tr>
+      <tr><td><strong>Vertical / tooling growth</strong></td><td>$20M–$300M</td><td>Growth venture, crossover funds</td><td>Distribution, sales, domain data, fine-tuning — not pretraining</td></tr>
+      <tr><td><strong>Frontier lab, early</strong></td><td>$100M–$1B+</td><td>Strategic corporates, large venture, sovereign funds</td><td>A first serious training run and the team to do it</td></tr>
+      <tr><td><strong>Frontier lab, scaling</strong></td><td>$1B–$40B+ per round</td><td>Hyperscalers, sovereign wealth (MGX, PIF), SoftBank, chipmakers</td><td>Multi-gigawatt compute commitments, several model generations</td></tr>
+      <tr><td><strong>Infrastructure buildout</strong></td><td>$10B–$500B programmes</td><td>Private credit, project finance, debt, joint ventures, utilities</td><td>Land, power, buildings, accelerators — financed like energy infrastructure, because it is</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="who-actually-has-this-much-money">Who Actually Has This Much Money</h3>
+  <ul>
+    <li><strong>Hyperscalers</strong> (Microsoft, Google, Amazon, Meta) — funding from operating cash flow at a combined capital-expenditure scale that reached several hundred billion dollars a year by 2025–26. Their investments are often strategic as much as financial: an equity stake that also locks in cloud consumption.</li>
+    <li><strong>Chip vendors</strong> — most visibly NVIDIA, investing in the customers who buy its accelerators. The circularity of this is discussed <a href="#circular-financing-the-argument-of-the-cycle">below</a> and is the single most contested feature of the current cycle.</li>
+    <li><strong>Sovereign wealth funds</strong> — Gulf vehicles such as MGX and Saudi Arabia's PIF, plus Singaporean and Norwegian state investors. They bring something scarcer than money: patient capital measured in decades, and in the Gulf's case, cheap energy and land.</li>
+    <li><strong>SoftBank's Vision Fund</strong> — a category of one in appetite for concentrated, very large technology bets.</li>
+    <li><strong>Private credit</strong> — Blue Owl, Apollo, Ares and similar lenders financing data-centre construction through joint ventures and special-purpose vehicles, often secured against the facilities and hardware themselves.</li>
+  </ul>
+
+  <div class="callout fact">
+    <strong>The compute-for-equity structure</strong>
+    Several of the largest AI investments are not simple cash-for-shares. Microsoft's early investments in OpenAI were substantially Azure credits. Amazon and Google's investments in Anthropic came bundled with commitments to their clouds and chips. NVIDIA's announced investments in model developers are tied to deployment of NVIDIA hardware. The investor supplies the input the startup must buy anyway; the startup gets compute without touching cash. It is efficient, it deepens the strategic relationship, and it makes both revenue and valuation genuinely harder to interpret from the outside — which is exactly why it attracts scrutiny.
+  </div>
+</section>
+
+<section>
+  <h2 id="staying-private-and-staying-private-a-long-time">Staying Private, and Staying Private a Long Time</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Companies used to go public to raise serious money. Now serious money is available privately, so the most valuable AI companies simply do not list — and that has consequences for who gets to invest, what the public gets to see, and who bears the risk.</p>
+  </div>
+
+  <p>The most valuable AI companies in the world are private. This is a deliberate choice, and the reasons are coherent:</p>
+
+  <ul>
+    <li><strong>Private capital is abundant enough.</strong> When sovereign funds and hyperscalers will write ten-billion-dollar cheques, the public markets lose their unique advantage.</li>
+    <li><strong>Quarterly reporting is hostile to this cost structure.</strong> A company spending heavily now for capability that may arrive in three years does not want to explain a collapsing margin every ninety days.</li>
+    <li><strong>Disclosure is competitive intelligence.</strong> Public filings would reveal training costs, inference margins, and customer concentration to every rival.</li>
+    <li><strong>Unusual governance survives better in private.</strong> Structures such as OpenAI's non-profit-controlled arrangement or Anthropic's Long-Term Benefit Trust are difficult to sustain under the fiduciary expectations of public markets.</li>
+  </ul>
+
+  <h3 id="how-private-companies-handle-liquidity-without-listing">How Private Companies Handle Liquidity Without Listing</h3>
+  <p>Staying private for a decade creates a problem: employees hold paper worth millions that they cannot spend, and early investors want returns. The solutions have become institutionalised:</p>
+  <ul>
+    <li><strong>Tender offers.</strong> The company periodically organises a sale in which employees may sell a slice of their vested equity to incoming investors at an agreed price. The company controls timing, price and who may buy.</li>
+    <li><strong>Secondary markets.</strong> Specialist platforms and funds trade private shares. Headline "valuations" often come from these transactions rather than from primary rounds, and they represent thin, selective trading — a real price, but not a market-clearing one.</li>
+    <li><strong>Structured vehicles.</strong> Funds that hold private AI stakes and sell exposure onward, sometimes several layers removed from the underlying company. Retail exposure to unlisted AI firms increasingly arrives through such wrappers, with fee and transparency implications that are not always obvious to the buyer.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>Who bears the risk?</strong>
+    In the dot-com cycle, companies listed early and the public absorbed both the upside and the losses in full view, with audited quarterly numbers. This cycle inverts that: gains have accrued largely to private investors, and losses — if they come — will land on sovereign funds, pension allocations to private credit, corporate balance sheets, and the retail investors who own the listed suppliers. That is not obviously worse. But it is far less <em>visible</em>, and opacity is its own category of risk. When the exposure is spread through private credit and structured vehicles, nobody — including regulators — has a clear picture of who is holding what.
+  </div>
+</section>
+
+<section>
+  <h2 id="ipos-and-the-public-market-exposure">IPOs and the Public-Market Exposure</h2>
+
+  <p>Although the model developers have stayed private, the AI trade is thoroughly represented in public markets — just one layer down the stack. Public investors have overwhelmingly expressed the AI thesis by buying <em>suppliers</em>: the chip designers, the memory makers, the equipment vendors, the networking companies, the power producers, and the specialist cloud operators.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Layer</th><th>Public exposure</th><th>What the market is really pricing</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Accelerators</strong></td><td>NVIDIA, AMD, Broadcom (custom ASICs)</td><td>That AI capital expenditure continues at present or higher levels</td></tr>
+      <tr><td><strong>Manufacturing</strong></td><td>TSMC, ASML, Applied Materials, Lam</td><td>Leading-edge wafer and advanced-packaging demand — see <a href="foundry.html">Foundries</a></td></tr>
+      <tr><td><strong>Memory</strong></td><td>SK Hynix, Micron, Samsung</td><td>HBM demand and pricing power, historically the most cyclical corner of semiconductors</td></tr>
+      <tr><td><strong>Neoclouds</strong></td><td>CoreWeave, Nebius and peers</td><td>GPU rental economics, and the durability of very large customer contracts</td></tr>
+      <tr><td><strong>Hyperscalers</strong></td><td>Microsoft, Google, Amazon, Meta</td><td>That enormous capex converts into durable revenue rather than depreciation</td></tr>
+      <tr><td><strong>Power</strong></td><td>Utilities, independent power producers, turbine and grid suppliers</td><td>Data-centre load growth — the newest and least crowded leg of the trade</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="the-notable-listings">The Notable Listings</h3>
+  <p><strong>CoreWeave's 2025 IPO</strong> was the cycle's landmark AI-infrastructure listing: a company that converted GPU fleets into rentable capacity, financed substantially with debt secured against the hardware, with revenue heavily concentrated in a small number of very large customers. It priced below its initial range and then traded up sharply. It is worth studying not because of the share price but because its filings made public — for the first time, in audited form — the actual economics of renting accelerators: the depreciation schedules, the contract structures, the leverage, the concentration.</p>
+
+  <p><strong>Cerebras</strong> illustrates the opposite pull. Having filed to go public, it raised a large private round instead and withdrew — a clean demonstration that when private capital is this available, the IPO becomes optional.</p>
+
+  <p>The interesting question for the next several years is whether the model developers ever list. The arguments for are the sheer scale of capital eventually required, employee liquidity, and the credibility that audited public reporting confers. The arguments against are disclosure, governance, and the fact that private markets have so far supplied everything needed. A listing by any frontier lab would be, among other things, the first time outsiders could see a full and audited set of frontier-AI economics — which is precisely why it would be so consequential, and part of why it keeps not happening.</p>
+</section>
+
+<section>
+  <h2 id="circular-financing-the-argument-of-the-cycle">Circular Financing: the Argument of the Cycle</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Some of the money flowing through AI goes in a circle. A chip company invests in an AI lab; the lab uses the money to buy that company's chips; the chip company books the purchase as revenue; its share price rises on the strength of that revenue, which makes further investment easier. Nothing here is illegal, and every individual step has a sound business rationale. The disagreement is about whether the loop is creating value or just recycling it faster than anyone can measure.</p>
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="ec-arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#6366f1"/>
+        </marker>
+        <marker id="ec-arr-g" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#10b981"/>
+        </marker>
+      </defs>
+
+      <rect x="255" y="18" width="190" height="62" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="1.8"/>
+      <text x="350" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#064e3b">Chip vendor</text>
+      <text x="350" y="61" text-anchor="middle" font-size="10" fill="#065f46">Sells accelerators · invests equity</text>
+
+      <rect x="18" y="168" width="185" height="76" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.8"/>
+      <text x="110" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#4c1d95">Model developer</text>
+      <text x="110" y="211" text-anchor="middle" font-size="10" fill="#6d28d9">Buys compute at vast scale</text>
+      <text x="110" y="228" text-anchor="middle" font-size="10" fill="#6d28d9">Sells tokens &amp; subscriptions</text>
+
+      <rect x="497" y="168" width="185" height="76" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.8"/>
+      <text x="589" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Cloud / neocloud</text>
+      <text x="589" y="211" text-anchor="middle" font-size="10" fill="#1d4ed8">Buys chips, rents capacity</text>
+      <text x="589" y="228" text-anchor="middle" font-size="10" fill="#1d4ed8">Often also an equity investor</text>
+
+      <rect x="255" y="322" width="190" height="62" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="350" y="346" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">Public markets</text>
+      <text x="350" y="365" text-anchor="middle" font-size="10" fill="#92400e">Price the revenue · supply the capital</text>
+
+      <path d="M262,60 C170,80 120,120 110,163" fill="none" stroke="#6366f1" stroke-width="1.8" marker-end="url(#ec-arr)"/>
+      <text x="128" y="108" font-size="10" font-weight="700" fill="#4338ca">equity / credits</text>
+
+      <path d="M158,168 C185,120 235,88 262,74" fill="none" stroke="#10b981" stroke-width="1.8" marker-end="url(#ec-arr-g)"/>
+      <text x="215" y="140" font-size="10" font-weight="700" fill="#047857">purchase orders</text>
+
+      <path d="M438,60 C530,80 580,120 590,163" fill="none" stroke="#6366f1" stroke-width="1.8" marker-end="url(#ec-arr)"/>
+      <text x="512" y="108" font-size="10" font-weight="700" fill="#4338ca">equity / supply deal</text>
+
+      <path d="M542,168 C515,120 465,88 438,74" fill="none" stroke="#10b981" stroke-width="1.8" marker-end="url(#ec-arr-g)"/>
+      <text x="440" y="140" font-size="10" font-weight="700" fill="#047857">purchase orders</text>
+
+      <path d="M203,214 L490,214" fill="none" stroke="#64748b" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ec-arr)"/>
+      <rect x="246" y="194" width="209" height="16" fill="#ffffff"/>
+      <text x="350" y="206" text-anchor="middle" font-size="10" font-weight="700" fill="#475569">multi-year compute contracts</text>
+
+      <path d="M110,244 C130,300 200,335 250,348" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ec-arr)"/>
+      <text x="120" y="300" font-size="10" fill="#475569">reported revenue</text>
+
+      <path d="M589,244 C570,300 500,335 450,348" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ec-arr)"/>
+      <text x="512" y="300" font-size="10" fill="#475569">reported revenue</text>
+
+      <path d="M350,322 L350,84" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ec-arr)"/>
+      <text x="358" y="300" font-size="10.5" font-weight="700" fill="#b45309">valuation → new capital</text>
+    </svg>
+    <figcaption>The capital loop. Each arrow is an ordinary commercial transaction. The concern is not any single arrow but the closed cycle: capital supplied by a vendor returns to that vendor as revenue, which supports the valuation that makes the next round of capital available.</figcaption>
+  </div>
+
+  <h3 id="the-historical-rhyme">The Historical Rhyme</h3>
+  <p>This is not new, and the precedent is not encouraging. In the late 1990s telecommunications boom, equipment makers such as Lucent and Nortel lent money to competitive carriers so those carriers could buy their equipment. Revenue grew impressively. When the carriers could not repay — because the demand for fibre capacity had been dramatically overestimated — both the receivables and the revenue evaporated, and the vendors were destroyed alongside their customers. Vendor financing does not create demand. It <em>accelerates</em> demand that would otherwise arrive later, and it <em>manufactures</em> demand that would otherwise never arrive at all, while making the two indistinguishable in the accounts.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>The case that it is fine</h4>
+      <ul>
+        <li>The compute is genuinely consumed. Unlike dark fibre laid in anticipation, accelerators are running at high utilisation today, serving real paying users.</li>
+        <li>Revenue is real and growing quickly at the model developers, from many customers across many industries.</li>
+        <li>Strategic investment along a supply chain is completely normal — automakers have financed suppliers for a century.</li>
+        <li>The equity stakes are a small share of the investors' balance sheets; even a total loss would be survivable for the largest players.</li>
+        <li>If AI capability keeps improving, demand at these prices is not the constraint — supply is.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>The case that it is not</h4>
+      <ul>
+        <li>Announced compute commitments have run to well over a trillion dollars against revenue in the tens of billions. The gap must be closed by growth that has not happened yet.</li>
+        <li>Vendor-funded revenue is lower quality than customer-funded revenue, and the accounts do not distinguish them.</li>
+        <li>Depreciation schedules of five to six years assume accelerators stay economically useful that long. If a new generation halves the cost per token, the older fleet is impaired long before it is written off.</li>
+        <li>Concentration is extreme in both directions: a few customers are a large share of key suppliers' revenue, and one supplier is most of the market.</li>
+        <li>Debt and special-purpose vehicles have entered the structure, and leverage converts a slowdown into a solvency event.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>The question that actually settles it</strong>
+    Not "is this a bubble?" — that resolves only in hindsight — but something more tractable: <strong>is the revenue growing from customers who are paying with their own money, for value they can measure?</strong> Enterprise seats renewed at higher prices, API usage rising because applications built on it are profitable, consumers who keep subscribing — that is demand. Compute contracts signed by companies funded by the compute vendor are something else. Both appear as revenue. Only one of them survives a downturn, and telling them apart from public disclosures is currently very difficult. Note also that the two cases can both be right: the internet was simultaneously a real revolution and a genuine bubble. Infrastructure built during a mania frequently outlives the investors who paid for it.
+  </div>
+</section>
+
+<section>
+  <h2 id="open-weights-versus-closed-models">Open Weights versus Closed Models</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Some companies publish their trained models for anyone to download and run; others keep them behind an API and sell access. This is not mainly a philosophical dispute — it is a competitive strategy, and which side a company picks tells you a great deal about where it thinks it makes money.</p>
+  </div>
+
+  <div class="callout warn">
+    <strong>A vocabulary correction worth making</strong>
+    Almost nothing described as "open-source AI" meets the definition that phrase carries in software. Open source implies you receive everything needed to rebuild the artefact: source, build instructions, and the freedom to modify and redistribute. What is nearly always released is <strong>open weights</strong> — the trained parameters, sometimes with inference code, but without the training data, the data-cleaning pipeline, or the training infrastructure. You can run and fine-tune the model; you cannot reproduce it or audit what went into it. Some licences additionally restrict commercial use or user counts, which no open-source licence would permit. The distinction matters, and conflating the two flatters the release.
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Open weights</th><th>Closed / API-only</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Access</strong></td><td>Download and run anywhere</td><td>Requests to the provider's servers</td></tr>
+      <tr><td><strong>Cost shape</strong></td><td>You pay for hardware and operations; heavy steady use can be much cheaper</td><td>Metered per token; no fixed cost, no idle waste</td></tr>
+      <tr><td><strong>Data control</strong></td><td>Complete — nothing leaves your infrastructure. Decisive for regulated sectors and classified work</td><td>Governed by contract and the provider's controls</td></tr>
+      <tr><td><strong>Customisation</strong></td><td>Full fine-tuning, quantisation, architecture surgery</td><td>Whatever the provider exposes</td></tr>
+      <tr><td><strong>Capability</strong></td><td>Historically trailing the frontier, and the gap has narrowed sharply — months rather than years</td><td>Frontier capability, updated continuously</td></tr>
+      <tr><td><strong>Operational burden</strong></td><td>You own serving, scaling, upgrades, security, and the eval work</td><td>The provider owns all of it</td></tr>
+      <tr><td><strong>Safety posture</strong></td><td>Irrevocable once published; safety training can be fine-tuned away by anyone</td><td>Provider can monitor, rate-limit, patch, and revoke</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="why-anyone-gives-away-a-model-that-cost-millions-to-train">Why Anyone Gives Away a Model That Cost Millions to Train</h3>
+  <p>Publishing weights is rarely altruism. It is generally one of four strategies:</p>
+  <ul>
+    <li><strong>Commoditise your complement.</strong> The classic play. If you sell cloud, advertising, or hardware, a free capable model that runs on your infrastructure grows your actual business while eroding a rival's pricing power. Making the model layer cheap is the point.</li>
+    <li><strong>Buy an ecosystem.</strong> Free weights attract researchers, tooling, fine-tunes and defaults. Becoming the standard base model is worth a great deal even when the weights themselves earn nothing.</li>
+    <li><strong>Compete asymmetrically.</strong> If you cannot beat the leader on capability, undercut the business model. A challenger releasing strong open weights takes revenue from an incumbent's API without needing to win on quality.</li>
+    <li><strong>Project influence.</strong> For a state or a national champion, widely adopted open models spread standards, tooling, and dependence. This is a substantial part of the Chinese strategy discussed below.</li>
+  </ul>
+
+  <div class="callout fact">
+    <strong>The DeepSeek moment and what it actually demonstrated</strong>
+    In January 2025 a Chinese lab released a strong open-weight reasoning model, reporting a final training run costing single-digit millions of dollars. Global equity markets fell sharply — NVIDIA lost several hundred billion dollars of market value in a single session — on the thesis that frontier capability might be far cheaper than assumed.
+    <br><br>
+    The reported figure was real but widely misread: it covered one final training run, excluding the research, failed runs, accumulated infrastructure and staff that made it possible. The genuine lesson was different and more durable. First, <strong>algorithmic efficiency is a real and underrated competitive axis</strong> — architectural work such as latent attention and aggressive mixture-of-experts sparsity can deliver multiples of improvement in cost per unit of capability. Second, <strong>constraints breed efficiency</strong>: export controls limited access to the best hardware, and the response was to get dramatically better at using what was available. Third, <strong>the capability gap between open and closed had become months, not years.</strong> Whether the market's reaction was right about the economics is still arguable; that the technical result was significant is not.
+  </div>
+
+  <p>The emerging equilibrium looks like a barbell rather than a winner. The frontier — the newest, most capable, most expensive models — stays closed, because that is where pricing power lives and where the safety arguments for control are strongest. Everything a generation or two behind trends toward open weights and commodity pricing, because someone always has a strategic reason to give it away. Most organisations end up using both: closed frontier models for the hardest reasoning, open models running on their own hardware for high-volume, latency-sensitive, or data-sensitive work. The interesting consequence is that <em>the model layer may be the worst place in the stack to try to capture value</em> — the durable margins appear to sit below it in silicon and power, and above it in applications and distribution.</p>
+</section>
+
+<section>
+  <h2 id="three-systems-the-us-europe-and-china">Three Systems: the US, Europe, and China</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>The same technology is being financed and governed in three genuinely different ways. America runs on private capital and speed. Europe runs on regulation and public programmes. China runs on state direction and cost discipline under hardware sanctions. Each approach has a real advantage and a real weakness, and none of them has obviously won.</p>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>United States</th><th>European Union / UK</th><th>China</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Primary capital</strong></td><td>Private: venture, hyperscaler cash flow, private credit, sovereign co-investment</td><td>Mixed: public programmes and EIB alongside a thinner venture market</td><td>State-directed: national funds, provincial vehicles, state-linked corporates</td></tr>
+      <tr><td><strong>Scale of a single round</strong></td><td>Tens of billions</td><td>Typically hundreds of millions to low billions</td><td>Large but more often programmatic than round-based</td></tr>
+      <tr><td><strong>Regulatory stance</strong></td><td>Light-touch federal policy with an explicit competitiveness framing; meaningful activity at state level</td><td>The AI Act — comprehensive, risk-tiered, phasing in through 2026–27, with active debate about simplifying and delaying parts of it</td><td>Targeted and fast-moving: generative-AI measures, algorithm and model filing, mandatory labelling of synthetic content</td></tr>
+      <tr><td><strong>Chips</strong></td><td>Designs the leading accelerators; depends on Taiwanese manufacture</td><td>Owns the critical lithography chokepoint (ASML); designs and fabricates little at the leading edge</td><td>Export-restricted from the best hardware; building domestic alternatives at real but incomplete parity</td></tr>
+      <tr><td><strong>Energy &amp; siting</strong></td><td>Abundant land, constrained grid; multi-year interconnection queues are the binding limit</td><td>High electricity prices, slow permitting, strong climate obligations</td><td>Fast buildout, cheap power, state coordination of siting</td></tr>
+      <tr><td><strong>Model strategy</strong></td><td>Mostly closed frontier, with notable open-weight releases</td><td>Open weights as differentiation and as a sovereignty argument</td><td>Aggressively open-weight, at very low prices</td></tr>
+      <tr><td><strong>Structural weakness</strong></td><td>Concentration, circular financing, energy constraints</td><td>Insufficient scale-up capital; talent and companies migrate to US funding</td><td>Compute ceiling from export controls; limited access to global capital markets</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="united-states-speed-scale-and-concentration">United States: Speed, Scale, and Concentration</h3>
+  <p>The American system is optimised for velocity. Capital moves fast, failure is tolerated, and the same handful of companies fund the models, the clouds, and the chips. Federal policy since 2025 has leaned explicitly toward competitiveness and infrastructure acceleration — permitting reform for data centres, federal land, promotion of an American AI stack for export — while comprehensive federal legislation has not arrived, leaving states to legislate and creating a patchwork the industry dislikes.</p>
+  <p>The binding constraint has quietly shifted from chips to <strong>electricity</strong>. Interconnection queues, transformer lead times and turbine backlogs now determine how fast capacity can be added. That has pulled AI companies into power markets directly: long-term contracts with nuclear plants, behind-the-meter gas generation, and restarts of retired capacity. Whether AI load ends up subsidising grid upgrades or raising consumer electricity prices is becoming a live political question, and it is one that could constrain the industry more than any technical limit.</p>
+
+  <h3 id="europe-rules-first-and-the-capital-problem">Europe: Rules First, and the Capital Problem</h3>
+  <p>Europe has the strongest regulatory framework and the weakest scale-up capital. The AI Act is the world's most comprehensive AI law — risk-tiered, with transparency and evaluation obligations for general-purpose models and stricter requirements for high-risk uses, phasing in across 2025–27. Its ambition is real, and so is the tension: significant parts of the industry argue the compliance burden disadvantages European firms, and the Commission has moved to simplify and delay elements of it, which in turn draws criticism that the framework is being weakened before it has been tested.</p>
+  <p>The deeper issue is not regulation but finance. Europe produces outstanding research and strong companies, and then watches them raise their large rounds from American and Gulf investors, or relocate outright. A European lab raising a billion euros is a landmark; an American peer raising thirty times that is a Tuesday. Public programmes — multi-billion-euro AI investment initiatives and publicly funded "AI gigafactories" — are attempts to close the gap with state money, and it is genuinely too early to judge them. Europe's one irreplaceable asset in this industry is not a company at all: it is ASML, the sole supplier of EUV lithography, which gives the continent decisive leverage over everyone else's silicon. See <a href="foundry.html">Foundries</a> for why that matters so much.</p>
+
+  <h3 id="china-constraint-as-strategy">China: Constraint as Strategy</h3>
+  <p>Chinese AI operates under a hardware ceiling and has organised around it. Export controls restrict access to the best accelerators; domestic alternatives are improving but still trail on performance, memory bandwidth and — critically — software maturity. The strategic response has three prongs:</p>
+  <ul>
+    <li><strong>Efficiency as a weapon.</strong> When you cannot buy more compute, you get better at using it. Sparse mixture-of-experts architectures, attention variants that shrink the KV cache, and aggressive quantisation have produced genuine algorithmic advances that the whole field has adopted.</li>
+    <li><strong>Open weights as diffusion policy.</strong> Chinese labs have released a large share of the world's capable open-weight models, frequently under permissive licences. This wins developer mindshare globally, sets de facto standards, and undercuts the pricing of closed Western APIs — at essentially no cost to a strategy that was never going to sell API access to those markets anyway.</li>
+    <li><strong>Price competition.</strong> Domestic token prices have been driven to levels that make Western pricing look leisurely, supported by cheaper power, cheaper engineering, and a tolerance for thin margins in service of adoption.</li>
+  </ul>
+  <p>The constraints are equally real: the compute ceiling is binding for the largest training runs, capital comes with state expectations attached, and access to international capital markets is limited. Domestic listings on Shanghai's STAR Market and in Hong Kong have become the liquidity route for Chinese AI and chip companies, in place of the New York listings that an earlier generation of Chinese technology firms pursued.</p>
+
+  <div class="callout">
+    <strong>What the comparison actually teaches</strong>
+    It is tempting to score these as a race with one winner. A more useful reading is that each system is <em>optimising a different variable</em>: America optimises for capability at any cost, China for capability per unit of constrained compute, Europe for legitimacy and rights protection. Each is producing exactly what its incentives select for. The efficiency techniques that emerged from Chinese constraint are now used everywhere. The transparency obligations Europe wrote are becoming global corporate practice because compliance is cheaper than segmentation. And the frontier keeps moving because American capital is willing to fund things with no clear path to profit. It is entirely possible that all three approaches turn out to have been necessary — and that the eventual settlement borrows from each.
+  </div>
+</section>
+
+<section>
+  <h2 id="unit-economics-does-any-of-this-pay">Unit Economics: Does Any of This Pay?</h2>
+
+  <p>Underneath the financing drama sits a more answerable question: what does it cost to serve a unit of AI, and what can be charged for it?</p>
+
+  <div class="specs-grid">
+    <div class="spec-card"><span class="val">~10×/yr</span><div class="lbl">Approximate fall in price for a fixed level of capability, sustained over recent years</div></div>
+    <div class="spec-card"><span class="val">↑ each gen</span><div class="lbl">Cost to train the newest frontier model — moving the opposite direction</div></div>
+    <div class="spec-card"><span class="val">50–70%</span><div class="lbl">Typical reported gross margin on mature inference — good, but not software-good</div></div>
+    <div class="spec-card"><span class="val">5–6 yrs</span><div class="lbl">Accelerator depreciation assumed by large operators — the industry's most contested number</div></div>
+  </div>
+
+  <p>Two curves are moving in opposite directions and their interaction determines everything. <strong>Inference gets cheaper relentlessly</strong>, through better hardware, lower-precision arithmetic, sparser architectures, distillation and serving improvements — the techniques on the <a href="inference.html">Inference</a> and <a href="inference-datacenter.html">Inference Data Centers</a> pages. <strong>Training the frontier gets more expensive</strong>, because each capability increment demands more compute than the last.</p>
+
+  <p>A company that only serves models eventually enjoys good margins on a commoditising product. A company that only trains frontier models burns capital forever. The viable position is to do both: fund frontier research from inference revenue, and let each generation's frontier become next year's cheap commodity tier. That works if and only if usage grows fast enough to outrun the price decline — which is why every AI company is so preoccupied with adoption and so relaxed about per-token prices falling. Falling prices are the plan.</p>
+
+  <div class="callout warn">
+    <strong>The bill agents are quietly running up</strong>
+    Agentic workloads change this arithmetic significantly. A chatbot exchange is perhaps a thousand tokens. An agent completing a real task may consume hundreds of thousands to millions — reasoning tokens, tool results, repeated passes over a growing transcript. Per-token prices falling by an order of magnitude means little if per-task consumption rises by two. This is why pricing is shifting from per-token toward per-seat, per-task and outcome-based models, and why prefix caching and context discipline (see <a href="agents.html">Agentic AI</a>) are financial engineering as much as technical hygiene. It is also the most plausible mechanism by which demand actually grows into the infrastructure being built for it.
+  </div>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why does a chip vendor investing in its own customer worry analysts, when a car maker financing a supplier does not?</summary>
+    <p>Direction. Supplier financing secures an input you need. Customer financing creates the demand you then book as revenue — the money returns to you as sales, supporting a valuation that funds the next investment. The loop can grow without any outside customer paying for anything, and the accounts do not distinguish the two sources.</p></details>
+    <details><summary>A lab reports training a frontier-class model for $6M. What is that figure not counting?</summary>
+    <p>Research and failed runs, salaries, data acquisition and cleaning, the accumulated infrastructure the run depended on, and all prior model generations it built upon. It is the electricity-and-rental cost of one successful final run — a real and interesting number, but not the cost of the capability.</p></details>
+    <details><summary>Why might the model layer be a poor place to capture value, even though it is the most impressive part of the stack?</summary>
+    <p>Because it is the layer most exposed to commoditisation. Capability diffuses in months; open weights arrive a generation behind and drive prices toward marginal cost; and everyone above and below has a strategic reason to make models cheap. Durable margins have tended to accumulate in scarce chokepoints — lithography, advanced packaging, HBM, power — and in customer relationships at the application layer.</p></details>
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>AI combines the capital intensity of heavy industry with the growth expectations of software, which is why its financing looks unlike anything in previous technology cycles.</li>
+    <li>The most valuable model developers are private and intend to stay private; public-market AI exposure is concentrated in suppliers — chips, memory, equipment, clouds and power.</li>
+    <li>Circular vendor financing is the cycle's defining controversy. Its historical precedent in 1990s telecoms ended badly, but real consumption today is a genuine and material difference.</li>
+    <li>"Open source AI" almost always means open <em>weights</em>. Publishing them is a competitive strategy — commoditise a rival's product, win an ecosystem, or project influence.</li>
+    <li>The US optimises for speed and scale, Europe for rules and rights, China for efficiency under constraint. Each produces distinct and genuinely useful results.</li>
+    <li>Inference costs fall relentlessly while frontier training costs rise. Whether the industry pays for itself depends on usage growing faster than prices fall — and agentic workloads are the mechanism most likely to deliver that.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

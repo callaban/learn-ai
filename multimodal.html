@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beyond Text: Diffusion, Vision &amp; World Models | Learn AI</title>
+  <meta name="description" content="How AI handles images, video and audio: patch embeddings, contrastive vision-language training, diffusion and flow matching, video generation, speech, native multimodal transformers, and world models.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="multimodal"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Foundations</div>
+    <h1>Beyond Text</h1>
+    <p>Diffusion, vision, video, audio, and world models. Language models get the attention, but the same transformer machinery — pointed at pixels and waveforms, and trained with a different objective — produces images, video and speech, and increasingly all of them in one model.</p>
+    <div class="page-meta">
+      <span>Prerequisites: Neural Networks, LLMs</span>
+      <span>Reading time ~25 min</span>
+      <span>Reviewed 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="everything-is-tokens">Everything Is Tokens</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A transformer does not know what text is. It processes sequences of vectors. If you can turn something — an image, a second of audio, a video frame, a robot's joint angles — into a sequence of vectors, the same architecture works on it. That single observation is why one family of models now handles every kind of media.</p>
+  </div>
+
+  <p>The <a href="llms.html">LLM page</a> describes attention operating over token embeddings. Nothing in that mechanism is specific to language. The only question for a new modality is how to convert it into a sequence of vectors and back again.</p>
+
+  <div class="eq">Turning an image into a sequence
+
+  A 224×224 RGB image = 150,528 numbers.
+  One token per pixel would give a 50,176-token sequence per image —
+  and attention is O(n²), so that is hopeless.
+
+  <span class="highlight">Patch embedding</span> (the Vision Transformer trick):
+    1. Cut the image into a grid of 16×16 pixel patches → 14×14 = 196 patches
+    2. Flatten each patch: 16 × 16 × 3 = 768 numbers
+    3. Project each through one learned linear layer → a d-dimensional vector
+    4. Add a positional embedding so the model knows where each patch was
+
+  Result: <span class="highlight">196 tokens</span>, indistinguishable in form from 196 word tokens.
+  The transformer proceeds exactly as before.
+
+  Same idea elsewhere:
+    audio  → mel-spectrogram frames, or discrete codes from a neural codec
+    video  → spacetime patches (a patch across several adjacent frames)
+    robots → joint angles and forces, projected to the same dimension</div>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>A shipping container transformed global trade not by improving ships but by standardising the <em>interface</em>: anything that fits in a box can travel on any ship, crane or truck. Token embeddings are the container. Once every modality is packed into the same shaped box, one architecture — and one enormous investment in training infrastructure — serves all of them.</p>
+  </div>
+
+  <h3 id="connecting-vision-to-language">Connecting Vision to Language</h3>
+  <p>Turning an image into tokens is not enough; the model must relate those tokens to words. The technique that unlocked this is <strong>contrastive learning</strong>, best known from CLIP.</p>
+
+  <div class="eq">Contrastive image-text training
+
+  Take a batch of N (image, caption) pairs scraped from the web.
+  Encode each image with a vision encoder → N image vectors.
+  Encode each caption with a text encoder → N text vectors.
+
+  Compute all N×N similarities between them, then train so that:
+    matching pairs      (image i, caption i)  →  high similarity
+    non-matching pairs  (image i, caption j)  →  low  similarity
+
+  <span class="highlight">The result is a shared embedding space</span> in which the vector for a
+  photograph of a dog sits near the vector for the words "a dog".
+
+  This is what makes zero-shot classification work: to ask "is this a
+  cat or a dog?", embed both phrases and see which is closer. No
+  classifier was trained for that question — and it is also the
+  mechanism that lets text steer an image generator.</div>
+</section>
+
+<section>
+  <h2 id="diffusion-generating-by-removing-noise">Diffusion: Generating by Removing Noise</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>To make an image, start with pure static and repeatedly ask a neural network: "if this were a slightly noisy picture of a fox in a forest, what would the noise be?" Subtract the predicted noise, and repeat. After twenty or fifty rounds, a fox emerges. The strange part is that this works — and the reason it works is that removing a little noise is a far easier problem than drawing a picture.</p>
+  </div>
+
+  <p>Diffusion inverts a process that is trivial to run forwards. Destroying an image is easy: add Gaussian noise repeatedly until nothing remains. That gives you unlimited training data for free — you know exactly what noise you added at every step. Training a network to <em>predict</em> that noise is ordinary supervised learning. And a network that can predict noise can be run in reverse to generate.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="df-arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/>
+        </marker>
+        <marker id="df-arr-p" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#8b5cf6"/>
+        </marker>
+      </defs>
+
+      <text x="20" y="24" font-size="11.5" font-weight="700" fill="#475569">FORWARD (fixed, no learning) — add noise step by step</text>
+
+      <rect x="30" y="36" width="76" height="60" rx="6" fill="#1e293b"/>
+      <text x="68" y="72" text-anchor="middle" font-size="10" fill="#e2e8f0">clean x₀</text>
+      <rect x="176" y="36" width="76" height="60" rx="6" fill="#334155"/>
+      <text x="214" y="72" text-anchor="middle" font-size="10" fill="#cbd5e1">x₂₅₀</text>
+      <rect x="322" y="36" width="76" height="60" rx="6" fill="#64748b"/>
+      <text x="360" y="72" text-anchor="middle" font-size="10" fill="#f1f5f9">x₅₀₀</text>
+      <rect x="468" y="36" width="76" height="60" rx="6" fill="#94a3b8"/>
+      <text x="506" y="72" text-anchor="middle" font-size="10" fill="#fff">x₇₅₀</text>
+      <rect x="614" y="36" width="76" height="60" rx="6" fill="#cbd5e1"/>
+      <text x="652" y="72" text-anchor="middle" font-size="10" fill="#334155">pure noise</text>
+
+      <line x1="108" y1="66" x2="172" y2="66" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#df-arr)"/>
+      <line x1="254" y1="66" x2="318" y2="66" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#df-arr)"/>
+      <line x1="400" y1="66" x2="464" y2="66" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#df-arr)"/>
+      <line x1="546" y1="66" x2="610" y2="66" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#df-arr)"/>
+
+      <text x="20" y="140" font-size="11.5" font-weight="700" fill="#5b21b6">REVERSE (learned) — the network predicts and subtracts the noise</text>
+
+      <rect x="30" y="152" width="76" height="60" rx="6" fill="#c4b5fd"/>
+      <text x="68" y="188" text-anchor="middle" font-size="10" fill="#3b0764">generated!</text>
+      <rect x="176" y="152" width="76" height="60" rx="6" fill="#a78bfa"/>
+      <text x="214" y="188" text-anchor="middle" font-size="10" fill="#3b0764">x̂₂₅₀</text>
+      <rect x="322" y="152" width="76" height="60" rx="6" fill="#8b5cf6"/>
+      <text x="360" y="188" text-anchor="middle" font-size="10" fill="#fff">x̂₅₀₀</text>
+      <rect x="468" y="152" width="76" height="60" rx="6" fill="#7c3aed"/>
+      <text x="506" y="188" text-anchor="middle" font-size="10" fill="#fff">x̂₇₅₀</text>
+      <rect x="614" y="152" width="76" height="60" rx="6" fill="#cbd5e1"/>
+      <text x="652" y="188" text-anchor="middle" font-size="10" fill="#334155">start: noise</text>
+
+      <line x1="610" y1="182" x2="548" y2="182" stroke="#8b5cf6" stroke-width="1.8" marker-end="url(#df-arr-p)"/>
+      <line x1="464" y1="182" x2="402" y2="182" stroke="#8b5cf6" stroke-width="1.8" marker-end="url(#df-arr-p)"/>
+      <line x1="318" y1="182" x2="256" y2="182" stroke="#8b5cf6" stroke-width="1.8" marker-end="url(#df-arr-p)"/>
+      <line x1="172" y1="182" x2="110" y2="182" stroke="#8b5cf6" stroke-width="1.8" marker-end="url(#df-arr-p)"/>
+
+      <rect x="230" y="226" width="250" height="26" rx="6" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.2"/>
+      <text x="355" y="244" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4c1d95">text prompt steers every reverse step</text>
+      <line x1="355" y1="226" x2="355" y2="214" stroke="#8b5cf6" stroke-width="1.4" marker-end="url(#df-arr-p)"/>
+    </svg>
+    <figcaption>Diffusion. The forward process is a fixed mathematical recipe requiring no learning — which is what makes training data free. Only the reverse process is learned, and the text prompt conditions every step of it.</figcaption>
+  </div>
+
+  <div class="eq">Training a diffusion model — the whole loop
+
+  for each training image x₀:
+      t   ~ Uniform(1, T)              <span class="comment">pick a random noise level</span>
+      ε   ~ 𝒩(0, I)                    <span class="comment">sample actual Gaussian noise</span>
+      xₜ  = √(ᾱₜ)·x₀ + √(1−ᾱₜ)·ε       <span class="comment">jump straight to step t — no iteration</span>
+
+      ε̂  = model(xₜ, t, text_embedding)
+      loss = ‖ε − ε̂‖²                  <span class="comment">plain mean squared error</span>
+
+<span class="highlight">That is the entire objective.</span> Predict the noise. The remarkable
+result is that a network good at this task is implicitly a model of
+the whole data distribution, and running it in reverse samples from it.
+
+Note the third line: because the forward process has a closed form,
+you can generate a training example at <span class="highlight">any</span> noise level in one step.
+No sequential simulation is needed during training.</div>
+
+  <h3 id="the-refinements-that-made-it-practical">The Refinements That Made It Practical</h3>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Technique</th><th>Problem it solves</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Latent diffusion</strong></td><td>Diffusing over raw pixels is ruinously expensive</td><td>Compress the image ~8× per side with an autoencoder and diffuse in that latent space. Roughly 64× less computation, with little perceptual loss. This is what made high-resolution generation affordable</td></tr>
+      <tr><td><strong>Classifier-free guidance</strong></td><td>Outputs only loosely follow the prompt</td><td>At each step predict noise both with and without the text, then extrapolate away from the unconditional prediction. One knob trades prompt adherence against diversity — turn it too high and images become oversaturated and stereotyped</td></tr>
+      <tr><td><strong>Better samplers</strong></td><td>1,000 sequential network evaluations per image</td><td>Treat the reverse process as an ordinary differential equation and use a good solver. 20–50 steps for comparable quality</td></tr>
+      <tr><td><strong>Distillation</strong></td><td>Even 20 steps is slow for interactive use</td><td>Train a student to reproduce many teacher steps at once. One to four steps, with some quality cost</td></tr>
+      <tr><td><strong>Diffusion transformers (DiT)</strong></td><td>Convolutional U-Nets do not scale as predictably</td><td>Replace the U-Net backbone with a transformer over latent patches. Scales with the same reliability as language models, which is why current large image and video models use it</td></tr>
+      <tr><td><strong>Flow matching</strong></td><td>Diffusion's noise schedule is fiddly and indirect</td><td>Learn a velocity field that transports noise to data along near-straight paths. Simpler objective, faster sampling, better behaved. The mainstream successor to classical diffusion formulations</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout fact">
+    <strong>Why diffusion for pixels but autoregression for text</strong>
+    Text is discrete, ordered, and causally structured: word <em>n</em> genuinely depends on words 1…n−1, so predicting left to right matches the data. Images are continuous and have no natural ordering — the bottom-right pixel is not "after" the top-left one. Diffusion generates the whole image at once and refines it globally, which suits that structure. The boundary is blurring: autoregressive image models are competitive, particularly inside multimodal models that already generate token sequences, and diffusion language models are an active research direction. Modality does not strictly determine method; it just makes one method a lot more natural.
+  </div>
+</section>
+
+<section>
+  <h2 id="video-adding-time">Video: Adding Time</h2>
+
+  <p>Video is the hardest generative modality, and the difficulty is not merely that there are more pixels. Three problems compound:</p>
+
+  <ul>
+    <li><strong>Temporal consistency.</strong> An object must remain the same object across frames — same identity, same colour, same number of fingers. Generating frames independently produces flickering nonsense.</li>
+    <li><strong>Implicit physics.</strong> Convincing video requires objects to fall, liquids to pour, and shadows to move correctly. Nobody trains this explicitly; it must emerge from the data, and its failures are exactly where generated video still looks wrong.</li>
+    <li><strong>Cost.</strong> A five-second clip at 24 frames per second is 120 images that must be generated <em>jointly</em>. Attention over spacetime patches is expensive in both compute and memory.</li>
+  </ul>
+
+  <p>The dominant approach applies the same recipe with a wider definition of "patch": compress video with a spatiotemporal autoencoder, cut the result into <strong>spacetime patches</strong> spanning several frames, and run a diffusion transformer over the whole sequence. Because the sequence is variable-length, one model can handle different durations, resolutions and aspect ratios — a genuine practical advantage over earlier architectures that fixed all three.</p>
+
+  <div class="callout warn">
+    <strong>What generated video is actually good at, and what it is not</strong>
+    Camera motion, texture, lighting and short human actions are frequently excellent. The reliable failure modes are revealing: object permanence across occlusion (something passes behind a pillar and comes out changed), causal consequence (a glass breaks but the liquid does not spill correctly), counting and text rendering, and long-range narrative consistency. These are not polish problems. They are the signature of a system that has learned the <em>appearance</em> of physics from video without a persistent representation of objects and their state — which is precisely the gap that world-model research is trying to close.
+  </div>
+</section>
+
+<section>
+  <h2 id="audio-and-speech">Audio and Speech</h2>
+
+  <p>Audio splits into two problems with different solutions.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Understanding audio</h4>
+      <p>Convert the waveform to a mel-spectrogram — a time–frequency image — and run an encoder-decoder transformer over it. Trained on very large weakly-labelled multilingual corpora, this yields robust speech recognition and translation that works across accents and noise without task-specific tuning.</p>
+    </div>
+    <div>
+      <h4>Generating audio</h4>
+      <p>A neural codec compresses the waveform into a sequence of discrete codes at a low rate. A transformer then predicts those codes exactly as it would predict words, and the codec decodes them back into sound. Speech becomes a token-prediction problem.</p>
+    </div>
+  </div>
+
+  <p>Neural audio codecs are the key enabling technology, and they are worth understanding. Raw audio at 24 kHz is 24,000 samples per second — hopeless for a transformer. A learned codec compresses it to a few hundred discrete tokens per second while retaining enough information to reconstruct intelligible, natural speech. That compression ratio is what brings audio into the same regime as text.</p>
+
+  <p>The consequential shift has been <strong>speech-to-speech</strong> models. The traditional pipeline — transcribe, feed text to a language model, synthesise a reply — discards tone, emotion, emphasis and timing at the first step, and accumulates latency at every stage. A model operating directly on audio tokens keeps all of it and responds fast enough to interrupt and be interrupted, which is what makes a conversation feel like one rather than like a walkie-talkie.</p>
+</section>
+
+<section>
+  <h2 id="native-multimodal-models">Native Multimodal Models</h2>
+
+  <p>Early multimodal systems bolted a vision encoder onto a finished language model with a small adapter between them. It worked, and the seams showed: visual reasoning was noticeably weaker than textual reasoning, and the model could describe an image better than it could reason about one.</p>
+
+  <p>Current frontier models are <strong>natively multimodal</strong> — trained from the beginning on interleaved text, images, audio and video in a single transformer, with no bolted-on encoder. The differences that follow are substantive rather than cosmetic:</p>
+
+  <ul>
+    <li><strong>Genuine cross-modal reasoning.</strong> Reading a chart and reasoning about its implications, rather than captioning it. Debugging a screenshot of an error. Following a diagram in a document.</li>
+    <li><strong>Interleaved input and output.</strong> A conversation can mix text, images and audio freely in both directions.</li>
+    <li><strong>Transfer across modalities.</strong> Concepts learned in text inform visual understanding and vice versa, because they share representations rather than merely exchanging messages.</li>
+    <li><strong>Context implications.</strong> Images are expensive in tokens — a high-resolution image can cost as much as several pages of text. Video is dramatically worse. This is a real budget constraint, not a footnote, and it shapes what is affordable to build.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>The connection to agents and robots</strong>
+    Native multimodality is what makes an agent able to operate a computer by looking at the screen (see <a href="agents.html">Agentic AI</a>) and what makes a robot able to follow a spoken instruction about an object it can see (see <a href="robotics.html">AI &amp; Robotics</a>). In both cases the model is doing the same thing: taking pixels and language into a shared representation and emitting actions. The vision-language-action models that control robots are, architecturally, multimodal models with an unusual output vocabulary.
+  </div>
+</section>
+
+<section>
+  <h2 id="world-models">World Models</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A world model is a neural network that answers "what happens next?" Given the current state and a proposed action, it predicts the resulting state. That lets a system plan by imagining consequences instead of trying them — which is exactly what you want when trying things is slow, expensive, or dangerous.</p>
+  </div>
+
+  <p>The idea is old in reinforcement learning: an agent with a learned model of its environment can search over imagined futures rather than acting in the real one. What is new is that video generation models have turned out to be surprisingly capable world models, because generating physically plausible video requires implicitly modelling how the world behaves. Train hard enough on prediction, and physics appears as a side effect.</p>
+
+  <p>Where this matters:</p>
+  <ul>
+    <li><strong>Robotics.</strong> Plan a manipulation by imagining outcomes; generate synthetic training data in imagined environments; evaluate a policy without a physical robot.</li>
+    <li><strong>Interactive environments.</strong> Playable worlds generated frame by frame in response to controller input, with no explicit game engine — a striking demonstration that state can be maintained implicitly.</li>
+    <li><strong>Autonomous vehicles.</strong> Simulating rare and dangerous scenarios that cannot ethically be collected on public roads.</li>
+    <li><strong>Reasoning about the physical world.</strong> Answering "will this stack of boxes fall over?" by prediction rather than by pattern-matching text.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>The honest limitation</strong>
+    Video models produce sequences that <em>look</em> physical without any guarantee of being physical. They have no explicit state, no conservation laws, no object registry — and they drift over long horizons, gradually violating constraints they appeared to respect at the start. For entertainment this is a quality issue. For a robot planning a real action, or a vehicle predicting a real trajectory, it is a safety issue. Whether learned world models can reach the accuracy that physical control demands, or whether they need explicit structure bolted on, is one of the genuinely open questions in AI right now — and the answer will shape how fast robotics moves.
+  </div>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why is diffusion training data effectively free, when the model is learning to generate images?</summary>
+    <p>Because the forward noising process is a fixed formula you control. Take any image, pick a random noise level, add exactly that much noise, and you have a labelled example: the input is the noisy image and the target is the noise you added. No human labelling is involved.</p></details>
+    <details><summary>Why does latent diffusion cut cost by roughly 64× rather than 8×?</summary>
+    <p>The autoencoder compresses by about 8× in each spatial dimension, so the area — the number of positions the model must process — falls by roughly 8², or 64×.</p></details>
+    <details><summary>Why does a generated video get object permanence wrong when it gets lighting right?</summary>
+    <p>Lighting and texture are local, frame-adjacent statistics the model sees constantly. Object permanence requires maintaining a persistent representation of an object through occlusion — state the architecture does not explicitly keep. It has learned the appearance of the world, not a model of the things in it.</p></details>
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Every modality becomes a sequence of vectors — image patches, spacetime patches, audio codec tokens — after which the same transformer machinery applies.</li>
+    <li>Contrastive image-text training builds a shared embedding space, which is what lets text steer image generation and enables zero-shot visual classification.</li>
+    <li>Diffusion learns to predict the noise added by a fixed forward process; running that prediction in reverse generates samples. Training data is free by construction.</li>
+    <li>Latent diffusion, classifier-free guidance, better ODE samplers, transformer backbones and flow matching are the refinements that made it practical.</li>
+    <li>Video is hard because of temporal consistency, implicit physics and joint generation cost — and its failure modes reveal what the model has not represented.</li>
+    <li>World models let systems plan by prediction, but they look physical without being physical, which is fine for media and a genuine problem for control.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

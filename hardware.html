@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Hardware | Learn AI</title>
+  <meta name="description" content="AI Hardware — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html" class="active">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="hardware"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,16 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>Why CPUs Cannot Train AI Models</h2>
+  <h2 id="why-cpus-cannot-train-ai-models">Why CPUs Cannot Train AI Models</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A CPU is a small team of brilliant generalists who can each solve any problem, one careful step at a time. A GPU is an army of tens of thousands of specialists who can only do arithmetic, but all at once. Training a neural network is billions of identical multiplications with no decisions to make — exactly the wrong job for the generalists and exactly the right one for the army.</p>
+  </div>
+
   <p>A modern server CPU (e.g. Intel Xeon Platinum 8592+) has 64 cores running at 3.9 GHz with AVX-512 SIMD units. AVX-512 can process 16 float32 values simultaneously per core. Total FP32 throughput:</p>
 
   <div class="eq">64 cores × 2 (FMA) × 16 floats × 3.9 GHz = ~8 TFLOPS peak FP32
@@ -54,9 +63,9 @@ Memory bandwidth:
 </section>
 
 <section>
-  <h2>GPU Architecture</h2>
+  <h2 id="gpu-architecture">GPU Architecture</h2>
 
-  <h3>SIMT Execution Model</h3>
+  <h3 id="simt-execution-model">SIMT Execution Model</h3>
   <p>A GPU executes threads in groups of 32 called <strong>warps</strong>. All 32 threads in a warp execute the same instruction simultaneously on different data — Single Instruction, Multiple Thread (SIMT). This is highly efficient when all threads follow the same code path. Branch divergence (threads taking different if/else paths) serialises execution, reducing throughput by up to 32×.</p>
 
   <div class="eq">H100 SM (Streaming Multiprocessor) count: 132 SMs
@@ -72,7 +81,7 @@ Maximum resident threads per SM: 2,048
 Total CUDA cores: 132 × 128 = 16,896
 Total Tensor Core units: 132 × 4 = 528</div>
 
-  <h3>Tensor Cores</h3>
+  <h3 id="tensor-cores">Tensor Cores</h3>
   <p>Tensor Cores are specialised matrix-multiply-accumulate (MMA) units introduced in NVIDIA Volta (2017). They compute D = A × B + C on 16×16 or 8×16 matrices in a single operation, far faster than using CUDA cores for the same computation:</p>
 
   <div class="eq">H100 4th-gen Tensor Core operation (per cycle per unit):
@@ -89,7 +98,7 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
 </section>
 
 <section>
-  <h2>NVIDIA GPU Generations</h2>
+  <h2 id="nvidia-gpu-generations">NVIDIA GPU Generations</h2>
   <div class="table-wrap">
   <table>
     <thead><tr><th>GPU</th><th>Year</th><th>Architecture</th><th>CUDA Cores</th><th>BF16 TFLOPS</th><th>HBM</th><th>Memory BW</th><th>NVLink BW</th><th>TDP</th></tr></thead>
@@ -97,9 +106,17 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
       <tr><td><strong>A100 SXM4</strong></td><td>2020</td><td>Ampere</td><td>6,912</td><td>312</td><td>HBM2e 80GB</td><td>2,000 GB/s</td><td>600 GB/s</td><td>400W</td></tr>
       <tr><td><strong>H100 SXM5</strong></td><td>2022</td><td>Hopper</td><td>16,896</td><td>1,979</td><td>HBM3 80GB</td><td>3,350 GB/s</td><td>900 GB/s</td><td>700W</td></tr>
       <tr><td><strong>H200 SXM</strong></td><td>2024</td><td>Hopper</td><td>16,896</td><td>1,979</td><td>HBM3e 141GB</td><td>4,800 GB/s</td><td>900 GB/s</td><td>700W</td></tr>
-      <tr><td><strong>B200 SXM</strong></td><td>2025</td><td>Blackwell</td><td>~20,000</td><td>~4,500</td><td>HBM3e 192GB</td><td>8,000 GB/s</td><td>1,800 GB/s</td><td>1,000W</td></tr>
+      <tr><td><strong>B200 SXM</strong></td><td>2024–25</td><td>Blackwell</td><td>~20,000</td><td>~4,500</td><td>HBM3e 192GB</td><td>8,000 GB/s</td><td>1,800 GB/s</td><td>1,000W</td></tr>
+      <tr><td><strong>GB300 / B300</strong></td><td>2025</td><td>Blackwell Ultra</td><td>~20,000</td><td>~5,000</td><td>HBM3e 288GB</td><td>~8,000 GB/s</td><td>1,800 GB/s</td><td>~1,400W</td></tr>
+      <tr><td><strong>Rubin (VR200)</strong></td><td>2026 <em>(announced)</em></td><td>Rubin</td><td>—</td><td>—</td><td>HBM4 ~288GB</td><td>~13–20 TB/s</td><td>3,600 GB/s</td><td>&gt;1,800W</td></tr>
     </tbody>
+    <caption>Vendor-published or announced figures; peak numbers are marketing peaks under ideal conditions and are not achievable in practice. Rubin figures are from public roadmap disclosures and should be treated as targets, not measurements.</caption>
   </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>Read peak FLOPS with suspicion</strong>
+    Vendors increasingly quote peak throughput at the lowest supported precision, and sometimes for a whole multi-die package or an entire rack rather than a single chip. A "20 PFLOPS" claim may be FP4 with structured sparsity assumed, across two dies. Comparing generations honestly means fixing the precision, fixing the unit (die, package, or rack), and ignoring sparsity multipliers. The number that actually predicts training throughput for most workloads is BF16 or FP8 dense, and the number that predicts <em>inference</em> throughput is usually memory bandwidth, not FLOPS at all.
   </div>
 
   <div class="callout fact">
@@ -107,7 +124,7 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
     The H200 uses the same Hopper GPU die as the H100, but with HBM3e (next-gen HBM) instead of HBM3. Memory capacity jumps from 80 GB to 141 GB (75% increase), and bandwidth from 3.35 TB/s to 4.8 TB/s (43% increase). This is primarily a win for inference: larger KV caches, larger batch sizes, more memory-bandwidth-bound throughput. Training FLOPs are unchanged — the same 1,979 TFLOPS BF16.
   </div>
 
-  <h3>Blackwell Architecture (B200)</h3>
+  <h3 id="blackwell-architecture-b200">Blackwell Architecture (B200)</h3>
   <p>The B200 (2025) introduces a dual-die design — two Blackwell GPU dies connected via NVLink with 1.8 TB/s die-to-die bandwidth. Together they function as a single logical GPU:</p>
   <div class="eq">B200 SXM:
   - 2× Blackwell dies per package (connected via 10 TBs NVLink-C2C)
@@ -118,10 +135,31 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
   - GB200 NVL72 rack: 36 Grace CPU + 72 B200 GPU modules
     → 1,440 TB/s NVLink fabric within a rack
     → 720 GB/s per B200 of NVLink bandwidth</div>
+
+  <h3 id="the-rack-became-the-unit-of-compute">The Rack Became the Unit of Compute</h3>
+  <p>The most consequential change in the Blackwell generation is not the die — it is that NVIDIA stopped selling servers and started selling racks. A GB200 NVL72 rack presents 72 GPUs joined by a single NVLink domain, so that from software's point of view the rack behaves like one very large accelerator with a shared, coherent pool of memory. This matters enormously for two workloads: training very large mixture-of-experts models, where expert weights must be sharded across many devices, and serving long-context reasoning models, where the KV cache exceeds any single GPU's memory.</p>
+  <p>It also changes the data centre. A 72-GPU rack draws on the order of 120 kW, which is roughly ten times the density of a conventional air-cooled rack and beyond what air can remove. Direct-to-chip liquid cooling stops being an optimisation and becomes a requirement, and power distribution moves toward higher-voltage DC architectures. See <a href="training-datacenter.html">Training Data Centers</a> for what that does to the building.</p>
+
+  <h3 id="the-published-roadmap">The Published Roadmap</h3>
+  <ul class="timeline">
+    <li><span class="t-when">2020–2022</span><span class="t-title">Ampere → Hopper</span>
+      <p>A100 to H100. Tensor core generations three and four; FP8 arrives with Hopper; the transformer era's workhorses.</p></li>
+    <li><span class="t-when">2024–2025</span><span class="t-title">Blackwell and Blackwell Ultra</span>
+      <p>Dual-die packages, FP4 tensor cores, HBM3e, and the shift to rack-scale NVLink domains. Blackwell Ultra (GB300) adds memory capacity and power headroom aimed squarely at long-context reasoning inference.</p></li>
+    <li class="future"><span class="t-when">2026</span><span class="t-title">Rubin</span>
+      <p>Announced to pair a new GPU with a new Arm CPU (Vera), HBM4, and roughly doubled NVLink bandwidth. HBM4 is the headline change: the interface widens to 2,048 bits per stack, which is the single biggest lever available for inference throughput.</p></li>
+    <li class="future"><span class="t-when">2027 and beyond</span><span class="t-title">Rubin Ultra, then Feynman</span>
+      <p>Named on public roadmaps with an annual cadence. Treat named future parts as statements of intent that shape customer purchasing decisions as much as they describe silicon — announcing a roadmap is itself a competitive act.</p></li>
+  </ul>
+
+  <div class="callout fact">
+    <strong>The annual cadence is a strategic weapon</strong>
+    NVIDIA moved from a roughly two-year architecture cycle to an annual one. This is punishing for competitors — a rival that takes three years to ship a chip competitive with last year's part is permanently behind — and it is punishing for customers too, since it shortens the economically useful life of hardware they have just bought. That second effect is exactly the depreciation argument discussed on the <a href="economics.html">Economics</a> page. A faster roadmap is good for the industry's capability and awkward for its balance sheets.
+  </div>
 </section>
 
 <section>
-  <h2>Google TPUs: Custom AI ASICs</h2>
+  <h2 id="google-tpus-custom-ai-asics">Google TPUs: Custom AI ASICs</h2>
   <p>Google developed Tensor Processing Units (TPUs) internally starting in 2015, motivated by the explosive growth of TensorFlow inference compute. Unlike GPUs, TPUs are purpose-built for tensor operations with no pretence of general-purpose computing.</p>
 
   <div class="table-wrap">
@@ -132,11 +170,18 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
       <tr><td><strong>TPU v5e</strong></td><td>2023</td><td>197</td><td>16 GB</td><td>ICI 1.6 TB/s</td><td>Google Cloud, inference focus</td></tr>
       <tr><td><strong>TPU v5p</strong></td><td>2023</td><td>459</td><td>95 GB</td><td>ICI 4.8 TB/s</td><td>Training, 8,960 chip pods</td></tr>
       <tr><td><strong>Trillium (v6e)</strong></td><td>2024</td><td>~918</td><td>32 GB</td><td>ICI &gt;2 TB/s</td><td>Production at Google scale</td></tr>
+      <tr><td><strong>Ironwood (v7)</strong></td><td>2025</td><td>~4,600 (FP8)</td><td>192 GB HBM3e</td><td>ICI ~1.2 TB/s</td><td>Inference-first; pods of up to ~9,200 chips</td></tr>
     </tbody>
+    <caption>Google publishes TPU figures selectively and changes the reported precision between generations, so cross-generation comparison requires care. Ironwood is explicitly positioned for large-scale inference and reasoning workloads rather than for training alone.</caption>
   </table>
   </div>
 
-  <h3>TPU Architecture vs GPU</h3>
+  <div class="callout">
+    <strong>Why Google's vertical integration matters more than the specifications</strong>
+    TPUs let Google train and serve its frontier models without paying an accelerator vendor's margin, and without competing for allocation in a supply-constrained market. That is a structural cost advantage no amount of per-chip benchmarking captures. It is also why every other hyperscaler has built its own silicon, and why NVIDIA's ~90% share of the merchant accelerator market understates how much AI compute it actually touches — a large and growing fraction of the world's AI compute now runs on chips that were never sold to anyone.
+  </div>
+
+  <h3 id="tpu-architecture-vs-gpu">TPU Architecture vs GPU</h3>
   <div class="two-col">
     <div>
       <h4>GPU (H100)</h4>
@@ -148,7 +193,7 @@ INT8 Tensor Core throughput (H100): 3,958 TOPS</div>
     </div>
   </div>
 
-  <h3>TPU Systolic Array</h3>
+  <h3 id="tpu-systolic-array">TPU Systolic Array</h3>
   <div class="eq">A systolic array computes C = A × B by streaming A and B through an array of PEs:
 
 Example: 128×128 systolic array
@@ -162,7 +207,7 @@ This regularity makes the TPU extremely area and power efficient for GEMM.</div>
 </section>
 
 <section>
-  <h2>Memory Hierarchy</h2>
+  <h2 id="memory-hierarchy">Memory Hierarchy</h2>
   <p>Every GPU operation navigates a memory hierarchy. Bandwidth and capacity trade off at every level:</p>
 
   <div class="diagram">
@@ -220,7 +265,7 @@ This regularity makes the TPU extremely area and power efficient for GEMM.</div>
 </section>
 
 <section>
-  <h2>High Bandwidth Memory (HBM)</h2>
+  <h2 id="high-bandwidth-memory-hbm">High Bandwidth Memory (HBM)</h2>
   <p>Conventional GDDR memory (used in gaming GPUs) achieves 500–700 GB/s by using many narrow channels at high frequency. HBM takes a different approach: stack multiple DRAM die vertically and connect them through-silicon vias (TSVs):</p>
 
   <div class="eq">HBM3 structure (one stack):
@@ -239,14 +284,29 @@ HBM evolution:
   HBM2 (2016): 256 GB/s
   HBM2e (2019): 460 GB/s (A100 uses 6 stacks = 2,000 GB/s)
   HBM3 (2022): 819 GB/s (H100)
-  HBM3e (2024): 1,200 GB/s per stack (H200/B200 use 8 stacks)</div>
+  HBM3e (2024): ~1,200 GB/s per stack (H200/B200 use 8 stacks)
+  HBM4 (2026):  ~2,000 GB/s per stack — the interface doubles from
+                1,024 to <span class="highlight">2,048 bits</span>, the first width change since HBM1
+
+Why HBM4's width change is the important one:
+  Bandwidth = bus width × transfer rate. Vendors have been raising the
+  transfer rate for a decade, and it is running into signal-integrity and
+  power limits. Doubling the width sidesteps that — at the cost of far
+  more through-silicon vias, a harder interposer, and tighter packaging
+  tolerances, which is why <span class="highlight">advanced packaging capacity, not wafer capacity,
+  has been the binding constraint on accelerator supply.</span> See the Foundry page.
+
+HBM is also a genuine oligopoly: SK Hynix, Micron and Samsung.
+Qualification for a given accelerator takes years, so supply agreements
+are signed generations in advance and pricing power sits with the memory
+makers to an extent unusual in semiconductors.</div>
 </section>
 
 <section>
-  <h2>The CUDA Software Stack</h2>
+  <h2 id="the-cuda-software-stack">The CUDA Software Stack</h2>
   <p>CUDA (Compute Unified Device Architecture), introduced by NVIDIA in 2006, is the programming model and runtime that makes GPUs programmable for general compute. It is the primary reason NVIDIA dominates AI — AMD's ROCm and Intel's oneAPI are years behind in ecosystem maturity.</p>
 
-  <h3>CUDA Programming Model</h3>
+  <h3 id="cuda-programming-model">CUDA Programming Model</h3>
   <div class="eq">CUDA thread hierarchy:
   Thread: single execution unit, has private registers
   Warp:   32 threads, executed in lockstep (SIMT)
@@ -263,7 +323,7 @@ Example: Matrix multiplication kernel for C = A × B
   → Reduces HBM accesses by factor of 32 (tile size)
   → This tiling is why GPU matrix multiply can approach theoretical peak throughput</div>
 
-  <h3>Occupancy and Efficiency</h3>
+  <h3 id="occupancy-and-efficiency">Occupancy and Efficiency</h3>
   <div class="eq">Occupancy = active warps / maximum resident warps
 
 Higher occupancy hides latency: while one warp waits for memory,
@@ -276,7 +336,7 @@ Occupancy limited by:
     max blocks = 228/50 = 4 blocks × 1,024 threads = 4,096 threads → 2× oversubscribed, fine
   - Instruction throughput: if compute-bound, occupancy above 50% gives diminishing returns</div>
 
-  <h3>Key Libraries in the CUDA Ecosystem</h3>
+  <h3 id="key-libraries-in-the-cuda-ecosystem">Key Libraries in the CUDA Ecosystem</h3>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Library</th><th>Function</th><th>Why it matters</th></tr></thead>
@@ -291,12 +351,27 @@ Occupancy limited by:
   </table>
   </div>
 
-  <h3>Why AMD Cannot Displace NVIDIA</h3>
-  <p>AMD's ROCm provides CUDA-equivalent APIs (HIP — Heterogeneous Interface for Portability), and MI300X has competitive raw specs (192 GB HBM3, 5.3 TB/s bandwidth). The barrier is software: PyTorch, TensorRT, cuDNN, and thousands of operator kernels are deeply optimised for CUDA. Porting and re-optimising this ecosystem takes years. MI300X achieves ~80% of H100 performance on standard benchmarks but lags on custom operations that rely on NVIDIA-specific kernel tuning. The gap is narrowing but NVIDIA's ecosystem moat is substantial.</p>
+  <h3 id="the-competition-and-why-the-moat-held-so-long">The Competition, and Why the Moat Held So Long</h3>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>NVIDIA's real advantage was never only the chips. It was that twenty years of software — libraries, compilers, tuned kernels, tutorials, and the accumulated habits of every machine-learning engineer alive — assumed NVIDIA hardware. A competitor has to beat all of that, not just the silicon. What has changed recently is that most people no longer write kernels at all; they call PyTorch or a serving engine, and those now have working non-NVIDIA backends.</p>
+  </div>
+
+  <p><strong>AMD</strong> has closed much of the hardware gap. The MI300X line led on memory capacity and bandwidth — genuinely advantageous for inference, where memory is usually the constraint — and successive generations have narrowed the compute gap while ROCm has matured from "technically supported" to "used in production by serious customers." Very large accelerator commitments from major AI developers have followed. The remaining disadvantage is concentrated in training at the largest scales, where NVIDIA's networking, collective-communication libraries and rack-scale integration remain ahead, and where the cost of a stalled 20,000-GPU run makes engineering teams conservative.</p>
+
+  <p><strong>Custom silicon</strong> is the larger competitive story. Every hyperscaler now designs its own accelerators — Google's TPUs, Amazon's Trainium and Inferentia, Microsoft's Maia, Meta's MTIA — typically with Broadcom or Marvell as design partner. These chips do not need to beat NVIDIA on any benchmark. They need only to be good enough at the operator's own dominant workload to be cheaper in total cost of ownership, and they answer to an internal customer who will do the porting work.</p>
+
+  <p><strong>Specialist inference hardware</strong> attacks from a third direction. Wafer-scale processors and architectures that keep model weights entirely in on-chip SRAM sidestep HBM bandwidth altogether, delivering token generation speeds that HBM-based designs cannot match. They are constrained by the model sizes their on-chip memory can hold, so they occupy a real but bounded niche — a niche that matters more as reasoning models make output tokens the dominant cost.</p>
+
+  <div class="callout warn">
+    <strong>Where the moat is now thinnest</strong>
+    Training at frontier scale still strongly favours NVIDIA: the networking, the collectives, the rack-scale NVLink domains and the operational maturity compound. Inference is a different market. Serving is dominated by a handful of engines (vLLM, SGLang, TensorRT-LLM) that abstract the hardware, the workload is memory-bandwidth-bound rather than kernel-bound, and buyers are acutely price-sensitive because inference is a recurring cost rather than a capital one. If NVIDIA's share erodes, it will erode there first — and inference is where the volume is heading.
+  </div>
 </section>
 
 <section>
-  <h2>Interconnects Summary</h2>
+  <h2 id="interconnects-summary">Interconnects Summary</h2>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Interconnect</th><th>Bandwidth</th><th>Scope</th><th>Latency</th><th>Protocol</th></tr></thead>
@@ -306,16 +381,42 @@ Occupancy limited by:
       <tr><td><strong>NVLink-C2C</strong></td><td>900 GB/s (B200)</td><td>CPU ↔ GPU (Grace-Hopper)</td><td>&lt;1 μs</td><td>Proprietary</td></tr>
       <tr><td><strong>InfiniBand NDR</strong></td><td>400 Gb/s = 50 GB/s</td><td>Server ↔ Server</td><td>0.5 μs</td><td>RDMA</td></tr>
       <tr><td><strong>Ethernet 400GbE</strong></td><td>400 Gb/s = 50 GB/s</td><td>Server ↔ Server</td><td>5–50 μs</td><td>TCP/IP or RoCE</td></tr>
+      <tr><td><strong>NVLink 5</strong></td><td>1,800 GB/s (Blackwell)</td><td>GPU ↔ GPU across a 72-GPU rack domain</td><td>&lt;1 μs</td><td>Proprietary</td></tr>
+      <tr><td><strong>InfiniBand XDR</strong></td><td>800 Gb/s = 100 GB/s</td><td>Server ↔ Server</td><td>~0.5 μs</td><td>RDMA</td></tr>
+      <tr><td><strong>Ethernet 800GbE / Ultra Ethernet</strong></td><td>800 Gb/s = 100 GB/s</td><td>Server ↔ Server</td><td>1–10 μs (RoCE, tuned)</td><td>RoCEv2 / UEC</td></tr>
       <tr><td><strong>TPU ICI</strong></td><td>4.8 TB/s (v5p)</td><td>TPU ↔ TPU (chip-to-chip)</td><td>&lt;1 μs</td><td>Google proprietary</td></tr>
     </tbody>
   </table>
   </div>
+
+  <div class="callout fact">
+    <strong>Ethernet is eating the AI network</strong>
+    InfiniBand won the first round of AI networking on latency and its mature RDMA implementation. Ethernet is winning the second, for unglamorous reasons: more suppliers, lower cost, existing operational expertise, and a specification effort (the Ultra Ethernet Consortium) explicitly targeting the congestion control and lossless behaviour that AI collectives require. At the very largest scales the two now coexist — a proprietary high-bandwidth domain inside the rack, Ethernet between racks. The next frontier is optics: as clusters grow, the power and reach limits of copper push toward co-packaged optical interfaces, where the fibre terminates on the switch package itself.
+  </div>
 </section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>GPUs win because neural network training is almost entirely dense matrix multiplication, which is embarrassingly parallel and needs no branch prediction or out-of-order execution.</li>
+    <li>Tensor cores, not CUDA cores, do the real work: they perform small matrix multiply-accumulate operations as single instructions, at an order of magnitude higher throughput.</li>
+    <li>Peak FLOPS figures are quoted at ever-lower precisions and ever-larger units. Fix the precision and the unit before comparing anything.</li>
+    <li>For inference, memory bandwidth predicts performance better than FLOPS — which is why HBM generations, and HBM4's doubled bus width, matter so much.</li>
+    <li>The unit of compute is becoming the rack, not the chip, which forces liquid cooling and new power architectures into the data centre.</li>
+    <li>NVIDIA's moat is strongest in frontier training and weakest in inference, where serving engines abstract the hardware and buyers are price-sensitive.</li>
+  </ul>
+</div>
 
 </main>
 
 <footer>
-  <p>Learn AI · <a href="inference-datacenter.html">← Inference DCs</a> · <a href="foundry.html">Next: Foundry →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

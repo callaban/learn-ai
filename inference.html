@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inference | Learn AI</title>
+  <meta name="description" content="Inference — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html" class="active">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="inference"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,11 +34,19 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>What Inference Is</h2>
+  <h2 id="what-inference-is">What Inference Is</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Training is building the model; inference is using it. When you send a prompt, the model reads your whole message in one efficient parallel pass, then produces the reply one token at a time — and each new token requires reading every single one of its weights out of memory again. That second phase is why generation feels like typing rather than appearing instantly, and why the entire engineering discipline of serving exists.</p>
+  </div>
+
   <p>Training updates weights; inference uses them. Given fixed model parameters θ, inference computes fθ(x) for a new input x — a pure forward pass with no gradient computation. But for autoregressive language models, inference has a distinctive structure that creates unique engineering challenges.</p>
 
-  <h3>Autoregressive Generation</h3>
+  <h3 id="autoregressive-generation">Autoregressive Generation</h3>
   <p>A language model does not generate the full response in one shot. It generates one token at a time, each token conditioned on all previous tokens — including those it just generated:</p>
 
   <div class="eq">Given prompt x₁, x₂, …, xₙ:
@@ -58,7 +67,7 @@ A 500-token response = 500 sequential forward passes.</div>
 </section>
 
 <section>
-  <h2>KV Cache</h2>
+  <h2 id="kv-cache">KV Cache</h2>
   <p>In the transformer's self-attention mechanism, every token attends to every previous token. Computing attention naively at every decode step would require recomputing the Key (K) and Value (V) vectors for all past tokens from scratch — O(n²) work per sequence of length n.</p>
 
   <p>The <strong>KV cache</strong> stores the K and V tensors for all past tokens in GPU memory, so each decode step only computes K, V for the single new token and reads the cached vectors for context:</p>
@@ -80,19 +89,19 @@ For 4,096 context tokens: 2.62 MB × 4096 ≈ 10.7 GB of KV cache</div>
 
   <p>The KV cache trades memory for compute — a fundamental tradeoff. Longer context windows require proportionally more KV cache memory, which is why serving very long contexts (128K+ tokens) at scale is expensive: the KV cache alone can dominate GPU memory.</p>
 
-  <h3>PagedAttention</h3>
+  <h3 id="pagedattention">PagedAttention</h3>
   <p>Standard KV caching allocates a contiguous block of memory per request at maximum context length — leading to severe internal fragmentation when requests have variable lengths. The vLLM framework introduced <strong>PagedAttention</strong> (2023), which manages KV cache in non-contiguous "pages" (blocks of ~16 tokens), analogous to virtual memory paging in an OS. Requests share physical pages, and pages are allocated on demand. This improves GPU memory utilisation from ~30% to ~90% on typical workloads, increasing throughput 2–4×.</p>
 </section>
 
 <section>
-  <h2>Sampling Strategies</h2>
+  <h2 id="sampling-strategies">Sampling Strategies</h2>
   <p>The model outputs a distribution over the vocabulary — a vector of logits zᵥ for each of V possible next tokens. The <strong>sampler</strong> converts this into a single token choice:</p>
 
-  <h3>Greedy Decoding</h3>
+  <h3 id="greedy-decoding">Greedy Decoding</h3>
   <div class="eq">token = argmax_v softmax(z_v)   [always picks the most probable token]</div>
   <p>Fast and deterministic. Poor for open-ended generation — tends toward repetitive, bland text.</p>
 
-  <h3>Temperature Sampling</h3>
+  <h3 id="temperature-sampling">Temperature Sampling</h3>
   <div class="eq">P(token = v) = softmax(z_v / T)_v = e^{z_v/T} / Σ_w e^{z_w/T}
 
 T → 0  : greedy decoding (argmax)
@@ -100,7 +109,7 @@ T = 1  : sample from model's distribution as trained
 T > 1  : flatten distribution, more random/creative
 T → ∞  : uniform distribution over all tokens</div>
 
-  <h3>Top-k and Top-p (Nucleus) Sampling</h3>
+  <h3 id="top-k-and-top-p-nucleus-sampling">Top-k and Top-p (Nucleus) Sampling</h3>
   <div class="eq">Top-k: restrict sampling to the k highest-probability tokens, renormalise, sample.
         Typical k = 40–100.
 
@@ -114,7 +123,7 @@ Top-p: sort tokens by probability (descending).
 </section>
 
 <section>
-  <h2>Quantisation</h2>
+  <h2 id="quantisation">Quantisation</h2>
   <p>Model weights stored in FP16 or BF16 require 2 bytes per parameter. Quantisation compresses weights to lower precision, reducing both memory footprint and — critically — memory bandwidth consumption during decode (which is the primary bottleneck).</p>
 
   <div class="eq">Quantisation maps floating-point values to integers:
@@ -137,12 +146,12 @@ GPTQ / AWQ: group-wise quantisation, calibrated on small dataset.
     INT8 quantisation typically degrades model quality by 0.1–0.5% on benchmarks — often acceptable. INT4 can degrade by 1–3% on complex tasks. Careful calibration (AWQ, GPTQ, SmoothQuant) narrows this gap significantly. FP8 (8-bit floating point, E4M3 format) is now natively supported on H100/H200 GPUs and offers INT8 compression with FP16-comparable quality because the exponent representation is retained.
   </div>
 
-  <h3>Activation-Weight vs Weight-Only Quantisation</h3>
+  <h3 id="activation-weight-vs-weight-only-quantisation">Activation-Weight vs Weight-Only Quantisation</h3>
   <p>During decode, the bottleneck is reading weight matrices from HBM into the GPU's SMs — weight-only INT4 (W4A16) maximally reduces this read, then dequantises to FP16 for the actual matrix multiplication. During prefill, compute is the bottleneck, so W8A8 (both weights and activations in INT8) improves compute throughput on tensor cores.</p>
 </section>
 
 <section>
-  <h2>Speculative Decoding</h2>
+  <h2 id="speculative-decoding">Speculative Decoding</h2>
   <p>Speculative decoding (Leviathan et al., 2022) uses a small, fast <em>draft</em> model to generate K candidate tokens, which the large <em>target</em> model then verifies in a single batched forward pass:</p>
 
   <div class="eq">Algorithm:
@@ -165,7 +174,7 @@ GPTQ / AWQ: group-wise quantisation, calibrated on small dataset.
 </section>
 
 <section>
-  <h2>Inference Metrics and Service-Level Objectives</h2>
+  <h2 id="inference-metrics-and-service-level-objectives">Inference Metrics and Service-Level Objectives</h2>
 
   <div class="specs-grid">
     <div class="spec-card"><span class="val">TTFT</span><div class="lbl">Time to First Token — latency from request submission to first token appearing. Includes queueing + prefill. Target: &lt;200 ms for chat.</div></div>
@@ -174,7 +183,7 @@ GPTQ / AWQ: group-wise quantisation, calibrated on small dataset.
     <div class="spec-card"><span class="val">MBU</span><div class="lbl">Memory Bandwidth Utilisation — decode is memory-bound; H100 peak is 3.35 TB/s. Good inference engines achieve 60–80% MBU.</div></div>
   </div>
 
-  <h3>The Batching Tradeoff</h3>
+  <h3 id="the-batching-tradeoff">The Batching Tradeoff</h3>
   <p>Processing multiple requests simultaneously (batching) increases throughput — the GPU is better utilised. But it adds latency for individual requests (requests wait in queue, longer decodes, larger KV caches). The optimal batch size maximises throughput while staying within latency SLOs. <strong>Continuous batching</strong> (Orca, 2022) dynamically adds new requests to a running batch as existing ones complete — rather than waiting for all requests in a batch to finish before accepting new ones. This dramatically improves GPU utilisation for variable-length workloads.</p>
 
   <div class="diagram">
@@ -239,7 +248,51 @@ GPTQ / AWQ: group-wise quantisation, calibrated on small dataset.
 </section>
 
 <section>
-  <h2>Compute vs Memory Bandwidth: The Core Tradeoff</h2>
+  <h2 id="serving-in-the-reasoning-era">Serving in the Reasoning Era</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Models that think before answering changed what serving means. A chatbot reply might be 300 tokens. A reasoning model may generate 10,000 tokens of internal working that the user never sees before writing its actual answer. Since generating tokens is the expensive, memory-bandwidth-bound half of inference, this multiplied the cost and latency of a single request by an order of magnitude — and forced a redesign of how serving systems are built.</p>
+  </div>
+
+  <p>Three consequences follow directly, and together they account for most of the change in inference infrastructure since 2024.</p>
+
+  <h3 id="prefill-and-decode-want-different-hardware">Prefill and Decode Want Different Hardware</h3>
+  <p>The two phases of inference have opposite profiles. <strong>Prefill</strong> processes the whole prompt in parallel: it is compute-bound, saturates tensor cores, and wants raw FLOPS. <strong>Decode</strong> generates one token at a time: it is memory-bandwidth-bound, leaves the tensor cores idle, and wants bandwidth and capacity. Running both on the same GPUs means each phase interferes with the other — a long prefill stalls every decode in the batch, producing the stuttering output users notice.</p>
+
+  <p><strong>Disaggregated serving</strong> splits them onto separate pools of hardware. Prefill workers process prompts and hand the resulting KV cache to decode workers over a fast interconnect. Each pool can be sized, batched and even provisioned with different accelerators according to its own bottleneck. The cost is moving the KV cache between pools, which is precisely why high-bandwidth interconnects matter as much for inference as they do for training.</p>
+
+  <div class="eq">Why the two phases do not share nicely
+
+  PREFILL   10,000-token prompt, batch 1
+    · every token processed in parallel  → large matrix × matrix
+    · arithmetic intensity is high       → compute-bound
+    · one long prefill can occupy a GPU for hundreds of milliseconds
+
+  DECODE    1 token at a time, batch 256
+    · one token per sequence             → matrix × vector, per sequence
+    · arithmetic intensity ≈ batch size  → memory-bandwidth-bound
+    · needs a steady, uninterrupted cadence to keep latency smooth
+
+  Mixed on one GPU: <span class="highlight">the prefill blocks the decodes.</span> Every user in the
+  batch sees their tokens pause. This is the "stutter" in poorly tuned
+  serving systems, and it is why chunked prefill and disaggregation exist.</div>
+
+  <h3 id="output-tokens-dominate-the-bill">Output Tokens Dominate the Bill</h3>
+  <p>Providers price input tokens far below output tokens — often by a factor of three to ten — and the asymmetry is not arbitrary. Input tokens are processed once, in parallel, at high arithmetic intensity. Output tokens each require a full pass over the model weights. Reasoning tokens are output tokens. A reasoning model that thinks for 8,000 tokens before writing a 200-token answer has produced 8,200 billable output tokens, and the user sees 200 of them.</p>
+  <p>This is why <strong>reasoning-effort controls</strong> have become standard product surface, and why the routing decision — should this request think, and for how long? — is now a first-class engineering concern rather than a configuration detail.</p>
+
+  <h3 id="caching-became-load-bearing">Caching Became Load-Bearing</h3>
+  <p>Prefix caching was a useful optimisation for chat. For agents it is structural. An agent re-sends a growing transcript on every step, and the stable front of that transcript — system prompt, tool schemas, project conventions — is byte-identical every time. Cached prefixes are typically billed at a small fraction of the uncached rate, so an agent that keeps its prefix stable can cost an order of magnitude less than one that does not. Cache-aware routing, which sends a request to the replica that already holds its prefix, is now a standard feature of serving stacks for exactly this reason.</p>
+
+  <div class="callout fact">
+    <strong>Speculative decoding, revisited</strong>
+    Because decode is memory-bandwidth-bound, a GPU verifying five candidate tokens costs almost exactly what verifying one costs — the weights had to be read either way. Speculative decoding exploits this: a cheap draft proposes several tokens, the real model verifies them in a single pass, and accepted tokens come nearly free. Modern variants avoid needing a separate draft model altogether: <strong>multi-token prediction</strong> trains extra output heads into the model itself so it drafts its own continuation, and tree-based verification checks several candidate branches at once. Typical speedups are roughly 1.5–3× with output identical in distribution to normal decoding — one of the rare optimisations with no quality cost.
+  </div>
+</section>
+
+<section>
+  <h2 id="compute-vs-memory-bandwidth-the-core-tradeoff">Compute vs Memory Bandwidth: The Core Tradeoff</h2>
   <p>Whether inference is compute-bound or memory-bound determines which optimisations matter. The key ratio is the <strong>arithmetic intensity</strong> — FLOPs per byte of memory access:</p>
 
   <div class="eq">Arithmetic intensity = FLOPs / Bytes accessed
@@ -258,12 +311,45 @@ For single decode step: intensity (1) << machine balance (591)
 → GPU is >99% idle on compute; 100% bound by memory bandwidth</div>
 
   <p>This is why throughput scales linearly with memory bandwidth, not TFLOPS, during single-request decode. Batching raises arithmetic intensity: with batch size B, each weight matrix element serves B queries — intensity ≈ B FLOPs/byte. At B ≈ 591, the workload becomes compute-bound. Production inference systems tune batch size to hit this crossover point.</p>
+
+  <div class="callout">
+    <strong>The one rule that explains most inference engineering</strong>
+    Decode is memory-bound; prefill is compute-bound. Nearly every serving optimisation is an attempt to raise the arithmetic intensity of decode — batching more requests, quantising weights so fewer bytes move, speculating several tokens per weight read, sharing a KV cache across requests. Once you internalise this, you can predict which optimisations will help a given workload without measuring: if it makes fewer bytes cross the memory bus per generated token, it will help.
+  </div>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why do providers charge much more for output tokens than input tokens?</summary>
+    <p>Input tokens are processed in one parallel, compute-bound pass with high arithmetic intensity. Each output token requires a separate pass reading the entire model from memory. The cost asymmetry in the hardware is real, and the pricing reflects it.</p></details>
+    <details><summary>Why is 4-bit quantisation such a large win for single-user latency?</summary>
+    <p>Decode is bandwidth-bound, so time per token is roughly proportional to the bytes of weights read. Going from 16-bit to 4-bit quarters those bytes, and therefore roughly quarters the time — the FLOPs were never the constraint.</p></details>
+    <details><summary>Your agent's costs jumped 8× after you started injecting fresh context at the top of its prompt. Why?</summary>
+    <p>You invalidated the cached prefix. Everything after the first changed byte must be recomputed and is billed at the full rate on every step. Stable content belongs at the front, byte-identical, and volatile content at the back.</p></details>
+  </div>
 </section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Inference has two phases with opposite bottlenecks: prefill is compute-bound, decode is memory-bandwidth-bound. Almost everything else follows from this.</li>
+    <li>The KV cache turns quadratic recomputation into linear memory growth, and then becomes the dominant memory consumer at long context.</li>
+    <li>PagedAttention and continuous batching lifted GPU memory utilisation from roughly a third to near ninety percent — a larger practical win than most model-level optimisations.</li>
+    <li>Quantisation helps latency mainly by moving fewer bytes, not by doing less arithmetic.</li>
+    <li>Speculative decoding is free throughput: it exploits idle compute during a memory-bound phase, with output identical in distribution.</li>
+    <li>Reasoning models made output tokens the dominant cost, which pushed serving toward disaggregation, aggressive prefix caching and explicit effort controls.</li>
+  </ul>
+</div>
 
 </main>
 
 <footer>
-  <p>Learn AI · <a href="training.html">← Training</a> · <a href="llms.html">Next: LLMs →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

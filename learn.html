@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Paths | Learn AI</title>
+  <meta name="description" content="Where to start in this guide depending on what you want: reading routes for newcomers, engineers, builders and analysts, plus the maths you actually need, projects, and misconceptions to unlearn.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="learn"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Start Here</div>
+    <h1>Learning Paths</h1>
+    <p>Seventeen pages is a lot of guide. This page tells you which ones to read, in what order, and what to skip — depending on whether you want to build AI systems, work alongside them, or simply understand what everyone is arguing about.</p>
+    <div class="page-meta">
+      <span>No prerequisites</span>
+      <span>Reading time ~12 min</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="how-this-guide-is-built">How This Guide Is Built</h2>
+
+  <p>Every technical page follows the same shape, so you can calibrate how deeply to read:</p>
+
+  <ul>
+    <li><strong>An "In plain terms" box</strong> opens each major idea. If you read only these, you will still come away with an accurate mental model. They assume nothing.</li>
+    <li><strong>The main text</strong> explains the mechanism properly, with equations and real numbers. It assumes you are comfortable with programming and school-level mathematics, and it defines everything else.</li>
+    <li><strong>Callouts</strong> flag the thing that is easy to get wrong, the surprising consequence, or the number that changes how you think about a topic.</li>
+    <li><strong>"Check yourself" questions</strong> appear near the end of most pages. Answer before expanding. If you cannot, reread that section — this is genuinely how the material sticks.</li>
+    <li><strong>Key takeaways</strong> close each page. Useful for revision, and useful for deciding whether to read the page at all.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Three features worth knowing about</strong>
+    Press <strong><kbd>/</kbd></strong> anywhere to search every heading and glossary term on the site. The <strong>🌙 / ☀️ button</strong> in the navigation bar switches between light and dark themes and remembers your choice. Every page has an <strong>"On this page"</strong> outline at the top, and <strong>previous / next links</strong> at the bottom that follow the recommended reading order.
+  </div>
+</section>
+
+<section>
+  <h2 id="four-routes-through">Four Routes Through</h2>
+
+  <div class="cards-grid" style="margin-bottom:2rem">
+    <div class="card" style="cursor:default">
+      <div class="card-icon">🧭</div>
+      <h3 id="the-curious-newcomer">The Curious Newcomer</h3>
+      <p>You keep reading about AI and want to actually understand it rather than absorb headlines. No maths required beyond what you remember from school.</p>
+      <div class="card-arrow">~3 hours →</div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="card-icon">⚙️</div>
+      <h3 id="the-engineer">The Engineer</h3>
+      <p>You write software and want to understand these systems at the level you understand databases or networks — mechanism, cost, and failure modes.</p>
+      <div class="card-arrow">~10 hours →</div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="card-icon">🛠️</div>
+      <h3 id="the-builder">The Builder</h3>
+      <p>You are shipping something on top of models and need what actually determines whether it works in production.</p>
+      <div class="card-arrow">~6 hours →</div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="card-icon">📊</div>
+      <h3 id="the-analyst">The Analyst</h3>
+      <p>You make decisions about AI — investment, policy, strategy — and need enough technical grounding to tell a real claim from a press release.</p>
+      <div class="card-arrow">~5 hours →</div>
+    </div>
+  </div>
+
+  <h3 id="route-1-the-curious-newcomer">Route 1 · The Curious Newcomer</h3>
+  <p>Read the "In plain terms" boxes and the main narrative; skip any equation block that looks unfriendly. You will lose no important thread.</p>
+  <ol class="steps">
+    <li data-n="1"><div><a href="neural-networks.html"><strong>Neural Networks</strong></a> — what a network is and how learning from mistakes actually works. Everything else depends on this one idea.</div></li>
+    <li data-n="2"><div><a href="llms.html"><strong>Large Language Models</strong></a> — attention, and why "predict the next word" turned out to produce so much more than expected.</div></li>
+    <li data-n="3"><div><a href="inference.html"><strong>Inference</strong></a> — what happens in the seconds after you press enter.</div></li>
+    <li data-n="4"><div><a href="agents.html"><strong>Agentic AI</strong></a> — the shift from systems that answer to systems that act. This is where the field is going.</div></li>
+    <li data-n="5"><div><a href="economics.html"><strong>The Economics of AI</strong></a> — who is paying for all of this, and the argument about whether it adds up.</div></li>
+    <li data-n="6"><div><a href="safety.html"><strong>Safety &amp; Governance</strong></a> — what actually goes wrong, and what is being done about it.</div></li>
+  </ol>
+
+  <h3 id="route-2-the-engineer">Route 2 · The Engineer</h3>
+  <p>The full guide, bottom-up. Read the equations; they are doing real work. Budget several sittings.</p>
+  <ol class="steps">
+    <li data-n="1"><div><a href="neural-networks.html"><strong>Neural Networks</strong></a> → <a href="llms.html"><strong>LLMs</strong></a> → <a href="training.html"><strong>Training</strong></a> — the mathematical core.</div></li>
+    <li data-n="2"><div><a href="inference.html"><strong>Inference</strong></a> → <a href="implementation.html"><strong>Implementation</strong></a> — how models run, and how to run them yourself.</div></li>
+    <li data-n="3"><div><a href="hardware.html"><strong>Hardware</strong></a> → <a href="training-datacenter.html"><strong>Training Data Centers</strong></a> → <a href="inference-datacenter.html"><strong>Inference Data Centers</strong></a> — the physical machine underneath, and why the bottlenecks sit where they do.</div></li>
+    <li data-n="4"><div><a href="foundry.html"><strong>Foundries</strong></a> — the bottom of the stack. Read it once and the entire geopolitics of AI becomes legible.</div></li>
+    <li data-n="5"><div><a href="multimodal.html"><strong>Beyond Text</strong></a> → <a href="agents.html"><strong>Agentic AI</strong></a> → <a href="robotics.html"><strong>Robotics</strong></a> — where the same machinery goes next.</div></li>
+    <li data-n="6"><div><a href="evaluation.html"><strong>Evaluation</strong></a> → <a href="safety.html"><strong>Safety</strong></a> → <a href="economics.html"><strong>Economics</strong></a> — how we know any of it works, and what it costs.</div></li>
+  </ol>
+
+  <h3 id="route-3-the-builder">Route 3 · The Builder</h3>
+  <p>You need mechanism where it affects your decisions and can safely skim the rest. Foundries and training data centres are fascinating and will not change your architecture.</p>
+  <ol class="steps">
+    <li data-n="1"><div><a href="llms.html"><strong>LLMs</strong></a> — enough architecture to reason about context, cost and capability. Focus on attention, context length and mixture-of-experts.</div></li>
+    <li data-n="2"><div><a href="inference.html"><strong>Inference</strong></a> — the most directly useful page for you. KV cache, batching, quantisation and latency determine your bill and your user experience.</div></li>
+    <li data-n="3"><div><a href="agents.html"><strong>Agentic AI</strong></a> — tool design, context engineering, failure modes and permissioning. Read the whole thing.</div></li>
+    <li data-n="4"><div><a href="evaluation.html"><strong>Evaluation</strong></a> — build your own evals before you ship. This page will save you more time than any other here.</div></li>
+    <li data-n="5"><div><a href="implementation.html"><strong>Implementation</strong></a> — fine-tuning, LoRA, deployment. Read when you have decided the API alone is not enough.</div></li>
+    <li data-n="6"><div><a href="inference-datacenter.html"><strong>Inference Data Centers</strong></a> — read the cost-modelling and caching sections if you are self-hosting at any scale.</div></li>
+  </ol>
+
+  <h3 id="route-4-the-analyst">Route 4 · The Analyst</h3>
+  <p>Enough mechanism to evaluate claims, plus the money and the rules.</p>
+  <ol class="steps">
+    <li data-n="1"><div><a href="neural-networks.html"><strong>Neural Networks</strong></a> and <a href="llms.html"><strong>LLMs</strong></a> — plain-terms boxes and narrative only. You need the vocabulary and the shape of the thing.</div></li>
+    <li data-n="2"><div><a href="hardware.html"><strong>Hardware</strong></a> and <a href="foundry.html"><strong>Foundries</strong></a> — where the physical chokepoints and the geopolitical leverage actually are.</div></li>
+    <li data-n="3"><div><a href="economics.html"><strong>The Economics of AI</strong></a> — financing structures, circular capital, open versus closed, and the three national systems.</div></li>
+    <li data-n="4"><div><a href="evaluation.html"><strong>Evaluation</strong></a> — the single best defence against believing a benchmark chart.</div></li>
+    <li data-n="5"><div><a href="safety.html"><strong>Safety &amp; Governance</strong></a> — the regulatory regimes and the risks that are actually documented.</div></li>
+    <li data-n="6"><div><a href="agents.html"><strong>Agentic AI</strong></a> and <a href="robotics.html"><strong>Robotics</strong></a> — the two places where capability turns into economic consequence.</div></li>
+  </ol>
+</section>
+
+<section>
+  <h2 id="what-depends-on-what">What Depends on What</h2>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="lp-arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/>
+        </marker>
+      </defs>
+
+      <rect x="255" y="12" width="190" height="40" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.6"/>
+      <text x="350" y="37" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4c1d95">Neural Networks</text>
+
+      <line x1="350" y1="52" x2="350" y2="72" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+
+      <rect x="255" y="76" width="190" height="40" rx="8" fill="#ddd6fe" stroke="#8b5cf6" stroke-width="1.6"/>
+      <text x="350" y="101" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4c1d95">Large Language Models</text>
+
+      <line x1="300" y1="116" x2="200" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="350" y1="116" x2="350" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="400" y1="116" x2="500" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+
+      <rect x="105" y="144" width="150" height="38" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="180" y="168" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1e3a8a">Training</text>
+
+      <rect x="278" y="144" width="145" height="38" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="350" y="168" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1e3a8a">Inference</text>
+
+      <rect x="447" y="144" width="150" height="38" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="522" y="168" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1e3a8a">Beyond Text</text>
+
+      <line x1="180" y1="182" x2="180" y2="206" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="350" y1="182" x2="350" y2="206" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="522" y1="182" x2="522" y2="206" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="440" y1="182" x2="380" y2="206" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+
+      <rect x="95" y="210" width="170" height="38" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="180" y="234" text-anchor="middle" font-size="11.5" font-weight="700" fill="#064e3b">Hardware · Data Centers</text>
+
+      <rect x="278" y="210" width="145" height="38" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="350" y="234" text-anchor="middle" font-size="11.5" font-weight="700" fill="#064e3b">Agentic AI</text>
+
+      <rect x="447" y="210" width="150" height="38" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="522" y="234" text-anchor="middle" font-size="11.5" font-weight="700" fill="#064e3b">Robotics</text>
+
+      <line x1="180" y1="248" x2="180" y2="272" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="350" y1="248" x2="350" y2="272" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="500" y1="248" x2="420" y2="272" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+      <line x1="230" y1="248" x2="300" y2="272" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#lp-arr)"/>
+
+      <rect x="105" y="276" width="150" height="38" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="180" y="300" text-anchor="middle" font-size="11.5" font-weight="700" fill="#78350f">Foundries</text>
+
+      <rect x="278" y="276" width="145" height="38" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="350" y="300" text-anchor="middle" font-size="11.5" font-weight="700" fill="#78350f">Evaluation</text>
+
+      <rect x="447" y="276" width="150" height="38" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="522" y="300" text-anchor="middle" font-size="11.5" font-weight="700" fill="#78350f">Economics · Safety</text>
+
+      <text x="350" y="332" text-anchor="middle" font-size="10" font-style="italic" fill="#64748b">Arrows mean "makes more sense after". Nothing here is strictly required — but reading against the arrows is harder work.</text>
+    </svg>
+    <figcaption>The dependency graph. Neural Networks and LLMs are the only genuine prerequisites; everything else is a matter of how much context you want before you start.</figcaption>
+  </div>
+</section>
+
+<section>
+  <h2 id="the-maths-you-actually-need">The Maths You Actually Need</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Far less than people assume. Almost all of deep learning is multiplying grids of numbers together and nudging them in the direction that reduces error. If you understand what a matrix multiplication does and what a derivative means, you can follow every equation on this site.</p>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Topic</th><th>What you need</th><th>Where it shows up</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Linear algebra</strong></td><td>Vectors, matrices, matrix multiplication, dimensions matching up. Not eigendecompositions</td><td>Every layer of every network. This is the one that genuinely matters</td></tr>
+      <tr><td><strong>Calculus</strong></td><td>What a derivative is, what a gradient is, the chain rule. You will never compute one by hand</td><td>Backpropagation and every optimiser</td></tr>
+      <tr><td><strong>Probability</strong></td><td>Distributions, sampling, expected value, why log-probabilities are used instead of probabilities</td><td>Loss functions, sampling strategies, diffusion</td></tr>
+      <tr><td><strong>Complexity</strong></td><td>Big-O notation, and the instinct to ask what grows with what</td><td>Why attention is quadratic, why context is expensive, why KV caching exists</td></tr>
+      <tr><td><strong>Numerical representation</strong></td><td>Floating point: exponent, mantissa, precision versus range</td><td>FP32 / BF16 / FP8 / INT4 — the single most practically useful item on this list</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout fact">
+    <strong>The one concept that unlocks the most</strong>
+    If you learn only one thing properly, make it <strong>matrix multiplication and dimensional analysis</strong>. Nearly every architecture diagram in AI is a claim about shapes: this tensor of shape (batch, sequence, dimension) meets this weight matrix of shape (dimension, dimension) and produces that. Once you can track shapes through a network, transformer diagrams stop being intimidating and start being readable — and you will catch your own bugs before you run anything.
+  </div>
+</section>
+
+<section>
+  <h2 id="things-to-unlearn">Things to Unlearn</h2>
+
+  <p>Some widely repeated statements about AI are wrong, or true in a way that misleads. Correcting these early saves a lot of confusion later.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Common claim</th><th>What is actually true</th></tr></thead>
+    <tbody>
+      <tr><td>"It's just autocomplete"</td><td>The training objective is next-token prediction. That says nothing about what internal machinery is required to do it well — and interpretability work finds planning, world representations and abstract features inside. The objective is simple; the solution is not</td></tr>
+      <tr><td>"It doesn't understand, it just pattern-matches"</td><td>This distinction is asserted far more often than it is defined. Until "understanding" is specified in a way that can be tested, the claim is not falsifiable — and it does not predict what the system can or cannot do, which is the only thing that matters practically</td></tr>
+      <tr><td>"Bigger models are always better"</td><td>Scale was the dominant axis for several years. It is now one of three, alongside post-training and inference-time compute. A smaller model that thinks longer often beats a larger one that answers immediately</td></tr>
+      <tr><td>"Hallucination is a bug to be fixed"</td><td>It is a direct consequence of an objective that rewards plausible continuations. It can be reduced substantially — grounding, retrieval, verification, calibration training — but it is a property of the approach, not a defect in the implementation</td></tr>
+      <tr><td>"The model is learning from our conversation"</td><td>Weights are fixed at inference. In-context learning happens entirely within the context window and vanishes when the conversation ends. Any persistence is a separate storage system a developer built</td></tr>
+      <tr><td>"AI will take physical jobs first"</td><td>The reverse happened. See <a href="robotics.html">Robotics</a> and Moravec's paradox — the manual work turned out to be the hard part</td></tr>
+      <tr><td>"Open source AI"</td><td>Almost always open <em>weights</em>: parameters without training data, code or reproducibility. A meaningful distinction, discussed on the <a href="economics.html">Economics</a> page</td></tr>
+      <tr><td>"Benchmark X proves model Y is best"</td><td>Benchmarks saturate, leak into training data, and are reported under wildly varying protocols. See <a href="evaluation.html">Evaluation</a> before believing any chart</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2 id="projects-that-teach">Projects That Teach</h2>
+
+  <p>Reading gets you a model of the field; building gets you an intuition for it. These are ordered by effort, and each targets a specific misunderstanding.</p>
+
+  <div class="three-col">
+    <div>
+      <h4>Weekend</h4>
+      <ul>
+        <li><strong>Tokenise text by hand.</strong> Run a tokeniser over English, code, and a non-Latin script. Compare token counts. You will never again wonder why some languages cost more.</li>
+        <li><strong>Build a tiny neural network with no framework.</strong> Two layers, NumPy, backprop written out. Nothing else makes gradients feel real.</li>
+        <li><strong>Measure your own KV cache.</strong> Compute the memory for a 70B model at 100K context. Compare to a GPU's capacity. The whole serving field suddenly makes sense.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Week</h4>
+      <ul>
+        <li><strong>Train a small character-level transformer</strong> on a text you like. Watch loss fall and samples improve. This is the entire pipeline in miniature.</li>
+        <li><strong>Fine-tune with LoRA</strong> on a consumer GPU. See how little data changes behaviour — and how easily it overfits.</li>
+        <li><strong>Write an agent loop from scratch.</strong> Three tools, no framework, under 200 lines. The mystique evaporates and the real difficulty appears.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Month</h4>
+      <ul>
+        <li><strong>Build an eval suite</strong> for a real task, with a golden set and a calibrated judge. The most transferable skill on this list.</li>
+        <li><strong>Serve a model yourself</strong> with a modern inference engine. Measure throughput against batch size and watch the tradeoff curve appear.</li>
+        <li><strong>Reproduce a paper's headline result</strong> — and discover how much was in the details rather than the abstract.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 id="keeping-up-without-drowning">Keeping Up Without Drowning</h2>
+
+  <p>The volume of AI output is unmanageable and getting worse. A few habits that hold up:</p>
+
+  <ul>
+    <li><strong>Prioritise mechanism over news.</strong> A model release is obsolete in months; understanding why attention is quadratic is permanent. This whole guide is organised on that principle.</li>
+    <li><strong>Read the method section first.</strong> Abstracts oversell. Methods and appendices tell you what was actually done, and limitations sections are where the honesty lives.</li>
+    <li><strong>Always ask for the protocol.</strong> "State of the art" without shots, attempts, reasoning budget and scaffolding is marketing, not measurement.</li>
+    <li><strong>Distrust demonstration videos.</strong> Especially in robotics and agents. Ask about success rate over many attempts, intervention rate, and how many takes it took.</li>
+    <li><strong>Follow the constraints, not the announcements.</strong> Power, memory bandwidth, packaging capacity and data availability predict what happens next far better than any roadmap does.</li>
+    <li><strong>Build something small.</strong> One afternoon of building corrects more misconceptions than a month of reading, including misconceptions acquired from this site.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>A note on this guide's own limitations</strong>
+    Everything here describing the industry — figures, capabilities, company behaviour, regulation — has a shelf life measured in months. The mathematics, the architectures and the physical constraints do not. Where those two categories conflict in your reading, trust the second and go check the first. And treat this guide the way it asks you to treat benchmarks: as a useful, dated, fallible instrument rather than an authority.
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Read Neural Networks and LLMs first regardless of route. Everything else is optional and reorderable.</li>
+    <li>Plain-terms boxes carry the ideas; equations carry the precision. Take whichever you need and skip the other without guilt.</li>
+    <li>The maths barrier is lower than advertised — matrix multiplication, the chain rule, and floating-point representation cover nearly all of it.</li>
+    <li>Build something small early. Intuition arrives through implementation, not through reading.</li>
+    <li>Prefer mechanism to news: the constraints outlive every announcement.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

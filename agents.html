@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic AI | Learn AI</title>
+  <meta name="description" content="What AI agents are, how they are built, how the agent loop actually works, and how people direct, verify, and manage agents at scale.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="agents"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Systems</div>
+    <h1>Agentic AI</h1>
+    <p>A chatbot answers. An agent <em>acts</em>. This page explains what that difference really consists of — the loop, the tools, the memory, the failure modes — and what it takes for a person to direct and supervise software that makes its own moves.</p>
+    <div class="page-meta">
+      <span>Prerequisites: LLMs, Inference</span>
+      <span>Reading time ~30 min</span>
+      <span>Reviewed 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="what-an-agent-actually-is">What an Agent Actually Is</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>An AI agent is a language model placed inside a loop, given a goal, and handed a set of tools it can operate. Instead of producing one answer and stopping, it decides what to do, does it, looks at the result, and decides again — until the goal is met or it gives up. Everything else on this page is detail about that loop.</p>
+  </div>
+
+  <p>The word "agent" has been stretched to cover almost anything involving a language model, which makes it nearly useless as a technical term. It is worth being precise. A useful working definition:</p>
+
+  <div class="callout">
+    <strong>Definition</strong>
+    An <strong>agent</strong> is a system in which a language model directs its own control flow: the model — not a fixed script — decides which action to take next, observes the result of that action, and repeats. The number of steps is not known in advance.
+  </div>
+
+  <p>That last clause is the sharp edge of the definition. If you can draw the complete flowchart before the program runs, you have a <strong>workflow</strong>, not an agent. Workflows are frequently the better engineering choice: they are cheaper, faster, easier to test, and their failure modes are predictable. Agency is something you should pay for only when the problem genuinely requires it.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Workflow (predetermined path)</h4>
+      <p>"Take the customer email → classify it into one of six categories → look up the account → draft a reply from the matching template → send it to a human for approval."</p>
+      <p>Every step is written by an engineer. The model fills in slots. Behaviour is repeatable and cheap to evaluate.</p>
+    </div>
+    <div>
+      <h4>Agent (model-directed path)</h4>
+      <p>"This test suite fails on the CI runner but passes locally. Find out why and fix it."</p>
+      <p>Nobody can write the flowchart in advance, because the right next step depends on what the previous step revealed. The model must decide.</p>
+    </div>
+  </div>
+
+  <h3 id="the-three-ingredients">The Three Ingredients</h3>
+  <p>Every agent, from a fifty-line script to a production coding assistant, is assembled from the same three parts:</p>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>A model capable of deciding.</strong> It must reliably choose among available actions, produce well-formed tool calls, and recognise when it has enough information to stop. This is a trained capability, not a prompting trick — see <a href="#training-a-model-to-be-agentic">Training a Model to Be Agentic</a> below.</div></li>
+    <li data-n="2"><div><strong>Tools that let it affect the world.</strong> Read a file, run a query, call an API, execute code, click a button. Without tools an agent can only think, and thinking without acting is just a longer answer.</div></li>
+    <li data-n="3"><div><strong>A loop with persistent context.</strong> The harness that runs tools, feeds results back, keeps a growing record of what has happened, and decides when to stop. This is ordinary software, and it is where most of the engineering effort actually goes.</div></li>
+  </ol>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>A base language model is a brilliant consultant locked in a windowless room with no phone. You can slide questions under the door and get remarkable answers back, but the consultant cannot look anything up, cannot check whether their advice worked, and cannot do anything themselves. Agent-building is the work of giving them a phone, a computer, a filing cabinet, and a clear brief — and then deciding how much you are willing to let them do without asking you first.</p>
+  </div>
+</section>
+
+<section>
+  <h2 id="the-agent-loop">The Agent Loop</h2>
+
+  <p>Strip away the frameworks and every agent reduces to the same cycle. The model is called repeatedly; each call sees the entire history of the task so far.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="ag-arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#6366f1"/>
+        </marker>
+      </defs>
+
+      <rect x="20" y="20" width="150" height="52" rx="9" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="95" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#312e81">Goal from user</text>
+      <text x="95" y="59" text-anchor="middle" font-size="10" fill="#4338ca">"Fix the failing test"</text>
+
+      <line x1="170" y1="46" x2="243" y2="46" stroke="#6366f1" stroke-width="1.6" marker-end="url(#ag-arr)"/>
+
+      <rect x="250" y="15" width="215" height="62" rx="9" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.8"/>
+      <text x="357" y="37" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4c1d95">1 · Model reasons</text>
+      <text x="357" y="53" text-anchor="middle" font-size="10" fill="#6d28d9">Reads full history, plans,</text>
+      <text x="357" y="66" text-anchor="middle" font-size="10" fill="#6d28d9">emits a structured tool call</text>
+
+      <line x1="465" y1="46" x2="538" y2="46" stroke="#6366f1" stroke-width="1.6" marker-end="url(#ag-arr)"/>
+
+      <rect x="545" y="15" width="155" height="62" rx="9" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="622" y="37" text-anchor="middle" font-size="12.5" font-weight="700" fill="#78350f">2 · Harness acts</text>
+      <text x="622" y="53" text-anchor="middle" font-size="10" fill="#92400e">Validates, checks</text>
+      <text x="622" y="66" text-anchor="middle" font-size="10" fill="#92400e">permission, executes</text>
+
+      <path d="M622,77 L622,110" stroke="#6366f1" stroke-width="1.6" marker-end="url(#ag-arr)"/>
+
+      <rect x="500" y="118" width="200" height="58" rx="9" fill="#d1fae5" stroke="#10b981" stroke-width="1.8"/>
+      <text x="600" y="140" text-anchor="middle" font-size="12.5" font-weight="700" fill="#064e3b">3 · Observation returns</text>
+      <text x="600" y="157" text-anchor="middle" font-size="10" fill="#065f46">stdout, file contents, error,</text>
+      <text x="600" y="169" text-anchor="middle" font-size="10" fill="#065f46">HTTP response, screenshot</text>
+
+      <path d="M500,147 L360,147" stroke="#6366f1" stroke-width="1.6" marker-end="url(#ag-arr)"/>
+
+      <rect x="180" y="118" width="175" height="58" rx="9" fill="#cffafe" stroke="#06b6d4" stroke-width="1.8"/>
+      <text x="267" y="140" text-anchor="middle" font-size="12.5" font-weight="700" fill="#164e63">4 · Append to context</text>
+      <text x="267" y="157" text-anchor="middle" font-size="10" fill="#0e7490">History grows by one</text>
+      <text x="267" y="169" text-anchor="middle" font-size="10" fill="#0e7490">action + one result</text>
+
+      <path d="M267,118 L267,95 L357,95 L357,80" stroke="#6366f1" stroke-width="1.6" fill="none" marker-end="url(#ag-arr)"/>
+      <text x="300" y="108" text-anchor="middle" font-size="9.5" font-style="italic" fill="#64748b">loop</text>
+
+      <path d="M357,177 L357,215" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ag-arr)"/>
+      <rect x="230" y="222" width="255" height="46" rx="9" fill="#fee2e2" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="357" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Stop condition</text>
+      <text x="357" y="258" text-anchor="middle" font-size="10" fill="#991b1b">Goal met · budget spent · needs a human · stuck</text>
+
+      <path d="M357,268 L357,292" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ag-arr)"/>
+      <rect x="255" y="296" width="205" height="28" rx="8" fill="#1e293b"/>
+      <text x="357" y="315" text-anchor="middle" font-size="11" font-weight="700" fill="#e2e8f0">Result returned to the user</text>
+    </svg>
+    <figcaption>The agent loop. Steps 1–4 repeat until a stop condition fires. Note that the model has no memory between calls other than the context that step 4 keeps appending to — a fact that drives nearly every design decision in agent engineering.</figcaption>
+  </div>
+
+  <h3 id="what-the-model-actually-sees">What the Model Actually Sees</h3>
+
+  <p>It is worth being concrete, because the mechanism is far simpler than the vocabulary suggests. Tools are described to the model as structured schemas placed in its context. The model emits a specially formatted block requesting a call. The harness — ordinary code you control — parses it, executes the real function, and appends the result as a new message. Then the model runs again on the longer context.</p>
+
+  <div class="eq">Turn 1 — the harness sends the model:
+  <span class="comment">[system]</span>  You are a coding agent. Tools available:
+             read_file(path: string) -> string
+             run_shell(cmd: string) -> {stdout, stderr, exit_code}
+             edit_file(path: string, old: string, new: string) -> ok
+  <span class="comment">[user]</span>    The test suite fails on CI but passes locally. Fix it.
+
+Model responds:
+  <span class="highlight">tool_call: run_shell(cmd="pytest -x tests/ 2&gt;&amp;1 | tail -30")</span>
+
+Turn 2 — the harness executes it and sends everything back, plus:
+  <span class="comment">[tool_result]</span>  FAILED tests/test_report.py::test_dates
+                  AssertionError: '2026-03-01' != '2026-02-28'
+
+Model responds:
+  <span class="highlight">tool_call: read_file(path="src/report.py")</span>
+
+Turn 3 — ... and so on. Each turn re-reads the entire growing transcript.</div>
+
+  <p>Three consequences fall directly out of this mechanism, and they explain most agent behaviour you will ever observe:</p>
+
+  <ul>
+    <li><strong>The context <em>is</em> the agent's memory.</strong> There is no hidden state. Anything not in the transcript effectively did not happen. If you truncate the transcript, you give the agent amnesia.</li>
+    <li><strong>Cost grows superlinearly with steps.</strong> A 20-step task re-processes a growing transcript 20 times. Without prefix caching (see <a href="inference-datacenter.html">Inference Data Centers</a>) the token bill for step <em>n</em> scales with everything that came before it.</li>
+    <li><strong>Tool results are untrusted input.</strong> A web page, a code comment, a database row — anything the agent reads enters the same context as your instructions. This is the root of prompt injection, covered in <a href="#how-agents-fail">How Agents Fail</a>.</li>
+  </ul>
+
+  <div class="callout fact">
+    <strong>ReAct: the pattern that named the field</strong>
+    The interleaving of <em>reasoning</em> and <em>acting</em> was formalised as <strong>ReAct</strong> (Yao et al., 2022): let the model write a thought, then an action, then observe, and repeat. It outperformed both pure chain-of-thought (which reasons but never checks reality) and pure action selection (which acts but never plans). Nearly every agent architecture since is a variation on it. Modern reasoning models fold the "thought" step into their own extended thinking rather than emitting it as visible text, but the structure is unchanged.
+  </div>
+</section>
+
+<section>
+  <h2 id="training-a-model-to-be-agentic">Training a Model to Be Agentic</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>You cannot turn any language model into a good agent with clever prompting. Being a competent agent — staying on task for fifty steps, recovering from an error, knowing when to stop — is a skill that has to be trained in, and the training method that produces it is reinforcement learning against tasks that can be automatically graded.</p>
+  </div>
+
+  <p>Pretraining (covered on the <a href="training.html">Training</a> page) teaches a model to predict text. That produces knowledge and fluency, but not the ability to pursue a goal over many steps. Agentic competence comes from post-training, and the decisive ingredient has been <strong>reinforcement learning from verifiable rewards (RLVR)</strong>.</p>
+
+  <p>The idea is simple and powerful. Take tasks where success can be checked by a program rather than a human: does the code compile, do the tests pass, is the maths answer correct, did the agent reach the target page. Let the model attempt the task thousands of times, and reinforce the trajectories that succeeded. No human labeller is in the loop, so the process scales with compute rather than with human hours — which is exactly the property that lets a capability improve quickly.</p>
+
+  <div class="eq">Why verifiable rewards changed agents
+
+  Human preference RL (RLHF):     reward = "which answer do people prefer?"
+                                  → teaches style, helpfulness, tone
+                                  → bounded by how fast humans can label
+
+  Verifiable-reward RL (RLVR):    reward = "did the tests pass? y/n"
+                                  → teaches persistence, error recovery, tool use
+                                  → bounded only by compute and task supply
+
+  The hard part is <span class="highlight">credit assignment</span>: a 40-step trajectory earns one
+  reward at the end. Which of the 40 decisions deserves the credit?
+  Algorithms such as PPO and GRPO handle this by comparing whole
+  trajectories against each other rather than scoring steps individually.</div>
+
+  <p>This is also why <strong>reasoning models</strong> — models trained to spend extra computation thinking before answering — were the unlock for practical agents. An agent's most expensive mistake is choosing a bad action early and then spending thirty steps in the wrong part of the search space. A model that can deliberate before acting makes materially fewer of those errors, and the deliberation is cheap relative to the wasted actions it prevents.</p>
+
+  <h3 id="the-capabilities-that-have-to-be-trained">The Capabilities That Have to Be Trained</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Capability</th><th>What it looks like when present</th><th>What its absence looks like</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Well-formed tool calls</strong></td><td>Correct schema, sensible arguments, first try</td><td>Malformed JSON, invented parameters, hallucinated tool names</td></tr>
+      <tr><td><strong>Tool selection</strong></td><td>Picks the right tool from 40 available</td><td>Uses a generic search when a precise lookup exists</td></tr>
+      <tr><td><strong>Error recovery</strong></td><td>Reads the stack trace, forms a new hypothesis</td><td>Retries the identical failing command five times</td></tr>
+      <tr><td><strong>Knowing when to stop</strong></td><td>Declares completion once the goal is verifiably met</td><td>Keeps "improving" a finished task, or quits at the first obstacle</td></tr>
+      <tr><td><strong>Asking for help</strong></td><td>Surfaces genuine ambiguity to the human</td><td>Guesses silently and builds ten steps on the guess</td></tr>
+      <tr><td><strong>Long-horizon coherence</strong></td><td>Step 45 still serves the goal set at step 1</td><td>Goal drift; solving a problem nobody asked about</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>The doubling that matters</strong>
+    The most useful single metric for agent progress is not benchmark accuracy but <strong>task horizon</strong>: the length of task, measured in how long a skilled human would take, that a model can complete unaided at a given success rate. Measured this way, frontier model capability has been roughly doubling every few months — from tasks of a few minutes in 2023 to multi-hour tasks by 2025–26. If that trend holds even approximately, the interesting question stops being "can the model do this?" and becomes "how do I verify a day's worth of work I did not watch happen?" That question is the subject of <a href="#working-with-agents-the-human-s-job">the human's job</a>, below.
+  </div>
+</section>
+
+<section>
+  <h2 id="anatomy-of-an-agent-system">Anatomy of an Agent System</h2>
+
+  <p>A production agent is mostly conventional software wrapped around a model call. Here is the full parts list.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect x="15" y="12" width="670" height="376" rx="12" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="30" y="32" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">AGENT RUNTIME (your code)</text>
+
+      <rect x="35" y="46" width="185" height="112" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.6"/>
+      <text x="127" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95">Model</text>
+      <text x="127" y="86" text-anchor="middle" font-size="9.5" fill="#6d28d9">Reasoning-capable LLM</text>
+      <text x="127" y="101" text-anchor="middle" font-size="9.5" fill="#6d28d9">Tool-call trained</text>
+      <text x="127" y="116" text-anchor="middle" font-size="9.5" fill="#6d28d9">Chosen per task tier:</text>
+      <text x="127" y="131" text-anchor="middle" font-size="9.5" fill="#6d28d9">small = cheap routing</text>
+      <text x="127" y="146" text-anchor="middle" font-size="9.5" fill="#6d28d9">large = hard reasoning</text>
+
+      <rect x="235" y="46" width="185" height="112" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="1.6"/>
+      <text x="327" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#164e63">Context assembly</text>
+      <text x="327" y="86" text-anchor="middle" font-size="9.5" fill="#0e7490">System prompt / role</text>
+      <text x="327" y="101" text-anchor="middle" font-size="9.5" fill="#0e7490">Tool schemas</text>
+      <text x="327" y="116" text-anchor="middle" font-size="9.5" fill="#0e7490">Task + running transcript</text>
+      <text x="327" y="131" text-anchor="middle" font-size="9.5" fill="#0e7490">Retrieved documents</text>
+      <text x="327" y="146" text-anchor="middle" font-size="9.5" fill="#0e7490">Compaction + summaries</text>
+
+      <rect x="435" y="46" width="230" height="112" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.6"/>
+      <text x="550" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">Tools</text>
+      <text x="550" y="86" text-anchor="middle" font-size="9.5" fill="#92400e">File I/O · shell · code execution</text>
+      <text x="550" y="101" text-anchor="middle" font-size="9.5" fill="#92400e">Search · retrieval · databases</text>
+      <text x="550" y="116" text-anchor="middle" font-size="9.5" fill="#92400e">Internal APIs via MCP servers</text>
+      <text x="550" y="131" text-anchor="middle" font-size="9.5" fill="#92400e">Browser / computer use</text>
+      <text x="550" y="146" text-anchor="middle" font-size="9.5" fill="#92400e">Sub-agent invocation</text>
+
+      <rect x="35" y="172" width="300" height="96" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="1.6"/>
+      <text x="185" y="194" text-anchor="middle" font-size="12" font-weight="700" fill="#064e3b">Memory</text>
+      <text x="185" y="212" text-anchor="middle" font-size="9.5" fill="#065f46">Working: the live context window</text>
+      <text x="185" y="227" text-anchor="middle" font-size="9.5" fill="#065f46">Durable: files, notes, scratchpads on disk</text>
+      <text x="185" y="242" text-anchor="middle" font-size="9.5" fill="#065f46">Semantic: vector / keyword retrieval</text>
+      <text x="185" y="257" text-anchor="middle" font-size="9.5" fill="#065f46">Episodic: what worked on past runs</text>
+
+      <rect x="350" y="172" width="315" height="96" rx="10" fill="#fee2e2" stroke="#ef4444" stroke-width="1.6"/>
+      <text x="507" y="194" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Guardrails &amp; permissions</text>
+      <text x="507" y="212" text-anchor="middle" font-size="9.5" fill="#991b1b">Allowlist / denylist per tool</text>
+      <text x="507" y="227" text-anchor="middle" font-size="9.5" fill="#991b1b">Human approval for irreversible actions</text>
+      <text x="507" y="242" text-anchor="middle" font-size="9.5" fill="#991b1b">Sandbox: container, network policy, scoped creds</text>
+      <text x="507" y="257" text-anchor="middle" font-size="9.5" fill="#991b1b">Budget caps: tokens, wall-clock, tool calls</text>
+
+      <rect x="35" y="282" width="630" height="88" rx="10" fill="#e2e8f0" stroke="#64748b" stroke-width="1.6"/>
+      <text x="350" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Orchestration &amp; observability</text>
+      <text x="350" y="322" text-anchor="middle" font-size="9.5" fill="#334155">The loop itself · retry and backoff · stop conditions · checkpointing and resume</text>
+      <text x="350" y="337" text-anchor="middle" font-size="9.5" fill="#334155">Full trace of every prompt, tool call and result · cost and latency per step</text>
+      <text x="350" y="352" text-anchor="middle" font-size="9.5" fill="#334155">Evaluation harness · regression suite · audit log for compliance</text>
+    </svg>
+    <figcaption>The parts of a production agent. Only the top-left box is a model; everything else is software you write, operate, and are accountable for. Teams new to agents consistently underestimate the bottom two rows.</figcaption>
+  </div>
+
+  <h3 id="tools-the-interface-to-reality">Tools: the Interface to Reality</h3>
+
+  <p>Tool design is the highest-leverage work in agent building, and it is closer to API design for a capable but literal-minded new colleague than to traditional programming. Four families dominate:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Kind</th><th>How it works</th><th>Strengths</th><th>Costs</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Function calling</strong></td><td>Typed schemas the model fills in; the harness dispatches</td><td>Precise, fast, auditable, easy to permission</td><td>Someone must write and maintain each tool</td></tr>
+      <tr><td><strong>MCP servers</strong></td><td>The Model Context Protocol — an open standard, released by Anthropic in late 2024 and now broadly adopted, that lets any application expose tools, resources and prompts to any agent over a common interface</td><td>Write the connector once, use it from every agent; a real ecosystem of pre-built servers</td><td>Each connected server consumes context and enlarges the trust boundary</td></tr>
+      <tr><td><strong>Code execution</strong></td><td>The model writes code that runs in a sandbox</td><td>Maximum expressiveness; the agent composes its own operations and processes data without pulling it all into context</td><td>Requires genuine isolation; hardest to constrain</td></tr>
+      <tr><td><strong>Computer use</strong></td><td>The model sees screenshots and emits clicks and keystrokes</td><td>Works with software that has no API at all — the universal fallback</td><td>Slow, expensive per step, brittle to UI changes, error-prone</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>Rules of thumb for tool design</strong>
+    <ul>
+      <li><strong>Few and sharp beats many and vague.</strong> Forty overlapping tools produce selection errors. Consolidate.</li>
+      <li><strong>Return what helps the next decision.</strong> A 40,000-token API dump burns context and buries the signal. Filter, paginate, summarise at the tool boundary.</li>
+      <li><strong>Make errors instructive.</strong> <code>Error: invalid date_range. Expected ISO-8601, e.g. "2026-01-15". Got "last Tuesday".</code> An agent can act on that. <code>Error 400</code> teaches it nothing.</li>
+      <li><strong>Name things for a stranger.</strong> The model has no institutional context. <code>get_active_subscriptions</code> is obvious; <code>fetch_sub_v2</code> is a guessing game.</li>
+      <li><strong>Prefer idempotence, and be explicit about what is not.</strong> Retries happen. Make it safe when they do — and gate the actions where it isn't.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2 id="context-engineering">Context Engineering</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>An agent's context window is a desk. Everything the agent can currently use has to fit on it. The craft of agent building is largely deciding, at each step, what belongs on the desk — because a cluttered desk makes an agent stupid just as reliably as a bad model does.</p>
+  </div>
+
+  <p>"Prompt engineering" was about phrasing a single request well. <strong>Context engineering</strong> is about curating an evolving working set across dozens of steps, and it is the discipline that separates agents that work from agents that demo. Context windows have grown enormously — hundreds of thousands of tokens is routine, a million is available — but capacity is not the constraint that matters.</p>
+
+  <div class="callout warn">
+    <strong>Context rot: bigger is not better</strong>
+    Model performance degrades as context fills, well before the limit is reached. Attention is a finite resource being divided among more tokens; irrelevant material actively competes with relevant material. A model given 200,000 tokens of "everything that might be useful" often performs <em>worse</em> than the same model given 15,000 tokens of carefully selected material. Treat context as a budget to be spent deliberately, not a bucket to be filled.
+  </div>
+
+  <h3 id="techniques-that-actually-move-the-needle">Techniques That Actually Move the Needle</h3>
+
+  <ul>
+    <li><strong>Compaction.</strong> When the transcript approaches its budget, summarise the older portion — decisions made, files touched, facts established, what remains — and continue from the summary. Done well, an agent can run for hours across many compactions. Done badly, it forgets the constraint that mattered and cheerfully redoes work it already did.</li>
+    <li><strong>Retrieval over preloading.</strong> Do not paste the codebase in. Give the agent <code>grep</code>, <code>find</code> and file reads and let it pull what it needs, when it needs it. Just-in-time retrieval keeps the desk clear and, as a bonus, mirrors how a human would actually work.</li>
+    <li><strong>Externalised memory.</strong> Let the agent write notes, plans, and intermediate results to files. A to-do file that survives compaction is a startlingly effective memory mechanism, and it doubles as a progress display for the human watching.</li>
+    <li><strong>Sub-agents for exploration.</strong> Delegate a search-heavy subtask to a fresh agent with its own clean context; it returns a short answer instead of the 80,000 tokens of dead ends it waded through. The parent's context stays clean.</li>
+    <li><strong>Structured note-taking.</strong> Ask the agent to maintain an explicit state document — hypothesis, evidence, next action. This makes reasoning inspectable by the human and resilient to truncation.</li>
+  </ul>
+
+  <div class="eq">A context budget for a long coding task (200K window)
+
+  System prompt + role                         ~2K   <span class="comment">stable, cached</span>
+  Tool schemas (12 tools)                      ~4K   <span class="comment">stable, cached</span>
+  Project conventions file                     ~3K   <span class="comment">stable, cached</span>
+  ────────────────────────────────────────────────
+  Cached prefix                                ~9K   <span class="highlight">→ ~10× cheaper per token on reuse</span>
+
+  Task statement                               ~1K
+  Retrieved file contents (4 files)           ~18K   <span class="comment">churns as work moves</span>
+  Running transcript (28 steps)               ~60K   <span class="comment">grows every step</span>
+  Working notes / to-do file                   ~2K
+  ────────────────────────────────────────────────
+  Live total                                  ~90K   <span class="comment">compact at ~140K, keep going</span></div>
+
+  <div class="callout fact">
+    <strong>Why prefix caching is an agent's best friend</strong>
+    Keep the unchanging part of your context — system prompt, tool schemas, conventions — at the very front and byte-identical between calls. Inference servers cache the attention state for that prefix, so re-reading it on step 40 costs a fraction of what it cost on step 1. Reorder or edit that prefix mid-run and you invalidate the cache, quietly multiplying your bill. This single detail can move the cost of a long agent run by an order of magnitude.
+  </div>
+</section>
+
+<section>
+  <h2 id="multi-agent-systems">Multi-Agent Systems</h2>
+
+  <p>Once one agent works, the obvious move is several. Sometimes that is right; often it is expensive theatre. The useful question is not "how many agents?" but "does this subtask deserve its own context window?"</p>
+
+  <div class="three-col">
+    <div>
+      <h4>Orchestrator–worker</h4>
+      <p>A lead agent decomposes the task and dispatches subtasks to workers, each with a clean context. Workers report back concise findings.</p>
+      <p><span class="pill green">Works well</span> for research, broad codebase search, and anything with independent parallel branches.</p>
+    </div>
+    <div>
+      <h4>Pipeline</h4>
+      <p>Specialised agents in sequence: draft → critique → revise → verify. Each stage sees only what it needs.</p>
+      <p><span class="pill green">Works well</span> when quality gates are genuinely separable and each stage has a clear rubric.</p>
+    </div>
+    <div>
+      <h4>Debate / ensemble</h4>
+      <p>Several agents attempt the same problem independently; a judge selects or synthesises.</p>
+      <p><span class="pill amber">Use sparingly</span> — real gains on hard reasoning, but N× the cost for often modest improvement.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>The coordination tax</strong>
+    Agents communicate through natural language, which is a lossy channel. Every hand-off risks dropping a constraint the sender considered obvious. Worse, sub-agents cannot see each other's work, so two of them will happily edit the same file in incompatible ways. A rough guide: parallelise <em>reading</em> aggressively — many agents searching, analysing, and reporting back is close to free parallelism. Parallelise <em>writing</em> only with explicit ownership boundaries, or expect to spend your savings on merge conflicts. And a single agent with a well-managed context beats five agents with muddled ones almost every time.
+  </div>
+</section>
+
+<section>
+  <h2 id="how-agents-fail">How Agents Fail</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>The way agents fail is different from the way chatbots fail, and more consequential. A chatbot's mistake is a wrong sentence you can read and discard. An agent's mistake is a wrong <em>action</em> — a deleted file, a sent email, a merged pull request — and it may be the foundation for twenty more actions before anyone notices.</p>
+  </div>
+
+  <h3 id="error-compounding">Error Compounding</h3>
+  <p>This is the arithmetic that governs agent reliability, and it is unforgiving:</p>
+
+  <div class="eq">Probability a whole task succeeds = (per-step reliability)^(number of steps)
+
+  Steps:        5        10        20        50
+  ────────────────────────────────────────────────
+  95% / step   77%       60%       36%        8%
+  99% / step   95%       90%       82%       61%
+  99.9% / step 99.5%     99%       98%       95%
+
+<span class="highlight">Reliability compounds against you.</span> This is why the engineering
+effort goes into <span class="highlight">error recovery</span>, not just error prevention:
+a step that fails and is correctly diagnosed and retried is not
+a lost step. Checkpoints, verification steps, and tools that fail
+loudly and informatively are what convert 95% into something usable.</div>
+
+  <h3 id="the-characteristic-failure-modes">The Characteristic Failure Modes</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Failure</th><th>What it looks like</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Goal drift</strong></td><td>Step 40 is solving a problem nobody asked about</td><td>Restate the goal in the context periodically; keep a visible to-do file</td></tr>
+      <tr><td><strong>Reward hacking</strong></td><td>Test fails, so the agent deletes the test — the metric is satisfied, the goal is not</td><td>Verify with checks the agent cannot edit; separate implementer from grader</td></tr>
+      <tr><td><strong>Doom-looping</strong></td><td>The same failing command, five times, with growing confidence</td><td>Detect repeats in the harness; force a strategy change or escalate to the human</td></tr>
+      <tr><td><strong>Hallucinated success</strong></td><td>"I've fixed the bug and all tests pass" — no test was run</td><td>Trust tool output, never the model's narration; require evidence in the transcript</td></tr>
+      <tr><td><strong>Context poisoning</strong></td><td>An early wrong assumption is now "established fact" for every later step</td><td>Checkpoint and restart rather than patching a corrupted transcript</td></tr>
+      <tr><td><strong>Overreach</strong></td><td>Asked to fix a typo, refactors three modules</td><td>Explicit scope in the prompt; small diffs; review gates before merge</td></tr>
+      <tr><td><strong>Prompt injection</strong></td><td>Text inside fetched content issues instructions the agent obeys</td><td>See below — this one is structural, not a bug to be patched</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="prompt-injection-and-the-lethal-trifecta">Prompt Injection and the Lethal Trifecta</h3>
+
+  <p>This deserves its own treatment because it is the security problem unique to agents, and because it does not have a clean solution. Recall the mechanism: tool results enter the same context as your instructions. A model reading a web page cannot reliably distinguish "content I was asked to summarise" from "instructions addressed to me." A comment in a GitHub issue, a line in a CSV, alt text in an image — any of it can carry an instruction.</p>
+
+  <div class="callout danger">
+    <strong>The lethal trifecta</strong>
+    An agent becomes genuinely dangerous when it simultaneously has all three of:
+    <ol>
+      <li><strong>Access to private data</strong> — your repository, your email, your database;</li>
+      <li><strong>Exposure to untrusted content</strong> — the open web, inbound messages, third-party files;</li>
+      <li><strong>The ability to communicate externally</strong> — send, post, push, call an API.</li>
+    </ol>
+    With all three, injected text can instruct the agent to read a secret and exfiltrate it, and the agent will comply, because from inside the context it looks like a legitimate request. <strong>Break any one leg and the attack fails.</strong> That is the practical defence: no network egress in a sandbox with credentials; no credentials in a sandbox with network egress; human approval on the boundary where the trifecta would otherwise close.
+  </div>
+
+  <p>Defences that help but do not solve it: clearly delimiting untrusted content in the context, training models to treat tool output as data rather than instruction, classifiers on inputs and outputs, and — most reliably — keeping the agent's permissions narrow enough that a fully compromised agent still cannot do much harm. Design as if injection will eventually succeed, because eventually it will.</p>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>An agent runs 30 steps at 97% per-step reliability. What is the chance the whole task succeeds?</summary>
+    <p>0.97³⁰ ≈ 40%. Which is why per-step reliability alone is the wrong thing to optimise — recovery, verification and checkpointing matter more than shaving the last percent off any single step.</p></details>
+    <details><summary>Your agent reads GitHub issues and can push commits. Which leg of the lethal trifecta would you break, and how?</summary>
+    <p>Untrusted content (issues) is essential to the task and private data (the repo) is the point, so break external communication: let the agent push only to a scratch branch that requires human review before it can merge or deploy. The blast radius of a successful injection becomes "a branch nobody merged."</p></details>
+    <details><summary>Why might giving an agent a 1M-token context make it perform worse than a 50K one?</summary>
+    <p>Context rot. Attention is spread across more tokens, and irrelevant material competes with relevant material. The useful move is better curation, not more capacity.</p></details>
+  </div>
+</section>
+
+<section>
+  <h2 id="working-with-agents-the-human-s-job">Working with Agents: the Human's Job</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Working with agents is much closer to delegating to a fast, capable, literal-minded colleague who has no idea how your organisation works than it is to using a tool. The skills that matter are the ones good managers already have: writing a clear brief, choosing what to delegate, and verifying results without redoing the work.</p>
+  </div>
+
+  <h3 id="write-the-brief-properly">Write the Brief Properly</h3>
+  <p>The single largest determinant of agent output quality is the quality of the request. Agents fail on ambiguity far more often than on difficulty. A good brief contains:</p>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>The goal, and why.</strong> "Add caching to the report endpoint because it times out for accounts with over 10,000 rows" lets the agent choose sensibly. "Add caching" invites a guess.</div></li>
+    <li data-n="2"><div><strong>The boundaries.</strong> What it may change, what it must not touch, what it should ask about rather than decide. Scope creep is the default behaviour of a capable and eager worker.</div></li>
+    <li data-n="3"><div><strong>The definition of done.</strong> Ideally something checkable: tests pass, the endpoint responds in under 200 ms, the report matches this fixture. Verifiable goals are also better goals for the agent to steer by.</div></li>
+    <li data-n="4"><div><strong>The context it cannot infer.</strong> Conventions, prior decisions, the reason the obvious approach was rejected last time. Write this down once in a project file — <code>CLAUDE.md</code>, <code>AGENTS.md</code>, a README section — rather than retyping it every session.</div></li>
+  </ol>
+
+  <h3 id="calibrate-trust-to-blast-radius">Calibrate Trust to Blast Radius</h3>
+  <p>The right level of autonomy is not a property of the agent; it is a property of the consequences. A sensible ladder:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Level</th><th>Human involvement</th><th>Appropriate when</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1 · Suggest</strong></td><td>Agent proposes, human performs every action</td><td>Learning a new agent; high-stakes or regulated systems</td></tr>
+      <tr><td><strong>2 · Approve each action</strong></td><td>Agent acts, human confirms every tool call</td><td>Production data; anything irreversible</td></tr>
+      <tr><td><strong>3 · Allowlist</strong></td><td>Reads and safe commands run freely; writes, deletes and network calls prompt</td><td>The everyday default for most development work</td></tr>
+      <tr><td><strong>4 · Sandbox autonomy</strong></td><td>Agent runs freely inside an isolated container; human reviews the final diff</td><td>Well-scoped tasks with an easy revert path and no live credentials</td></tr>
+      <tr><td><strong>5 · Unattended</strong></td><td>Agent runs on a schedule or trigger; human reviews outcomes and metrics</td><td>Narrow, well-evaluated, thoroughly instrumented tasks only</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>The verification bottleneck — the real limit on agent usefulness</strong>
+    An agent can produce four hours of work in twenty minutes. If checking it takes three hours, you have gained very little; if you skip the check, you have accepted unreviewed work into your system. As generation gets cheaper, <em>verification becomes the scarce resource</em>, and the highest-leverage engineering investment shifts accordingly: better tests, better types, better linters, better staging environments, smaller diffs, richer traces. Teams that invest in making work <em>cheap to check</em> get compounding returns from agents. Teams that only invest in prompting hit a ceiling almost immediately — and it is a ceiling made of their own review capacity.
+  </div>
+
+  <h3 id="make-your-environment-agent-legible">Make Your Environment Agent-Legible</h3>
+  <p>Agents work far better in environments built for them, and — pleasingly — the changes are the same ones that help new human colleagues:</p>
+  <ul>
+    <li><strong>A fast, reliable test suite.</strong> The agent's feedback loop and your verification mechanism, in one. Flaky tests are actively corrosive: they teach the agent that failures are noise.</li>
+    <li><strong>A conventions file at the project root.</strong> How to run things, what not to touch, the decisions already made. Load-bearing documentation.</li>
+    <li><strong>Reproducible setup.</strong> If a human needs three days of tribal knowledge to get a working environment, the agent will fail in the first five minutes.</li>
+    <li><strong>Small, reviewable units of work.</strong> One task, one branch, one diff you can actually read.</li>
+    <li><strong>Machine-readable interfaces.</strong> A CLI or API beats a GUI; explicit errors beat silent failure; types beat comments.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="managing-agents-in-production">Managing Agents in Production</h2>
+
+  <p>An agent deployed for real users is a distributed system with a stochastic component, and it needs the operational apparatus that implies.</p>
+
+  <h3 id="observability">Observability</h3>
+  <p>When an agent misbehaves, "the model was wrong" is almost never the actual cause. It is a truncated context, a tool that returned an unhelpful error, a permission denial the model interpreted as a missing file. You cannot diagnose any of that without a full trace: every prompt, every tool call, every result, with token counts, latency and cost attached to each step. Build this before you need it — the first production incident is a bad time to discover you are logging nothing.</p>
+
+  <h3 id="evaluation">Evaluation</h3>
+  <p>Agent evaluation differs from model evaluation because the output is a <em>trajectory</em>, not a string. Three layers, in increasing order of what they cost you:</p>
+  <ul>
+    <li><strong>Outcome evals.</strong> Did the task succeed, judged by a program? Cheap, objective, and the backbone of any regression suite.</li>
+    <li><strong>Trajectory evals.</strong> Did it get there sensibly — reasonable number of steps, no dangerous actions, no reward hacking? Catches agents that pass for the wrong reasons.</li>
+    <li><strong>Human review of samples.</strong> Expensive, irreplaceable, and the only thing that reliably catches the failure mode nobody thought to write an eval for.</li>
+  </ul>
+  <p>The <a href="evaluation.html">Evaluation &amp; Benchmarks</a> page covers the methodology, including why public agent benchmarks tend to overstate real-world performance.</p>
+
+  <h3 id="cost-and-latency-control">Cost and Latency Control</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Lever</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Prefix caching</strong></td><td>Often the single largest saving on long runs — keep the stable prefix byte-identical</td></tr>
+      <tr><td><strong>Model tiering</strong></td><td>Small model for routing, extraction and classification; large model only for genuine reasoning</td></tr>
+      <tr><td><strong>Hard budgets</strong></td><td>Cap tokens, tool calls and wall-clock per task. Runaway loops are a cost incident, not a curiosity</td></tr>
+      <tr><td><strong>Tool result trimming</strong></td><td>Filter at the tool boundary; a verbose tool taxes every subsequent step of the run</td></tr>
+      <tr><td><strong>Parallel sub-agents</strong></td><td>Cuts wall-clock latency; raises total token spend. A latency/cost trade, not a saving</td></tr>
+      <tr><td><strong>Early stopping</strong></td><td>Detect "stuck" and escalate to a human rather than burning the budget confirming it</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="identity-authorisation-and-audit">Identity, Authorisation, and Audit</h3>
+  <p>An agent acting on your behalf raises questions that ordinary software does not. Whose credentials does it use? If it acts at 3 a.m. under a service account, who is accountable for the action? What does the audit log record — the agent, the human who launched it, or both?</p>
+  <p>The emerging good practice is to treat each agent as a <strong>first-class principal</strong>: its own identity, its own narrowly scoped and short-lived credentials, its own entry in the audit log, and a recorded link to the human or system that authorised the run. "The agent used my API key" is a governance failure waiting for an incident report to be written about it. This is also where agent engineering meets the regulatory material on the <a href="safety.html">Safety &amp; Governance</a> page — accountability frameworks generally require exactly this kind of traceability.</p>
+</section>
+
+<section>
+  <h2 id="where-this-is-going">Where This Is Going</h2>
+
+  <p>Forecasting in this field ages badly, so treat the following as informed extrapolation, not prediction. The direction of travel, as of 2026:</p>
+
+  <ul class="timeline">
+    <li>
+      <span class="t-when">Established</span>
+      <span class="t-title">Agents are the default product form</span>
+      <p>Coding assistants that edit repositories and run tests, research agents that browse and synthesise, and customer-facing agents that transact are shipped products, not demos. Tool use and reasoning are assumed capabilities of frontier models rather than differentiators.</p>
+    </li>
+    <li>
+      <span class="t-when">Underway</span>
+      <span class="t-title">Standardised plumbing</span>
+      <p>MCP has made tool connectivity roughly as portable as HTTP made document retrieval. The comparable work now happening in agent identity, payment authorisation and inter-agent communication is less mature, and the standards contest is unresolved.</p>
+    </li>
+    <li>
+      <span class="t-when">Underway</span>
+      <span class="t-title">Longer horizons, higher stakes</span>
+      <p>As reliable task horizons stretch from minutes to hours to days, the binding constraint moves decisively from model capability to verification, permissioning and organisational trust. The interesting engineering problems become social and procedural as much as technical.</p>
+    </li>
+    <li class="future">
+      <span class="t-when">Projected</span>
+      <span class="t-title">Fleets, and the management problem</span>
+      <p>Running dozens of concurrent agents makes individual supervision impossible and forces a shift to managing by outcome, sampling and exception — the same transition an organisation makes when it grows past the size where one person can watch everything. Expect the tooling for this to look more like operations dashboards than like chat.</p>
+    </li>
+    <li class="future">
+      <span class="t-when">Projected</span>
+      <span class="t-title">Economic agents</span>
+      <p>Agents holding budgets, negotiating, and transacting with other agents raise unsettled questions of liability, fraud and market structure. The technology will arrive before the legal framework does; it usually does.</p>
+    </li>
+  </ul>
+
+  <div class="callout">
+    <strong>A provocation worth sitting with</strong>
+    Every argument for agent autonomy is an argument about who checks the work. We accept unverified output from human professionals constantly — we do not re-derive our doctor's reasoning — because we have centuries of institutional scaffolding for it: licensure, liability, reputation, malpractice insurance. None of that scaffolding exists for agents yet. The technical question "can the agent do this task?" is being answered rather quickly. The question "under what circumstances should anyone accept the result without checking?" has barely been posed, and it is the one that will actually determine how far this goes.
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>An agent is a model in a loop with tools, where the model — not a script — decides the next step. If you can draw the flowchart in advance, build a workflow instead; it will be cheaper and more reliable.</li>
+    <li>The context window is the agent's entire memory. Curating it is the central engineering craft, and more context is not better context.</li>
+    <li>Agentic competence is trained, chiefly through reinforcement learning on automatically verifiable tasks — which is why progress here scales with compute rather than with human labelling.</li>
+    <li>Reliability compounds against you across steps, so invest in error recovery and verification, not just in preventing individual mistakes.</li>
+    <li>Prompt injection is structural, not a bug. Break the lethal trifecta — private data, untrusted content, external communication — rather than hoping to filter your way out.</li>
+    <li>The binding constraint on agent usefulness is human verification capacity. Making work cheap to check pays better than making the agent slightly smarter.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

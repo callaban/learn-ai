@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Neural Networks | Learn AI</title>
+  <meta name="description" content="Neural Networks — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html" class="active">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="neural-networks"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,15 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>The Artificial Neuron</h2>
+  <h2 id="the-artificial-neuron">The Artificial Neuron</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>An artificial neuron is a weighted vote. It receives several numbers, multiplies each by a weight saying how much that input matters, adds them up, and passes the total through a simple function that decides how strongly to fire. That is the whole thing — a multiply, an add, and a bend. Stack billions of these and train the weights, and you get a system that writes code and holds a conversation. The gap between the simplicity of the part and the behaviour of the whole is the genuinely startling fact of the field.</p>
+  </div>
   <p>A biological neuron integrates electrical signals from thousands of dendrites and fires an output along its axon if the total input exceeds a threshold. The artificial neuron is an algebraic abstraction of this process. Given a vector of <em>n</em> inputs <strong>x</strong> = [x₁, x₂, …, xₙ], the neuron computes a scalar output <em>a</em> in two steps:</p>
 
   <div class="eq">z = w₁x₁ + w₂x₂ + … + wₙxₙ + b   =   <span class="highlight">wᵀx + b</span>
@@ -48,7 +56,7 @@ a = f(z)   where f is an activation function</div>
     A composition of linear functions is itself linear: A(Bx) = (AB)x. No depth of purely linear layers can learn to classify XOR, fit a sine wave, or parse language. Nonlinear activations break this limitation, letting deep networks approximate any continuous function (by the Universal Approximation Theorem).
   </div>
 
-  <h3>Activation Functions</h3>
+  <h3 id="activation-functions">Activation Functions</h3>
   <p>The choice of activation function profoundly affects training dynamics. The dominant activation in modern networks is ReLU and its variants:</p>
 
   <div class="eq"><span class="highlight">ReLU(z)</span>    = max(0, z)
@@ -79,7 +87,7 @@ a = f(z)   where f is an activation function</div>
 </section>
 
 <section>
-  <h2>Network Architecture</h2>
+  <h2 id="network-architecture">Network Architecture</h2>
   <p>Neurons are arranged into <strong>layers</strong>. The input layer holds the raw features. One or more <strong>hidden layers</strong> progressively transform the representation. The output layer produces the prediction. In a <em>fully connected</em> (dense) layer, every neuron in layer ℓ connects to every neuron in layer ℓ+1.</p>
 
   <p>Using matrix notation, a single layer maps an input vector <strong>x</strong> ∈ ℝⁿ to an output vector <strong>a</strong> ∈ ℝᵐ:</p>
@@ -196,15 +204,20 @@ a⁽ˡ⁾ = f⁽ˡ⁾(W⁽ˡ⁾ a⁽ˡ⁻¹⁾ + b⁽ˡ⁾)    for l = 1, …, L
 </section>
 
 <section>
-  <h2>Loss Functions</h2>
+  <h2 id="loss-functions">Loss Functions</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A loss function is a single number saying how wrong the network currently is. It is the only definition of "good" the system ever receives, which makes choosing it the most consequential decision in the whole design — the network will optimise exactly what you write here, including the parts you did not mean. Nearly every alignment problem discussed on the <a href="safety.html">Safety</a> page is a story about a loss function that was subtly not what anyone wanted.</p>
+  </div>
   <p>Training requires measuring how wrong the model's predictions are. A <strong>loss function</strong> L maps the model output <strong>ŷ</strong> and the true target <strong>y</strong> to a scalar. The network learns by minimising this scalar over the training set.</p>
 
-  <h3>Mean Squared Error (MSE) — regression</h3>
+  <h3 id="mean-squared-error-mse-regression">Mean Squared Error (MSE) — regression</h3>
   <div class="eq">L<sub>MSE</sub> = (1/n) Σᵢ (ŷᵢ − yᵢ)²
 
 ∂L/∂ŷᵢ = (2/n)(ŷᵢ − yᵢ)    ← gradient fed into backprop</div>
 
-  <h3>Cross-Entropy — classification</h3>
+  <h3 id="cross-entropy-classification">Cross-Entropy — classification</h3>
   <p>For a C-class problem with one-hot target vector <strong>y</strong> and softmax output <strong>ŷ</strong>:</p>
   <div class="eq">L<sub>CE</sub> = − Σᶜ yᶜ · log(ŷᶜ)
 
@@ -214,7 +227,7 @@ For the correct class c*: L<sub>CE</sub> = −log(ŷ<sub>c*</sub>)
 
   <p>The elegance of pairing softmax with cross-entropy is that the combined gradient is simply (ŷ − y) — clean, numerically stable, and fast to compute.</p>
 
-  <h3>Next-Token Prediction Loss (Language Models)</h3>
+  <h3 id="next-token-prediction-loss-language-models">Next-Token Prediction Loss (Language Models)</h3>
   <div class="eq">L = − (1/T) Σₜ log P(xₜ | x₁, x₂, …, x_{t-1}; θ)
 
 where P(·) is the model's softmax distribution over V vocabulary tokens
@@ -222,7 +235,12 @@ T is the sequence length, θ are the model parameters</div>
 </section>
 
 <section>
-  <h2>Backpropagation</h2>
+  <h2 id="backpropagation">Backpropagation</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>The network makes a prediction and it is wrong by some amount. Backpropagation is the bookkeeping that assigns blame: it works backwards through the network figuring out, for every single weight, whether nudging it up or down would have made the error smaller — and by how much. Then every weight takes a tiny step in its improving direction. Repeat a few million times. The only mathematics involved is the chain rule from first-year calculus, applied with extreme discipline at enormous scale.</p>
+  </div>
   <p>The forward pass computes the loss. Backpropagation efficiently computes <em>every</em> partial derivative ∂L/∂wᵢⱼ using the <strong>chain rule of calculus</strong>. For parameter w in layer ℓ, the gradient depends on every computation that follows w in the forward pass:</p>
 
   <div class="eq">∂L/∂W⁽ˡ⁾ = ∂L/∂a⁽ˡ⁾ · ∂a⁽ˡ⁾/∂z⁽ˡ⁾ · ∂z⁽ˡ⁾/∂W⁽ˡ⁾
@@ -239,15 +257,15 @@ where δ⁽ˡ⁾ = (W⁽ˡ⁺¹⁾)ᵀ δ⁽ˡ⁺¹⁾ ⊙ f'(z⁽ˡ⁾)   [erro
     To compute gradients, the activations a⁽ˡ⁾ at every layer must be stored until that layer's backward pass runs. For a 70B-parameter model training on long sequences, this activation memory can exceed 100 GB per GPU — often larger than the parameter memory itself. Gradient checkpointing trades recomputation for memory: only a subset of activations are stored; the rest are recomputed on demand during the backward pass.
   </div>
 
-  <h3>Vanishing and Exploding Gradients</h3>
+  <h3 id="vanishing-and-exploding-gradients">Vanishing and Exploding Gradients</h3>
   <p>During backprop, the gradient at layer ℓ is multiplied by the Jacobian of every subsequent layer. If those Jacobians have spectral norm &lt; 1 (as sigmoid and tanh do at saturation), the gradient shrinks exponentially with depth — <strong>vanishing</strong>. If the norm exceeds 1, it grows exponentially — <strong>exploding</strong>. ReLU has a constant gradient of 1 for positive inputs, which helps. Residual connections (adding the input directly to the output of a layer) create gradient highways that bypass this multiplicative chain.</p>
 </section>
 
 <section>
-  <h2>Regularisation</h2>
+  <h2 id="regularisation">Regularisation</h2>
   <p>Without constraint, a network with enough parameters will memorise training data instead of generalising — <strong>overfitting</strong>. Key regularisation techniques:</p>
 
-  <h3>L2 Weight Decay</h3>
+  <h3 id="l2-weight-decay">L2 Weight Decay</h3>
   <div class="eq">L_total = L_task + (λ/2) Σᵢ wᵢ²
 
 ∂L_total/∂wᵢ = ∂L_task/∂wᵢ + λwᵢ
@@ -255,10 +273,10 @@ where δ⁽ˡ⁾ = (W⁽ˡ⁺¹⁾)ᵀ δ⁽ˡ⁺¹⁾ ⊙ f'(z⁽ˡ⁾)   [erro
 Effective update: w ← w(1 − ηλ) − η · ∂L_task/∂w</div>
   <p>Weight decay penalises large weights, biasing the model toward simpler solutions. λ is a hyperparameter (typical value: 0.01–0.1 for large models).</p>
 
-  <h3>Dropout</h3>
+  <h3 id="dropout">Dropout</h3>
   <p>During training, each neuron's activation is set to zero with probability <em>p</em> (typically 0.1–0.5) and scaled by 1/(1−p) to maintain expected values. This prevents co-adaptation — neurons cannot rely on specific other neurons, forcing redundant representations. At inference, dropout is disabled.</p>
 
-  <h3>Batch Normalisation</h3>
+  <h3 id="batch-normalisation">Batch Normalisation</h3>
   <div class="eq">BN(x) = γ · (x − μ_B) / √(σ²_B + ε) + β
 
 μ_B = (1/m) Σᵢ xᵢ        (batch mean)
@@ -269,7 +287,7 @@ Effective update: w ← w(1 − ηλ) − η · ∂L_task/∂w</div>
 </section>
 
 <section>
-  <h2>Parameter Count and Computational Cost</h2>
+  <h2 id="parameter-count-and-computational-cost">Parameter Count and Computational Cost</h2>
   <p>For a fully connected layer with <em>n</em> inputs and <em>m</em> outputs:</p>
   <ul>
     <li><strong>Parameters:</strong> m × n (weights) + m (biases) ≈ mn</li>
@@ -290,10 +308,38 @@ This is the Kaplan/Chinchilla approximation used to budget training runs.</div>
   </div>
 </section>
 
+<div class="checkpoint">
+  <h4>Check yourself</h4>
+  <details><summary>Why does a network need a non-linear activation function at all?</summary>
+  <p>Because composing linear functions gives you another linear function. Without a non-linearity, a hundred stacked layers would be exactly equivalent to a single layer, and the network could only ever learn straight-line relationships. The bend is what makes depth worth anything.</p></details>
+  <details><summary>What causes vanishing gradients, and why does ReLU help?</summary>
+  <p>The chain rule multiplies derivatives across layers. Sigmoid and tanh derivatives are well below one almost everywhere, so multiplying dozens of them drives the gradient toward zero and early layers stop learning. ReLU's derivative is exactly 1 for positive inputs, so the gradient passes through undiminished.</p></details>
+  <details><summary>Dropout is applied during training but switched off at inference. Why?</summary>
+  <p>Dropout is a regulariser: randomly removing units during training forces the network not to rely on any single one, which reduces overfitting. At inference you want the full trained network and a deterministic answer, so all units are used — with activations scaled to match the expected value seen during training.</p></details>
+</div>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>A neuron is a weighted sum passed through a non-linearity. Everything else is composition and scale.</li>
+    <li>Non-linear activations are what make depth meaningful; without them any network collapses to a single linear layer.</li>
+    <li>The loss function is the only definition of "good" the system receives, which makes it the most consequential design choice in the whole pipeline.</li>
+    <li>Backpropagation is the chain rule applied systematically backwards through the network — the same idea whether the network has three layers or a thousand.</li>
+    <li>Vanishing and exploding gradients are why residual connections, careful normalisation and ReLU-family activations exist. They are not decorations.</li>
+    <li>Regularisation trades a little training accuracy for generalisation, which is the only thing that matters outside the training set.</li>
+  </ul>
+</div>
+
 </main>
 
 <footer>
-  <p>Learn AI · <a href="index.html">Home</a> · <a href="training.html">Next: Training →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

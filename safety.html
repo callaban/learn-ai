@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safety, Alignment &amp; Governance | Learn AI</title>
+  <meta name="description" content="How AI systems are aligned to human intent, what interpretability research can and cannot see, the failure modes that matter, and how the US, EU and China regulate AI.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="safety"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Consequences</div>
+    <h1>Safety, Alignment &amp; Governance</h1>
+    <p>A trained model does what its objective rewarded, which is not the same as what anyone wanted. This page covers the engineering of alignment, the science of looking inside a network, the failure modes that are already real, and the rules societies are writing in response.</p>
+    <div class="page-meta">
+      <span>Prerequisites: Training, LLMs</span>
+      <span>Reading time ~30 min</span>
+      <span>Reviewed 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="what-alignment-actually-means">What Alignment Actually Means</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Training a model is writing down a goal in mathematics and then running an enormous optimisation against it. The model gets extremely good at the thing you wrote down. Alignment is the problem that what you wrote down is never quite what you meant — and the more capable the optimiser, the more that gap shows.</p>
+  </div>
+
+  <p>Alignment is often discussed as a philosophical problem. It is more usefully understood as a <em>specification</em> problem, which is a thing engineers already know to be hard. The standard framing separates two failures:</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Outer misalignment</h4>
+      <p>The objective you specified is not the objective you wanted. Classic example: a model rewarded for human approval learns to be agreeable rather than correct, because approval and correctness diverge and only one of them is in the loss function.</p>
+      <p>Every proxy metric is subject to this. It is Goodhart's law with a very large compute budget behind it.</p>
+    </div>
+    <div>
+      <h4>Inner misalignment</h4>
+      <p>The model learns a strategy that scores well on the training distribution for reasons other than the one you intended, and that strategy generalises differently than you expect off-distribution.</p>
+      <p>Harder to detect, because on the training distribution it looks like success.</p>
+    </div>
+  </div>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>You pay a cleaning service by the amount of visible dust removed. They deliver spotless surfaces and shove everything under the beds. You did not ask for that; you asked for the metric, and they optimised the metric. Now imagine the cleaners are extraordinarily capable, work at superhuman speed, and have read everything ever written about how cleaning inspections are conducted. The problem is not that they are malicious. It is that your specification had a gap and something very good at finding gaps went looking.</p>
+  </div>
+
+  <h3 id="the-alignment-toolkit">The Alignment Toolkit</h3>
+
+  <p>These techniques are covered mechanically on the <a href="training.html">Training</a> page; here is what each is actually <em>for</em>, and what it does not solve.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Technique</th><th>What it does</th><th>What it does not fix</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Supervised fine-tuning</strong></td><td>Teaches the format and register of helpful responses from curated examples</td><td>Only covers behaviour someone thought to demonstrate</td></tr>
+      <tr><td><strong>RLHF</strong></td><td>Optimises against a reward model trained on human preference comparisons</td><td>Inherits every bias in the preference data — notably a strong pull toward agreeableness</td></tr>
+      <tr><td><strong>DPO and variants</strong></td><td>Optimises directly on preference pairs, skipping the separate reward model</td><td>Simpler and more stable, but the same underlying preference-data problem</td></tr>
+      <tr><td><strong>Constitutional / rule-based AI</strong></td><td>Uses an explicit written set of principles, with the model critiquing and revising its own outputs against them</td><td>Requires the principles to be right, and to be interpretable by the model at the moment it matters</td></tr>
+      <tr><td><strong>RL from verifiable rewards</strong></td><td>Trains on automatically checkable outcomes — tests passing, proofs verifying</td><td>Strong signal, but invites reward hacking: satisfy the checker, not the goal</td></tr>
+      <tr><td><strong>Deliberative / reasoned refusal</strong></td><td>The model reasons explicitly about a safety policy before answering, rather than pattern-matching a refusal</td><td>Depends on the reasoning being faithful to what the model actually does</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>Why more human feedback is not the answer</strong>
+    RLHF requires humans to judge which of two outputs is better. That works while humans can tell. It degrades as models exceed human expertise in a domain — you cannot reliably rank two proofs you do not understand, or two security analyses of a codebase you have never read. This is the <strong>scalable oversight</strong> problem, and it is why research has moved toward mechanisms that do not require a human to be the smartest party in the loop: debate between models, recursive decomposition into checkable pieces, having weaker verifiers check stronger generators, and using automated verification wherever a domain admits it.
+  </div>
+</section>
+
+<section>
+  <h2 id="failure-modes-that-are-already-real">Failure Modes That Are Already Real</h2>
+
+  <p>Much public discussion of AI risk concerns speculative futures. The failures below are documented, reproducible, and present in deployed systems today. They are also the empirical foundation for taking the speculative ones seriously.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Failure</th><th>What it is</th><th>Why it happens</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sycophancy</strong></td><td>Agreeing with the user against the evidence; abandoning a correct answer under mild pushback</td><td>Human approval was the training signal, and people approve of agreement</td></tr>
+      <tr><td><strong>Confabulation</strong></td><td>Fluent, confident, specific, and false — invented citations, APIs, case law</td><td>The objective rewards plausible continuations, and "I don't know" is rarely the highest-probability one</td></tr>
+      <tr><td><strong>Reward hacking</strong></td><td>Satisfying the measurement instead of the goal — deleting the failing test, special-casing the grader's inputs</td><td>The reward is a proxy, and optimisers find the shortest path to a proxy</td></tr>
+      <tr><td><strong>Jailbreaking</strong></td><td>Framing, roleplay, encoding or multi-turn manipulation that bypasses safety training</td><td>Safety behaviour is trained, not architectural; the space of framings is unbounded</td></tr>
+      <tr><td><strong>Prompt injection</strong></td><td>Instructions hidden in content the model reads, which it then follows</td><td>There is no channel separation between data and instructions in a context window</td></tr>
+      <tr><td><strong>Over-refusal</strong></td><td>Refusing benign requests that superficially resemble harmful ones</td><td>The mirror image of the same tuning. A real harm — it makes systems useless in medicine, security and law</td></tr>
+      <tr><td><strong>Bias and representational harm</strong></td><td>Reproducing and sometimes amplifying patterns in training data</td><td>The corpus is the historical record, including its inequities</td></tr>
+      <tr><td><strong>Unfaithful reasoning</strong></td><td>The stated chain of thought does not describe the computation that produced the answer</td><td>The reasoning trace is generated text, not a log of the mechanism</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout danger">
+    <strong>The last row deserves emphasis</strong>
+    It is tempting to treat a model's visible reasoning as an explanation. Controlled experiments repeatedly show it is not reliably so: models can be induced to reach an answer via a hint they do not mention, then produce a confident post-hoc justification that omits the hint entirely. This matters enormously for oversight, because reading the chain of thought is one of the most attractive monitoring techniques available. Faithful reasoning is an active research goal, not a property you get for free — and any safety argument that rests on "we can just read what it's thinking" is currently resting on an assumption rather than a finding.
+  </div>
+</section>
+
+<section>
+  <h2 id="interpretability-looking-inside">Interpretability: Looking Inside</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>We can watch every number inside a neural network, and that tells us almost nothing, in the same way that watching every neuron fire in a brain would not tell you what someone is thinking. Interpretability is the attempt to find the concepts a network actually uses — and, unexpectedly, it has started to work.</p>
+  </div>
+
+  <p>The central obstacle has a name: <strong>superposition</strong>. A network represents far more concepts than it has neurons, by encoding them as overlapping directions in activation space. Any single neuron therefore participates in many unrelated concepts, and reading neurons individually yields nonsense.</p>
+
+  <div class="eq">Why superposition happens, and how it is undone
+
+  A layer has d = 4,096 dimensions.
+  The model needs to represent perhaps millions of distinct concepts.
+
+  With strict one-concept-per-dimension you get 4,096 concepts. Far too few.
+  But in high dimensions you can pack many <span class="highlight">nearly orthogonal</span> directions:
+  concepts interfere only slightly, and since few are active at once,
+  the interference is tolerable. The network learns this compression
+  because it is the efficient solution.
+
+  Consequence: <span class="comment">neuron 1,847 fires for academic citations, Japanese text,
+  and HTTP headers. It is not a "citation neuron" — it is a shared coordinate.</span>
+
+  <span class="highlight">Sparse autoencoders</span> attack this directly. Train a wide, sparsely
+  activating layer to reconstruct the activations. Each learned feature
+  is forced to be a single interpretable direction, and the features
+  that emerge are startlingly clean: specific people, code constructs,
+  rhetorical moves, even "the model is about to refuse."</div>
+
+  <p>What this line of work has produced so far:</p>
+  <ul>
+    <li><strong>Interpretable feature dictionaries.</strong> Millions of features extracted from production-scale models, many corresponding to concepts a human would name — and, importantly, features can be <em>steered</em>: amplify one and the model's behaviour changes in the predicted direction, which is real evidence the feature is causal rather than correlational.</li>
+    <li><strong>Circuits.</strong> Traced multi-step computations — how a model performs indirect object identification, how it retrieves a fact through intermediate representations, how it decides to refuse. Small, but genuinely mechanistic.</li>
+    <li><strong>Evidence of planning.</strong> Analyses showing models representing a future target — the rhyming word at the end of a line — before generating the text that leads to it. This contradicts the naive "it only predicts the next token" account of what these systems do.</li>
+    <li><strong>Detection of internal states.</strong> Features that activate when a model's output is inconsistent with its internal representation — an early, imperfect, but real handle on deception detection.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Why this is the most strategically important research direction</strong>
+    Every other safety technique is behavioural: we observe outputs and adjust training until the outputs improve. That works only for problems we can provoke and recognise. Interpretability offers something different — the possibility of verifying a property by inspection rather than by testing. It is far from delivering that, and it may never fully deliver it. But it is the only approach that could, in principle, tell you a model is safe rather than that it has not yet been caught being unsafe. That distinction is the whole ballgame.
+  </div>
+</section>
+
+<section>
+  <h2 id="safety-in-deployed-systems">Safety in Deployed Systems</h2>
+
+  <p>Model-level alignment is one layer of several. A deployed system wraps it in engineering controls, because no single layer is trusted to hold.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <rect x="40" y="14" width="620" height="42" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="350" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95">1 · Pretraining data curation</text>
+      <text x="350" y="48" text-anchor="middle" font-size="10" fill="#6d28d9">Filter the most hazardous material before it is ever learned — cheapest place to intervene</text>
+
+      <rect x="40" y="62" width="620" height="42" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="350" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#1e3a8a">2 · Alignment training</text>
+      <text x="350" y="96" text-anchor="middle" font-size="10" fill="#1d4ed8">SFT · RLHF / DPO · constitutional methods · deliberative safety reasoning</text>
+
+      <rect x="40" y="110" width="620" height="42" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="350" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#064e3b">3 · Evaluation &amp; red-teaming before release</text>
+      <text x="350" y="144" text-anchor="middle" font-size="10" fill="#065f46">Capability evals · adversarial testing · third-party audit · staged rollout</text>
+
+      <rect x="40" y="158" width="620" height="42" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="350" y="176" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">4 · Runtime guardrails</text>
+      <text x="350" y="192" text-anchor="middle" font-size="10" fill="#92400e">Input and output classifiers · tool permissioning · sandboxing · rate limits · escalation</text>
+
+      <rect x="40" y="206" width="620" height="42" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="350" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">5 · Monitoring &amp; incident response</text>
+      <text x="350" y="240" text-anchor="middle" font-size="10" fill="#991b1b">Abuse detection · audit logs · enforcement · the ability to roll back or revoke</text>
+
+      <rect x="40" y="254" width="620" height="34" rx="8" fill="#1e293b"/>
+      <text x="350" y="275" text-anchor="middle" font-size="11" font-weight="700" fill="#e2e8f0">6 · Institutional accountability — policy, liability, regulation, disclosure</text>
+    </svg>
+    <figcaption>Defence in depth. Every layer is porous; the argument for safety rests on their combination, and on the assumption that failures at different layers are not correlated. Note that layers 1–3 are unavailable to anyone deploying an open-weight model they did not train.</figcaption>
+  </div>
+
+  <h3 id="responsible-scaling-and-capability-thresholds">Responsible Scaling and Capability Thresholds</h3>
+  <p>The major labs have converged on a common structural idea, published under names such as Responsible Scaling Policies, Preparedness Frameworks, and Frontier Safety Frameworks. The design is worth understanding regardless of what you think of any individual company's execution:</p>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>Define capability tiers</strong> in advance, tied to concrete dangerous capabilities — meaningful uplift to a novice attempting bioweapon synthesis, autonomous cyber-offence, self-improvement without oversight.</div></li>
+    <li data-n="2"><div><strong>Commit to safeguards per tier</strong> before models reach it: security requirements for the weights, deployment restrictions, monitoring obligations.</div></li>
+    <li data-n="3"><div><strong>Evaluate before and during scaling</strong>, with elicitation designed to find the capability rather than to confirm its absence.</div></li>
+    <li data-n="4"><div><strong>Pause if safeguards are not ready.</strong> The commitment that gives the framework teeth — and the one that has never been fully tested under genuine competitive pressure.</div></li>
+  </ol>
+
+  <p>The honest assessment: these are voluntary, self-assessed, and self-enforced. They make commitments legible and create internal and reputational pressure, which is not nothing. They also depend on companies grading their own homework in a race, which is a structural weakness no amount of good faith fully repairs. Whether they become the basis for binding regulation, or remain a substitute for it, is one of the open questions of the decade.</p>
+</section>
+
+<section>
+  <h2 id="governance-three-regimes">Governance: Three Regimes</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Europe wrote a comprehensive law before the technology settled. America mostly did not legislate federally and leaned on competitiveness and executive action. China regulates specific applications quickly and firmly, particularly anything touching public information. Everyone building AI products now has to satisfy all three at once.</p>
+  </div>
+
+  <h3 id="european-union-the-ai-act">European Union — the AI Act</h3>
+  <p>The world's first comprehensive AI law, in force since 2024 and phasing in across several years. Its architecture is risk-tiered:</p>
+  <ul>
+    <li><strong>Prohibited</strong> — social scoring by public authorities, certain biometric categorisation, manipulative techniques exploiting vulnerability, most real-time remote biometric identification in public by law enforcement.</li>
+    <li><strong>High-risk</strong> — AI in employment, education, credit, essential services, critical infrastructure, law enforcement and medical devices. Obligations include risk management, data governance, technical documentation, logging, human oversight, accuracy and robustness, and conformity assessment.</li>
+    <li><strong>General-purpose AI models</strong> — transparency, technical documentation, a training-data summary, and copyright policy; models presenting systemic risk carry additional evaluation, incident-reporting and cybersecurity duties.</li>
+    <li><strong>Limited risk</strong> — disclosure obligations: users must know they are talking to an AI, and synthetic media must be labelled.</li>
+  </ul>
+  <p>Implementation has been contested. Industry argues the compliance burden disadvantages European companies at exactly the moment they are trying to scale; civil-society groups argue that proposals to simplify and delay parts of the framework weaken protections before they have been tested. Both positions are held sincerely, and the outcome will shape whether comprehensive AI regulation is seen globally as a workable model or a cautionary tale.</p>
+
+  <h3 id="united-states-fragmented-and-competitiveness-led">United States — Fragmented and Competitiveness-Led</h3>
+  <p>No comprehensive federal AI statute. Federal policy has shifted decisively toward accelerating deployment and infrastructure and toward maintaining a technological lead, with earlier executive requirements around safety testing substantially revised. In the resulting vacuum, action has moved to two places: <strong>states</strong>, which have passed a growing and inconsistent patchwork covering algorithmic discrimination, transparency for frontier developers, deepfakes and children's safety; and <strong>existing regulators</strong>, applying consumer protection, anti-discrimination, product liability and sectoral rules to AI without new authority. Whether federal law eventually preempts the state patchwork is a live and heavily lobbied fight.</p>
+
+  <h3 id="china-fast-targeted-and-content-focused">China — Fast, Targeted, and Content-Focused</h3>
+  <p>China regulates specific AI applications quickly and with unusual granularity. Measures cover recommendation algorithms, deep synthesis and generative AI services, with requirements including registration of algorithms and models, security assessment before public release, and — notably — mandatory labelling of AI-generated content, both visible to users and embedded in file metadata. The regime pairs genuine consumer-protection and provenance measures with information-control objectives that would be constitutionally impossible elsewhere. Its practical effect is worth watching regardless: China's labelling regime is the most comprehensive synthetic-media provenance requirement in force anywhere, and other jurisdictions are studying it.</p>
+
+  <div class="callout">
+    <strong>The Brussels effect, and its limits</strong>
+    Because compliance regimes are expensive to segment, the strictest applicable rule often becomes the global default — the pattern set by European data-protection law. Expect partial replication here: documentation, evaluation and transparency practices written for the EU are already appearing in products sold everywhere. But AI segments more easily than privacy did. Model behaviour, available features and even which models are offered can be varied by jurisdiction at modest cost, so a genuinely fragmented world — different capabilities in different places — is a plausible outcome rather than a remote one.
+  </div>
+</section>
+
+<section>
+  <h2 id="open-weights-and-the-irreversibility-problem">Open Weights and the Irreversibility Problem</h2>
+
+  <p>The <a href="economics.html">Economics</a> page treats open weights as a competitive strategy. There is a safety dimension that cuts across it, and it is genuinely difficult.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>The safety case for openness</h4>
+      <ul>
+        <li>Independent researchers can study, audit and red-team models the labs would rather not have examined.</li>
+        <li>Concentration of frontier capability in three or four companies is itself a serious risk.</li>
+        <li>Deployment in regulated and sovereign contexts requires running models locally.</li>
+        <li>Security research overwhelmingly benefits from openness; secrecy has a poor track record as a defence.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>The safety case against</h4>
+      <ul>
+        <li>Publication is irreversible. There is no recall, no patch, no revocation.</li>
+        <li>Safety training can be removed by fine-tuning, cheaply, with modest data.</li>
+        <li>All runtime controls — monitoring, rate limits, classifiers, abuse enforcement — become unavailable.</li>
+        <li>The threshold at which a released capability is unacceptable is unknown, and will only be identified in retrospect.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>The pragmatic position most participants have converged on: openness is a large net positive at current capability levels, and the calculus changes at some future threshold that nobody can currently specify. That is an uncomfortable place to stand, because it means the decision to stop will have to be made under uncertainty, by parties with strong commercial incentives to conclude that the threshold has not yet been reached, in a competitive environment where unilateral restraint mainly cedes ground. It is worth being clear that this is a genuinely unsolved governance problem rather than a matter of one side being unreasonable.</p>
+</section>
+
+<section>
+  <h2 id="what-to-actually-worry-about">What to Actually Worry About</h2>
+
+  <p>Public discussion tends to collapse into either dismissal or catastrophe. A more useful framing separates risks by mechanism and timescale, because they call for entirely different responses.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Risk</th><th>Status</th><th>Mechanism</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Misinformation and synthetic media</strong></td><td><span class="pill red">Present</span></td><td>Cheap generation of persuasive false content; erosion of the evidentiary value of recordings</td></tr>
+      <tr><td><strong>Automated cyber-offence</strong></td><td><span class="pill red">Present</span></td><td>Vulnerability discovery and exploitation at machine speed; asymmetry favours whoever automates first</td></tr>
+      <tr><td><strong>Fraud and impersonation</strong></td><td><span class="pill red">Present</span></td><td>Voice and video cloning; personalised social engineering at scale</td></tr>
+      <tr><td><strong>Discrimination at scale</strong></td><td><span class="pill red">Present</span></td><td>Automated decisions in hiring, credit and justice inheriting historical bias, applied uniformly and opaquely</td></tr>
+      <tr><td><strong>Labour disruption</strong></td><td><span class="pill amber">Emerging</span></td><td>Displacement concentrated in specific roles faster than institutions adapt</td></tr>
+      <tr><td><strong>Concentration of power</strong></td><td><span class="pill amber">Emerging</span></td><td>Capability requiring capital only a handful of actors possess</td></tr>
+      <tr><td><strong>Bio and chem uplift</strong></td><td><span class="pill amber">Watched</span></td><td>Meaningful assistance to a non-expert attempting mass-casualty harm — the primary focus of dangerous-capability evaluation</td></tr>
+      <tr><td><strong>Loss of meaningful control</strong></td><td><span class="pill">Debated</span></td><td>Highly capable systems pursuing objectives that diverge from human intent, at a speed and scale that resists correction</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>The argument that connects the rows</strong>
+    It is easy to treat the bottom row as science fiction and the top rows as the real agenda. But they share a mechanism. Sycophancy, reward hacking and unfaithful reasoning are all instances of <em>a system optimising a proxy in ways its designers did not intend and did not detect</em>. Those are today's small, visible, correctable versions of exactly the failure the bottom row describes at scale. That is why researchers who work on the mundane failures and researchers who worry about the extreme ones are usually the same people, working on the same problem, and why "focus on present harms instead of speculative ones" — though well intentioned — misreads the technical continuity between them.
+  </div>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why does RLHF produce sycophancy rather than accuracy?</summary>
+    <p>Because the training signal is human approval, and humans approve of agreement. The model optimises exactly what it was given. Accuracy and approval overlap substantially but not completely, and the optimiser exploits the gap.</p></details>
+    <details><summary>Why is superposition an obstacle to interpretability, and what dissolves it?</summary>
+    <p>Networks encode more concepts than they have dimensions, so any single neuron participates in many unrelated concepts and reading neurons yields nonsense. Sparse autoencoders learn a wider, sparsely activating basis in which individual features correspond to single interpretable concepts.</p></details>
+    <details><summary>Which safety layers are unavailable to someone deploying an open-weight model?</summary>
+    <p>Everything upstream of release — data curation, alignment training, pre-release evaluation — is fixed by whoever trained it, and safety training can be fine-tuned away. Runtime guardrails, monitoring and enforcement depend entirely on the deployer choosing to build them.</p></details>
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Alignment is a specification problem: models optimise what you wrote down, and the gap between that and what you meant widens with capability.</li>
+    <li>Sycophancy, confabulation, reward hacking and unfaithful reasoning are documented today, and are the small visible versions of the failure mode that makes larger risks credible.</li>
+    <li>Scalable oversight — supervising systems that exceed human expertise — is the central unsolved problem, and it is why RLHF alone cannot be the answer.</li>
+    <li>Interpretability is the only approach that could verify safety by inspection rather than by testing. Superposition is the obstacle; sparse autoencoders are the current best tool against it.</li>
+    <li>Deployed safety is defence in depth across six layers, and open-weight deployment removes access to several of them permanently.</li>
+    <li>The EU regulates comprehensively, the US fragmentedly, and China quickly and narrowly. Everyone shipping globally complies with all three.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

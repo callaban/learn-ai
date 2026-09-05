@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Implementation with PyTorch | Learn AI</title>
   <meta name="description" content="Practical AI implementation with PyTorch: tensors, autograd, training loops, LoRA fine-tuning, mixed precision, and production deployment.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html" class="active">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="implementation"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -34,8 +34,15 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>Why PyTorch</h2>
+  <h2 id="why-pytorch">Why PyTorch</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>PyTorch is the language the field actually speaks. It gives you multi-dimensional arrays that live on a GPU, and — the crucial part — it records every operation you perform on them so it can automatically work out the gradients. You write the forward computation as ordinary Python; the derivatives come for free. That combination of "just write normal code" and "differentiation is handled" is why it won.</p>
+  </div>
   <p>PyTorch was released by Meta AI in 2016 and has become the framework of choice for AI research and increasingly for production. Its core design principle is <em>define-by-run</em> (dynamic computation graphs): the graph is built at runtime as Python code executes, making debugging with standard Python tools natural. TensorFlow 1.x required a separate graph-construction phase; PyTorch eliminated this friction.</p>
 
   <div class="two-col">
@@ -51,7 +58,7 @@
 </section>
 
 <section>
-  <h2>Tensors: The Core Data Structure</h2>
+  <h2 id="tensors-the-core-data-structure">Tensors: The Core Data Structure</h2>
   <p>A <strong>tensor</strong> is an n-dimensional array, generalising scalars (rank 0), vectors (rank 1), matrices (rank 2), and higher-dimensional structures. PyTorch tensors are similar to NumPy arrays but can live on GPU memory and participate in automatic differentiation.</p>
 
   <pre>import torch
@@ -80,7 +87,7 @@ print(x.device)  # device(type='cuda', index=0)</pre>
     Tensors are stored as a flat buffer with a shape and stride. A stride tells PyTorch how many elements to skip in memory to move one position along each dimension. Operations like <code>.T</code> (transpose) don't copy data — they return a view with swapped strides. Calling <code>.contiguous()</code> forces a physical copy into C-contiguous order, which many CUDA kernels require for peak performance.
   </div>
 
-  <h3>dtypes and Memory Cost</h3>
+  <h3 id="dtypes-and-memory-cost">dtypes and Memory Cost</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>dtype</th><th>Bits</th><th>Range / Precision</th><th>Typical Use</th></tr></thead>
@@ -97,7 +104,7 @@ print(x.device)  # device(type='cuda', index=0)</pre>
 </section>
 
 <section>
-  <h2>Autograd: Automatic Differentiation</h2>
+  <h2 id="autograd-automatic-differentiation">Autograd: Automatic Differentiation</h2>
   <p>PyTorch's <code>autograd</code> engine implements <strong>reverse-mode automatic differentiation</strong>. Every tensor operation records itself into a <em>computation graph</em> (a directed acyclic graph of <code>Function</code> objects). Calling <code>.backward()</code> on a scalar loss traverses the graph in reverse, computing gradients via the chain rule.</p>
 
   <pre>x = torch.tensor([[2.0, 3.0]], requires_grad=True)  # (1, 2)
@@ -165,7 +172,7 @@ print(b.grad)             # ∂loss/∂b</pre>
     <figcaption>The computation graph. The forward pass builds it left to right. Calling loss.backward() traverses it right to left, computing gradients at each node via the chain rule.</figcaption>
   </div>
 
-  <h3>No-Grad Contexts</h3>
+  <h3 id="no-grad-contexts">No-Grad Contexts</h3>
   <p>During inference, gradient tracking wastes memory and compute. Wrap inference code in <code>torch.no_grad()</code> to disable the autograd engine:</p>
   <pre>model.eval()
 with torch.no_grad():
@@ -176,7 +183,7 @@ with torch.no_grad():
 </section>
 
 <section>
-  <h2>Building Models with nn.Module</h2>
+  <h2 id="building-models-with-nn-module">Building Models with nn.Module</h2>
   <p>All neural networks in PyTorch inherit from <code>torch.nn.Module</code>. A Module encapsulates parameters, child modules, and a <code>forward()</code> method that defines the computation. Modules compose: a Module can contain other Modules, and PyTorch automatically discovers all nested parameters for the optimizer.</p>
 
   <pre>import torch
@@ -214,7 +221,7 @@ model   = TransformerBlock(d_model=512, n_heads=8, d_ff=2048)
 n_params = sum(p.numel() for p in model.parameters())
 print(f"Parameters: {n_params:,}")   # Parameters: 3,152,384</pre>
 
-  <h3>Key nn Primitives</h3>
+  <h3 id="key-nn-primitives">Key nn Primitives</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Module</th><th>Operation</th><th>Parameters</th></tr></thead>
@@ -231,7 +238,7 @@ print(f"Parameters: {n_params:,}")   # Parameters: 3,152,384</pre>
 </section>
 
 <section>
-  <h2>The Training Loop</h2>
+  <h2 id="the-training-loop">The Training Loop</h2>
   <p>A complete PyTorch training loop has five components: the <strong>dataset</strong> (raw data), the <strong>DataLoader</strong> (batching/shuffling), the <strong>model</strong>, the <strong>loss function</strong>, and the <strong>optimizer</strong>. Each training step follows the same four-step pattern:</p>
 
   <ol class="steps">
@@ -278,13 +285,13 @@ for epoch in range(10):
     PyTorch accumulates gradients by default — calling <code>loss.backward()</code> without first calling <code>optimizer.zero_grad()</code> adds to existing gradients. This causes incorrect, diverging updates. Always zero gradients before the backward pass, not after.
   </div>
 
-  <h3>Gradient Clipping</h3>
+  <h3 id="gradient-clipping">Gradient Clipping</h3>
   <p><code>clip_grad_norm_</code> caps the global gradient norm to <code>max_norm</code> before the optimizer step, preventing the exploding gradient problem that can destabilise training on long sequences. The norm is computed across all parameters:</p>
   <div class="eq">‖g‖₂ = √(Σᵢ gᵢ²)
 
 If ‖g‖₂ > max_norm:  g ← g · (max_norm / ‖g‖₂)</div>
 
-  <h3>Learning Rate Schedulers</h3>
+  <h3 id="learning-rate-schedulers">Learning Rate Schedulers</h3>
   <pre>from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 
 # Linear warmup for 100 steps then cosine decay to 5% of base LR
@@ -298,7 +305,7 @@ scheduler.step()</pre>
 </section>
 
 <section>
-  <h2>Mixed Precision Training</h2>
+  <h2 id="mixed-precision-training">Mixed Precision Training</h2>
   <p>Training in BF16 halves memory use and doubles throughput on Ampere/Hopper GPUs versus FP32, because tensor cores run at 2× the FLOP rate for 16-bit operations. PyTorch's <code>torch.amp</code> module handles this automatically — the forward and backward passes run in BF16, while the master weights and optimizer state stay in FP32.</p>
 
   <pre>from torch.amp import autocast, GradScaler
@@ -325,10 +332,10 @@ for batch_X, batch_y in loader:
 </section>
 
 <section>
-  <h2>Fine-Tuning Pretrained Models</h2>
+  <h2 id="fine-tuning-pretrained-models">Fine-Tuning Pretrained Models</h2>
   <p>Training a large model from scratch requires millions of GPU-hours. For most applications, the practical path is to <strong>fine-tune</strong> a pretrained model on task-specific data. The Hugging Face <code>transformers</code> library provides pretrained models and tokenizers for thousands of architectures.</p>
 
-  <h3>Full Fine-Tuning</h3>
+  <h3 id="full-fine-tuning">Full Fine-Tuning</h3>
   <pre>from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model_id  = "meta-llama/Llama-3.2-1B"
@@ -341,7 +348,7 @@ model     = AutoModelForCausalLM.from_pretrained(
 optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
 # ... standard training loop ...</pre>
 
-  <h3>LoRA: Low-Rank Adaptation</h3>
+  <h3 id="lora-low-rank-adaptation">LoRA: Low-Rank Adaptation</h3>
   <p>Fine-tuning all weights of a 7B model requires ~14 GB for weights plus ~56 GB for FP32 optimizer state — impractical on most hardware. <strong>LoRA</strong> (Hu et al., 2021) freezes the original weights and injects low-rank trainable update matrices into attention projection layers.</p>
 
   <div class="eq">Original weight: W ∈ ℝᵈˣᵏ    (frozen during fine-tuning)
@@ -372,7 +379,7 @@ model.print_trainable_parameters()
     QLoRA (Dettmers et al., 2023) combines 4-bit NF4 quantisation of the frozen base model with LoRA adapters in BF16. A 65B model normally requires ~130 GB; QLoRA reduces this to ~35 GB — fitting on a single A100-80GB. The NF4 data type is optimised for normally-distributed weight values, minimising quantisation error versus INT4.
   </div>
 
-  <h3>When to Use Each Approach</h3>
+  <h3 id="when-to-use-each-approach">When to Use Each Approach</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Method</th><th>GPU RAM (7B model)</th><th>Trainable Params</th><th>Best For</th></tr></thead>
@@ -387,7 +394,7 @@ model.print_trainable_parameters()
 </section>
 
 <section>
-  <h2>Datasets and DataLoaders</h2>
+  <h2 id="datasets-and-dataloaders">Datasets and DataLoaders</h2>
   <p>The <code>torch.utils.data</code> module provides the contract for streaming training data efficiently. A <code>Dataset</code> implements <code>__len__</code> and <code>__getitem__</code>. A <code>DataLoader</code> wraps it with batching, shuffling, and multi-process prefetching.</p>
 
   <pre>from torch.utils.data import Dataset, DataLoader
@@ -427,10 +434,10 @@ loader = DataLoader(
 </section>
 
 <section>
-  <h2>Production Deployment</h2>
+  <h2 id="production-deployment">Production Deployment</h2>
   <p>Research code uses Python's dynamism freely. Production code must be fast, portable, and able to run without the full Python runtime. PyTorch offers several compilation paths.</p>
 
-  <h3>torch.compile (PyTorch 2.0+)</h3>
+  <h3 id="torch-compile-pytorch-2-0">torch.compile (PyTorch 2.0+)</h3>
   <p>The simplest path to faster inference. Wrapping a model with <code>torch.compile()</code> triggers Dynamo (a Python bytecode interpreter) to capture the computation graph and hand it to Inductor (the default backend), which generates optimised Triton or C++/CUDA kernels.</p>
   <pre>model = torch.compile(model, mode="reduce-overhead")
 # Options: "default", "reduce-overhead" (stable shapes), "max-autotune"
@@ -439,7 +446,7 @@ loader = DataLoader(
 with torch.no_grad():
     out = model(input_ids)   # typically 1.5–3× speedup over eager mode</pre>
 
-  <h3>ONNX Export</h3>
+  <h3 id="onnx-export">ONNX Export</h3>
   <p>ONNX (Open Neural Network Exchange) is a portable IR for models. Export once, run anywhere — ONNX Runtime, TensorRT, CoreML, OpenVINO. Essential for deploying to mobile, edge, or non-NVIDIA hardware.</p>
   <pre>dummy = torch.zeros(1, 128, dtype=torch.long)
 torch.onnx.export(
@@ -454,7 +461,7 @@ import onnxruntime as ort
 sess   = ort.InferenceSession("model.onnx", providers=["CUDAExecutionProvider"])
 logits = sess.run(None, {"input_ids": dummy.numpy()})[0]</pre>
 
-  <h3>TorchServe</h3>
+  <h3 id="torchserve">TorchServe</h3>
   <p>TorchServe is PyTorch's model serving framework. It handles REST/gRPC endpoints, batching, multiple model versions, and metrics out of the box.</p>
   <pre># Package model artifact
 torch-model-archiver --model-name mymodel --version 1.0 \
@@ -467,7 +474,29 @@ torchserve --start --model-store ./model_store --models mymodel=mymodel.mar
 </section>
 
 <section>
-  <h2>The PyTorch Ecosystem</h2>
+  <h2 id="fine-tuning-is-usually-the-wrong-first-move">Fine-Tuning Is Usually the Wrong First Move</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Fine-tuning is the most requested and least often necessary technique in applied AI. Before you spend a week on it, work through the cheaper options in order — most teams find their problem was solved three steps before they got to training anything.</p>
+  </div>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>Write a better prompt, and give examples.</strong> Free, instant, and revisable. A surprising share of "the model can't do this" turns out to be "the model was never told what done looks like."</div></li>
+    <li data-n="2"><div><strong>Give it the information.</strong> Retrieval, tools, or simply pasting the relevant document. Most failures attributed to capability are failures of context — the model did not know your schema, not that it could not reason about it.</div></li>
+    <li data-n="3"><div><strong>Let it think, or let it act.</strong> A reasoning budget, or an agent loop with the ability to check its own work, fixes many problems that look like they need a new model.</div></li>
+    <li data-n="4"><div><strong>Try a bigger model.</strong> Frequently cheaper in engineer-hours than fine-tuning a smaller one, even when it costs more per token.</div></li>
+    <li data-n="5"><div><strong>Now fine-tune</strong> — when you need a consistent format or house style, a narrow domain the base model genuinely lacks, or a small fast model distilled from a large one for cost or latency reasons.</div></li>
+  </ol>
+
+  <div class="callout warn">
+    <strong>What fine-tuning does and does not do</strong>
+    It reliably teaches <em>behaviour</em>: format, tone, structure, when to call which tool, how to refuse. It is a poor way to teach <em>facts</em> — knowledge injected by fine-tuning is diffuse, unreliable, and cannot be updated without retraining, whereas retrieval handles the same job precisely and can be edited by changing a document. And whatever you fine-tune on, you also fine-tune away from: a model tuned hard on one narrow task usually gets worse at everything else, a phenomenon inconvenient enough to have its own name — catastrophic forgetting.
+  </div>
+</section>
+
+<section>
+  <h2 id="the-pytorch-ecosystem">The PyTorch Ecosystem</h2>
   <p>PyTorch's value extends well beyond the core library. A rich ecosystem of libraries handles data, training orchestration, model hubs, and production serving.</p>
 
   <div class="two-col">
@@ -484,8 +513,12 @@ torchserve --start --model-store ./model_store --models mymodel=mymodel.mar
       <p>Domain-specific datasets, transforms, and pretrained models for computer vision (ResNet, ViT, CLIP) and audio (wav2vec, Whisper wrappers). Maintained by the PyTorch core team.</p>
     </div>
     <div>
-      <h4>vLLM</h4>
-      <p>High-throughput inference server built on PyTorch with PagedAttention and continuous batching. Standard choice for self-hosted LLM inference. Up to 24× higher throughput than naive implementations on the same hardware.</p>
+      <h4>vLLM and SGLang</h4>
+      <p>The two dominant open-source serving engines. Both implement PagedAttention, continuous batching, prefix caching, tensor and pipeline parallelism, and quantised inference, and both support non-NVIDIA backends. Either is the right starting point for self-hosting; benchmark both on your own traffic, because which wins depends on your context lengths and batch profile.</p>
+    </div>
+    <div>
+      <h4>PEFT, TRL and friends</h4>
+      <p>The Hugging Face post-training stack: PEFT for LoRA and other parameter-efficient methods, TRL for supervised fine-tuning, DPO and reinforcement-learning training loops. Together they cover most of the post-training pipeline described on the <a href="training.html">Training</a> page without writing it from scratch.</p>
     </div>
     <div>
       <h4>bitsandbytes</h4>
@@ -499,10 +532,10 @@ torchserve --start --model-store ./model_store --models mymodel=mymodel.mar
 </section>
 
 <section>
-  <h2>Distributed Training with PyTorch</h2>
+  <h2 id="distributed-training-with-pytorch">Distributed Training with PyTorch</h2>
   <p>Single-GPU training is insufficient for models beyond a few billion parameters. PyTorch provides several distributed strategies through <code>torch.distributed</code>.</p>
 
-  <h3>Data Parallel (DDP)</h3>
+  <h3 id="data-parallel-ddp">Data Parallel (DDP)</h3>
   <p><code>DistributedDataParallel</code> replicates the full model on each GPU. Each GPU processes a different micro-batch; gradients are all-reduced (summed and averaged) across GPUs at the end of the backward pass. Scales efficiently to ~8–16 GPUs; communication overhead grows at higher GPU counts.</p>
   <pre>import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -512,7 +545,7 @@ model = DDP(model.to(local_rank), device_ids=[local_rank])
 
 # Launch with: torchrun --nproc_per_node=8 train.py</pre>
 
-  <h3>Model Parallel and Pipeline Parallel</h3>
+  <h3 id="model-parallel-and-pipeline-parallel">Model Parallel and Pipeline Parallel</h3>
   <p>When a model doesn't fit on a single GPU, its layers are split across devices. Pipeline parallelism splits the model into stages — GPU 0 runs layers 0–11, GPU 1 runs layers 12–23, etc. — and uses micro-batches to keep all stages active simultaneously. PyTorch's <code>torch.distributed.pipelining</code> module automates this.</p>
 
   <div class="callout">
@@ -520,7 +553,7 @@ model = DDP(model.to(local_rank), device_ids=[local_rank])
     Large-scale training (GPT-4, LLaMA 3 405B) combines three strategies simultaneously: <strong>Data Parallelism</strong> (replicate across nodes), <strong>Tensor Parallelism</strong> (split individual weight matrices across GPUs within a node, using Megatron-LM column/row splits), and <strong>Pipeline Parallelism</strong> (split layers across nodes). This 3D decomposition is the state of the art for frontier model training and is covered in depth on the Training Data Centers page.
   </div>
 
-  <h3>FSDP: Fully Sharded Data Parallel</h3>
+  <h3 id="fsdp-fully-sharded-data-parallel">FSDP: Fully Sharded Data Parallel</h3>
   <p>FSDP (PyTorch 1.12+) shards model parameters, gradients, and optimizer state across all GPUs, rather than replicating them. Each GPU holds only 1/N of each tensor. During forward and backward passes, FSDP all-gathers the full parameter shard just in time for each layer, then immediately discards it. This enables training models far larger than a single GPU's memory while approaching DDP throughput.</p>
   <pre>from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
@@ -532,10 +565,49 @@ model = FSDP(
 )</pre>
 </section>
 
+<section>
+  <h2 id="building-on-models-you-do-not-host">Building on Models You Do Not Host</h2>
+
+  <p>Most production AI systems never train anything. They call an API, and the engineering is everything around that call. Some of it is unfamiliar to people arriving from conventional backend work:</p>
+
+  <ul>
+    <li><strong>Structure the output.</strong> Constrained decoding and schema-enforced generation guarantee parseable output rather than hoping for it. If your code contains a regular expression that extracts JSON from prose, replace it with a schema — the model can be made to emit only valid tokens.</li>
+    <li><strong>Order your prompt for the cache.</strong> Stable content first, byte-identical between calls; volatile content last. This is a pure cost optimisation and it can be worth an order of magnitude on long-running agents.</li>
+    <li><strong>Design tools, not endpoints.</strong> The <a href="agents.html">Agentic AI</a> page covers this properly. The short version: descriptive names, narrow scope, filtered results, and error messages that tell the model what to do differently.</li>
+    <li><strong>Route by difficulty.</strong> A small model for classification, extraction and routing; a large one only where reasoning is genuinely required. Usually the largest single cost saving available.</li>
+    <li><strong>Handle non-determinism.</strong> The same input can produce different output. Set temperature deliberately, pin model versions, and write tests that assert properties rather than exact strings.</li>
+    <li><strong>Instrument everything.</strong> Log prompts, responses, token counts, latency and cost per call. You cannot debug what you did not record, and you will need to debug.</li>
+    <li><strong>Evaluate continuously.</strong> A regression suite that runs on every prompt change. See <a href="evaluation.html">Evaluation</a> — this is the step teams skip and then regret.</li>
+  </ul>
+
+  <div class="callout fact">
+    <strong>The Model Context Protocol</strong>
+    MCP is an open standard for connecting models to tools and data sources: a server exposes tools, resources and prompts over a defined interface, and any compatible client can use them. The practical value is combinatorial. Before, every application had to build a bespoke integration with every data source. With a common protocol, you write one server per system and every agent can use it. If you are exposing an internal system to agents, writing an MCP server is usually the right unit of work — and it means the integration outlives whichever model or client you started with.
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>PyTorch's autograd records operations as you run them, so gradients come free from ordinary Python control flow — the reason it displaced graph-first frameworks.</li>
+    <li>Mixed precision keeps BF16 activations with FP32 master weights: roughly half the memory and double the throughput, with training stability preserved.</li>
+    <li>LoRA trains small low-rank adapters instead of full weights, cutting trainable parameters by orders of magnitude and making adapters swappable at serving time.</li>
+    <li>Work through prompting, context, reasoning and a bigger model before fine-tuning. Fine-tuning teaches behaviour well and facts badly.</li>
+    <li>DDP replicates the model and syncs gradients; FSDP shards parameters, gradients and optimiser state so models larger than one GPU can be trained.</li>
+    <li>Most production AI engineering is the code around the model call: structured output, cache-aware prompt ordering, routing, instrumentation and evaluation.</li>
+  </ul>
+</div>
+
 </main>
 
 <footer>
-  <p>Learn AI · <a href="index.html">Home</a> · <a href="neural-networks.html">← Neural Networks</a> · <a href="glossary.html">Glossary →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

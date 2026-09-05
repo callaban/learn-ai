@@ -4,112 +4,196 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Learn AI — A Technical Guide to Artificial Intelligence</title>
-  <meta name="description" content="A deep technical guide to AI infrastructure: neural networks, training, inference, hardware, data centers, and semiconductor foundries.">
+  <meta name="description" content="A deep technical guide to modern AI: neural networks, transformers, training and inference, agents, robotics, hardware, data centers, semiconductor foundries, economics, and governance.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand active">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="index"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="hero">
-  <div class="hero-badge">Technical Reference · 2025</div>
+  <div class="hero-badge">Technical Reference · Reviewed 2026</div>
   <h1>Understanding <span>Artificial Intelligence</span></h1>
-  <p class="lead">A deep technical guide to modern AI — from the mathematics of neural networks to the semiconductor foundries that fabricate the chips that power them. Written for readers who understand digital computing and want to understand AI at engineering depth.</p>
+  <p class="lead">From the mathematics of a single artificial neuron to the semiconductor foundries that fabricate the chips, the agents that now act on our behalf, and the capital that pays for all of it. Written to be understood — with a plain-English explanation beside every equation.</p>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="learn.html">Start here — choose a path</a>
+    <a class="btn btn-ghost" href="neural-networks.html">Jump to the mathematics</a>
+  </div>
 </header>
 
 <div style="max-width:900px;margin:0 auto;padding:2.5rem 2rem 0;">
-  <p>Modern AI is a stack. At the bottom is silicon manufactured at sub-nanometre precision in a handful of foundries. That silicon runs firmware, drivers, and a CUDA/ROCm runtime. On top of that sit frameworks like PyTorch that express neural networks as computation graphs. Those graphs are trained on clusters of thousands of GPUs, consuming megawatts of power and petabytes of data. The trained model weights are then served at inference to millions of users, with a completely different optimization profile than training.</p>
-  <p>This site covers every layer of that stack in detail. The recommended reading order for a first pass is: <strong>Neural Networks → Training → LLMs → Inference → Hardware → Training Data Centers → Inference Data Centers → Foundry</strong>. The Glossary is a quick-reference companion for the whole guide.</p>
+  <div class="plain">
+    <strong>What this guide is</strong>
+    <p>Modern AI is a stack, and almost nobody sees all of it. At the bottom is silicon patterned at atomic precision in a handful of factories on Earth. That silicon runs drivers and a GPU runtime. Above that, frameworks turn neural networks into computation graphs. Those graphs train on clusters of tens of thousands of accelerators drawing enough power to supply a city, then serve billions of requests a day under a completely different set of constraints. Above <em>that</em>, models are now given tools and told to get things done — in software, and increasingly in the physical world. Around all of it sits an unprecedented flow of capital and a scramble to write rules.</p>
+    <p>This guide covers every one of those layers properly, and connects them, because the interesting things happen where they meet.</p>
+  </div>
+
+  <p>Each page opens its ideas in plain language before going deep, so you can read at whatever level suits you. If you want a route through the material tailored to what you actually need — newcomer, engineer, builder or analyst — start with <a href="learn.html"><strong>Learning Paths</strong></a>. If you would rather dive straight into the mathematics, begin with <a href="neural-networks.html"><strong>Neural Networks</strong></a> and follow the next-page links at the foot of each page.</p>
+
   <div class="callout fact">
     <strong>Scope</strong>
-    This guide focuses on the <em>infrastructure and engineering</em> side of AI — mathematics, hardware, systems, and manufacturing. AI applications, policy, and ethics are outside scope except where they directly constrain infrastructure design decisions.
+    This guide covers the full stack: the mathematics, the systems engineering, the manufacturing, the applications, and the economics and governance that constrain all of them. It is deliberately technical, and deliberately opinionated where the evidence supports a position — but it flags contested questions as contested rather than pretending they are settled. Figures describing this industry are dated where it matters; treat forward-looking statements as informed projection.
   </div>
 </div>
 
 <div class="cards-section">
-  <h2>Topics</h2>
+  <h2 id="foundations">Foundations</h2>
+  <p class="section-note">How the models work. Start here if you want to understand anything else on this site.</p>
   <div class="cards-grid">
 
     <a href="neural-networks.html" class="card">
       <div class="card-icon">🧠</div>
-      <h3>Neural Networks</h3>
-      <p>The artificial neuron, weight matrices, activation functions, backpropagation, and the chain rule — the mathematical foundation of all deep learning.</p>
+      <h3 id="neural-networks">Neural Networks</h3>
+      <p>The artificial neuron, weight matrices, activation functions, backpropagation and the chain rule — the mathematical foundation everything else is built on.</p>
       <div class="card-arrow">Start here →</div>
+    </a>
+
+    <a href="llms.html" class="card">
+      <div class="card-icon">📖</div>
+      <h3 id="large-language-models">Large Language Models</h3>
+      <p>The transformer in detail: scaled dot-product attention, multi-head and grouped-query attention, RoPE, mixture-of-experts, long context, and what emerges at scale.</p>
+      <div class="card-arrow">Explore →</div>
     </a>
 
     <a href="training.html" class="card">
       <div class="card-icon">⚙️</div>
-      <h3>Training Foundational Models</h3>
-      <p>SGD and Adam optimizers, loss landscapes, scaling laws (Chinchilla), mixed-precision arithmetic, pretraining objectives, and RLHF alignment.</p>
+      <h3 id="training-models">Training Models</h3>
+      <p>Optimisers, loss landscapes, scaling laws, mixed precision, distributed training — and the post-training stack of SFT, RLHF, DPO and reinforcement learning on verifiable rewards.</p>
       <div class="card-arrow">Explore →</div>
     </a>
 
     <a href="inference.html" class="card">
       <div class="card-icon">⚡</div>
-      <h3>Inference</h3>
-      <p>Autoregressive token generation, KV caching, quantization (INT8/FP8), speculative decoding, prefill vs decode phases, and throughput/latency tradeoffs.</p>
+      <h3 id="inference">Inference</h3>
+      <p>Autoregressive generation, KV caching, quantisation, speculative decoding, prefill versus decode, reasoning-time compute, and the throughput/latency tradeoff.</p>
       <div class="card-arrow">Explore →</div>
     </a>
 
-    <a href="llms.html" class="card">
-      <div class="card-icon">📖</div>
-      <h3>Large Language Models</h3>
-      <p>The transformer architecture in mathematical detail: scaled dot-product attention, multi-head attention, RoPE positional encoding, and emergent scale effects.</p>
+    <a href="multimodal.html" class="card">
+      <div class="card-icon">🎨</div>
+      <h3 id="beyond-text-new">Beyond Text<span class="badge-new">New</span></h3>
+      <p>Diffusion and flow matching, patch embeddings, contrastive vision-language training, video generation, neural audio codecs, native multimodal models, and world models.</p>
       <div class="card-arrow">Explore →</div>
     </a>
 
-    <a href="training-datacenter.html" class="card">
-      <div class="card-icon">🏭</div>
-      <h3>Training Data Centers</h3>
-      <p>GPU cluster topology, NVLink (900 GB/s), InfiniBand NDR fat-tree networks, parallel file systems, power budgets, and liquid cooling at MW scale.</p>
+  </div>
+</div>
+
+<div class="cards-section" style="padding-top:0">
+  <h2 id="systems">Systems</h2>
+  <p class="section-note">What happens when models are given tools, bodies, and jobs to do.</p>
+  <div class="cards-grid">
+
+    <a href="agents.html" class="card">
+      <div class="card-icon">🤖</div>
+      <h3 id="agentic-ai-new">Agentic AI<span class="badge-new">New</span></h3>
+      <p>The agent loop, tool design, context engineering, multi-agent systems, error compounding, prompt injection and the lethal trifecta — and how humans direct and supervise agents.</p>
       <div class="card-arrow">Explore →</div>
     </a>
 
-    <a href="inference-datacenter.html" class="card">
-      <div class="card-icon">🌐</div>
-      <h3>Inference Data Centers</h3>
-      <p>Serving millions of users: dynamic batching, PagedAttention, prompt-prefix caching, tensor parallelism, geographic distribution, and cost modeling.</p>
-      <div class="card-arrow">Explore →</div>
-    </a>
-
-    <a href="hardware.html" class="card">
-      <div class="card-icon">💾</div>
-      <h3>AI Hardware</h3>
-      <p>GPU vs TPU vs CPU architecture, NVIDIA H100/B200 deep-dive, HBM3 memory bandwidth, NVLink, InfiniBand, and the CUDA/cuDNN software stack.</p>
-      <div class="card-arrow">Explore →</div>
-    </a>
-
-    <a href="foundry.html" class="card">
-      <div class="card-icon">🔬</div>
-      <h3>Semiconductor Foundries</h3>
-      <p>EUV lithography, transistor process nodes, wafer yield economics, CoWoS advanced packaging for HBM, TSMC/Samsung, and geopolitical supply chain risk.</p>
+    <a href="robotics.html" class="card">
+      <div class="card-icon">🦾</div>
+      <h3 id="ai-robotics-new">AI &amp; Robotics<span class="badge-new">New</span></h3>
+      <p>Vision-language-action models, the robot data problem, simulation and the reality gap, humanoid hardware and control hierarchies, and the economics of physical labour.</p>
       <div class="card-arrow">Explore →</div>
     </a>
 
     <a href="implementation.html" class="card">
       <div class="card-icon">🛠️</div>
-      <h3>AI Implementation</h3>
-      <p>PyTorch tensors, autograd, the training loop, LoRA fine-tuning, mixed precision (BF16), ONNX export, and distributed training with DDP and FSDP.</p>
+      <h3 id="implementation">Implementation</h3>
+      <p>PyTorch tensors and autograd, the training loop, LoRA fine-tuning, mixed precision, torch.compile, ONNX export, and distributed training with DDP and FSDP.</p>
       <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="evaluation.html" class="card">
+      <div class="card-icon">📏</div>
+      <h3 id="evaluation-benchmarks-new">Evaluation &amp; Benchmarks<span class="badge-new">New</span></h3>
+      <p>Benchmark saturation and contamination, preference arenas, LLM-as-judge and its biases, agent evaluation, pass@k versus pass^k, and how to build evals you can trust.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+  </div>
+</div>
+
+<div class="cards-section" style="padding-top:0">
+  <h2 id="infrastructure">Infrastructure</h2>
+  <p class="section-note">The physical machine. Everything above runs on this, and its limits are the industry's limits.</p>
+  <div class="cards-grid">
+
+    <a href="hardware.html" class="card">
+      <div class="card-icon">💾</div>
+      <h3 id="ai-hardware">AI Hardware</h3>
+      <p>GPU, TPU and custom-ASIC architecture, tensor cores, the Hopper → Blackwell → Rubin roadmap, HBM bandwidth, NVLink and the CUDA software moat.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="training-datacenter.html" class="card">
+      <div class="card-icon">🏭</div>
+      <h3 id="training-data-centers">Training Data Centers</h3>
+      <p>Cluster topology, NVLink domains, InfiniBand and Ethernet fabrics, parallel file systems, gigawatt power budgets, liquid cooling, and fault tolerance on month-long runs.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="inference-datacenter.html" class="card">
+      <div class="card-icon">🌐</div>
+      <h3 id="inference-data-centers">Inference Data Centers</h3>
+      <p>Serving at global scale: continuous batching, PagedAttention, prefix caching, prefill/decode disaggregation, geographic routing, and cost modelling per million tokens.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="foundry.html" class="card">
+      <div class="card-icon">🔬</div>
+      <h3 id="semiconductor-foundries">Semiconductor Foundries</h3>
+      <p>EUV lithography, gate-all-around process nodes, yield economics, CoWoS packaging and HBM integration, TSMC and its rivals, and export controls as industrial policy.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+  </div>
+</div>
+
+<div class="cards-section" style="padding-top:0">
+  <h2 id="consequences">Consequences</h2>
+  <p class="section-note">Who pays for this, what could go wrong, and who gets to decide.</p>
+  <div class="cards-grid">
+
+    <a href="economics.html" class="card">
+      <div class="card-icon">💰</div>
+      <h3 id="the-economics-of-ai-new">The Economics of AI<span class="badge-new">New</span></h3>
+      <p>Startup financing and sovereign capital, staying private, IPOs, circular vendor financing and its 1990s precedent, open weights versus closed models, and the US, EU and China compared.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="safety.html" class="card">
+      <div class="card-icon">🛡️</div>
+      <h3 id="safety-governance-new">Safety &amp; Governance<span class="badge-new">New</span></h3>
+      <p>Alignment as a specification problem, sycophancy and reward hacking, interpretability and superposition, defence in depth, and the EU, US and Chinese regulatory regimes.</p>
+      <div class="card-arrow">Explore →</div>
+    </a>
+
+    <a href="learn.html" class="card">
+      <div class="card-icon">🧭</div>
+      <h3 id="learning-paths-new">Learning Paths<span class="badge-new">New</span></h3>
+      <p>Four routes through this guide, the dependency graph between topics, the maths you actually need, projects that build intuition, and eight things worth unlearning.</p>
+      <div class="card-arrow">Start here →</div>
     </a>
 
     <a href="glossary.html" class="card">
       <div class="card-icon">📚</div>
-      <h3>Glossary</h3>
-      <p>Concise definitions for 70+ technical terms used throughout this guide — from attention to zero-copy.</p>
+      <h3 id="glossary">Glossary</h3>
+      <p>Searchable definitions for the technical vocabulary used throughout this guide — from action chunking to zero-redundancy optimisers.</p>
       <div class="card-arrow">Reference →</div>
     </a>
 
@@ -117,63 +201,67 @@
 </div>
 
 <div style="max-width:900px;margin:0 auto;padding:0 2rem 3rem;">
-  <h2>The AI Technology Stack at a Glance</h2>
+  <h2 id="the-ai-stack-at-a-glance">The AI Stack at a Glance</h2>
+  <p>Each layer below is a page of this guide. Constraints propagate upward — a packaging bottleneck in a Taiwanese fab eventually shows up as a rate limit on an API — and requirements propagate downward, which is why model architects now think about memory bandwidth and why utility companies now think about model releases.</p>
   <div class="diagram">
-    <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
-      <!-- Stack layers, top to bottom -->
-      <!-- Layer 1: Applications -->
-      <rect x="50" y="15" width="600" height="44" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
-      <text x="350" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#4c1d95">AI Applications</text>
-      <text x="350" y="50" text-anchor="middle" font-size="11" fill="#6d28d9">Chatbots · Code generation · Image synthesis · Scientific reasoning</text>
-
-      <!-- Arrow -->
-      <line x1="350" y1="59" x2="350" y2="70" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Layer 2: LLMs / Models -->
-      <rect x="80" y="70" width="540" height="44" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-      <text x="350" y="88" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Foundational Models (LLMs, Diffusion, etc.)</text>
-      <text x="350" y="105" text-anchor="middle" font-size="11" fill="#1d4ed8">Billions–Trillions of parameters · Transformer architecture · Trained on web-scale data</text>
-
-      <line x1="350" y1="114" x2="350" y2="125" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Layer 3: Frameworks -->
-      <rect x="110" y="125" width="480" height="44" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
-      <text x="350" y="143" text-anchor="middle" font-size="13" font-weight="700" fill="#064e3b">ML Frameworks &amp; Runtimes</text>
-      <text x="350" y="160" text-anchor="middle" font-size="11" fill="#065f46">PyTorch · JAX · TensorFlow · Triton · vLLM · TensorRT</text>
-
-      <line x1="350" y1="169" x2="350" y2="180" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Layer 4: CUDA / Software -->
-      <rect x="110" y="180" width="480" height="44" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
-      <text x="350" y="198" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">GPU Software Stack</text>
-      <text x="350" y="215" text-anchor="middle" font-size="11" fill="#92400e">CUDA · cuDNN · NCCL · ROCm · GPU Drivers</text>
-
-      <line x1="350" y1="224" x2="350" y2="235" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Layer 5: Hardware -->
-      <rect x="80" y="235" width="540" height="44" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
-      <text x="350" y="253" text-anchor="middle" font-size="13" font-weight="700" fill="#7f1d1d">AI Hardware</text>
-      <text x="350" y="270" text-anchor="middle" font-size="11" fill="#991b1b">NVIDIA H100/B200 GPUs · Google TPUs · HBM3 Memory · NVLink · InfiniBand</text>
-
-      <line x1="350" y1="279" x2="350" y2="290" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
-
-      <!-- Layer 6: Silicon -->
-      <rect x="50" y="290" width="600" height="22" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
-      <text x="350" y="305" text-anchor="middle" font-size="12" font-weight="700" fill="#e2e8f0">Silicon Fabrication — TSMC 3nm/4nm · ASML EUV · CoWoS Packaging</text>
-
-      <!-- Arrow marker -->
+    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
       <defs>
-        <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <marker id="ix-arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/>
         </marker>
       </defs>
+
+      <rect x="35" y="12" width="630" height="46" rx="8" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="350" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#831843">Capital &amp; Governance</text>
+      <text x="350" y="48" text-anchor="middle" font-size="10.5" fill="#be185d">Venture and sovereign funding · circular financing · export controls · the EU AI Act · safety frameworks</text>
+
+      <line x1="350" y1="58" x2="350" y2="68" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="55" y="70" width="590" height="46" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="350" y="89" text-anchor="middle" font-size="13" font-weight="700" fill="#4c1d95">Agents &amp; Applications</text>
+      <text x="350" y="106" text-anchor="middle" font-size="10.5" fill="#6d28d9">Coding and research agents · robots · assistants · tool use via MCP · retrieval · computer use</text>
+
+      <line x1="350" y1="116" x2="350" y2="126" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="80" y="128" width="540" height="46" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="350" y="147" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Foundation Models</text>
+      <text x="350" y="164" text-anchor="middle" font-size="10.5" fill="#1d4ed8">Sparse mixture-of-experts transformers · reasoning models · diffusion · multimodal · VLAs</text>
+
+      <line x1="350" y1="174" x2="350" y2="184" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="105" y="186" width="490" height="46" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="350" y="205" text-anchor="middle" font-size="13" font-weight="700" fill="#064e3b">Frameworks &amp; Serving</text>
+      <text x="350" y="222" text-anchor="middle" font-size="10.5" fill="#065f46">PyTorch · JAX · Triton · vLLM · SGLang · TensorRT-LLM · compilers and kernels</text>
+
+      <line x1="350" y1="232" x2="350" y2="242" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="105" y="244" width="490" height="46" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="350" y="263" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">Accelerator Software</text>
+      <text x="350" y="280" text-anchor="middle" font-size="10.5" fill="#92400e">CUDA · cuDNN · NCCL · ROCm · XLA · drivers and collectives</text>
+
+      <line x1="350" y1="290" x2="350" y2="300" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="80" y="302" width="540" height="46" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="350" y="321" text-anchor="middle" font-size="13" font-weight="700" fill="#7f1d1d">Hardware &amp; Data Centers</text>
+      <text x="350" y="338" text-anchor="middle" font-size="10.5" fill="#991b1b">GPUs · TPUs · custom ASICs · HBM · NVLink · InfiniBand and Ethernet · power and liquid cooling</text>
+
+      <line x1="350" y1="348" x2="350" y2="358" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#ix-arr)"/>
+
+      <rect x="35" y="360" width="630" height="30" rx="7" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+      <text x="350" y="380" text-anchor="middle" font-size="12" font-weight="700" fill="#e2e8f0">Silicon — leading-edge logic · EUV lithography · advanced packaging · HBM stacking</text>
     </svg>
-    <figcaption>The complete AI technology stack, from silicon to application. This guide covers every layer.</figcaption>
+    <figcaption>The full stack, from capital at the top to atoms at the bottom. This guide covers every layer, and the pages are cross-linked at the points where the layers actually constrain one another.</figcaption>
   </div>
 </div>
 
 <footer>
-  <p>Learn AI · <a href="https://github.com/callaban/learn-ai">Source on GitHub</a> · Built with GitHub Pages</p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

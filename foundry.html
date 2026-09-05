@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Semiconductor Foundries | Learn AI</title>
+  <meta name="description" content="Semiconductor Foundries — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html" class="active">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="foundry"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,15 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>What a Foundry Does</h2>
+  <h2 id="what-a-foundry-does">What a Foundry Does</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A chip is a pattern of tens of billions of switches printed onto a slice of silicon, using light with a wavelength smaller than a virus, in a machine that costs more than an airliner. Only one company on Earth makes those machines, and only a handful of factories can use them well. Everything on this website — every model, every agent, every data centre — depends on a supply chain that narrows, at its tip, to a few buildings.</p>
+  </div>
   <p>A <strong>semiconductor foundry</strong> (or fab) manufactures integrated circuits from silicon wafers based on designs provided by fabless chip companies. The foundry business model separates chip design (NVIDIA, AMD, Qualcomm) from manufacturing (TSMC, Samsung, GlobalFoundries), allowing design companies to focus on silicon architecture rather than process technology.</p>
 
   <p>The manufacturing process transforms a bare silicon wafer into a chip containing billions of transistors through hundreds of sequential steps — photolithography, etching, doping, deposition, polishing — repeated many times at different layers. A modern process (e.g. TSMC N3E, "3nm") involves 1,000+ individual process steps and takes 3–4 months from wafer to finished chip.</p>
@@ -46,7 +54,7 @@
 </section>
 
 <section>
-  <h2>Process Nodes: What "3nm" Actually Means</h2>
+  <h2 id="process-nodes-what-3nm-actually-means">Process Nodes: What "3nm" Actually Means</h2>
   <p>Process node names (3nm, 5nm, 7nm) are marketing designations, not physical measurements of any single transistor dimension. The gate length of a transistor in a "3nm" process is actually ~12–15nm. The naming convention became decoupled from physical dimensions starting around 2016.</p>
 
   <p>What the node name actually tracks is <strong>transistor density</strong> — how many transistors fit per square millimeter:</p>
@@ -58,7 +66,11 @@ N7      2018    91.2               AMD Zen 2, NVIDIA Turing (partial)
 N5      2020   171.3               Apple M1, AMD Zen 4 (partial)
 N4P     2023   ~190               NVIDIA H100 (N4H variant)
 N3E     2023    ~172              Apple A17 Pro
-N2      2025   ~295 (est.)        Apple A18 (planned)
+N3E     2023    ~172              Apple A17 Pro / A18 family
+N2      2025   ~295 (est.)        First TSMC node using gate-all-around
+                                  nanosheet transistors, not FinFET
+A16     2026-27  higher           Adds backside power delivery
+                                  (announced; figures are targets)
 
 The H100 GPU die:
   - Process: TSMC N4H (custom 4nm variant for HPC)
@@ -66,11 +78,25 @@ The H100 GPU die:
   - Transistor count: ~80 billion
   - Density: ~98 MTr/mm²</div>
 
-  <p>Higher density means more transistors per mm², allowing either more capability in the same die size, or the same capability in a smaller (cheaper) die. Each node transition historically delivered ~40–50% density improvement, ~20% performance gain at the same power, and ~30% power reduction at the same performance.</p>
+  <p>Higher density means more transistors per mm², allowing either more capability in the same die size, or the same capability in a smaller (cheaper) die. Each node transition historically delivered ~40–50% density improvement, ~20% performance gain at the same power, and ~30% power reduction at the same performance. Those gains have been shrinking for several generations, and cost per transistor — which fell reliably for forty years — has roughly flattened at the leading edge.</p>
+
+  <h3 id="two-structural-changes-at-2nm-and-below">Two Structural Changes at 2nm and Below</h3>
+
+  <p>For the first time in a decade, the transistor itself is changing shape, and so is the way power reaches it.</p>
+
+  <ul>
+    <li><strong>Gate-all-around (nanosheet) transistors.</strong> FinFET wraps the gate around three sides of a vertical silicon fin. As fins got shorter, that third-side-only contact stopped controlling leakage adequately. A nanosheet transistor stacks horizontal silicon sheets with the gate material wrapped fully around each one — control on all four sides. It also allows the drive strength of a device to be tuned by varying sheet width, which gives circuit designers a knob FinFET never offered. Intel calls its implementation RibbonFET; Samsung shipped a version first; TSMC adopted it at N2.</li>
+    <li><strong>Backside power delivery.</strong> Conventionally, power and signal wiring share the metal stack above the transistors, and they compete: thick low-resistance power rails crowd out dense signal routing. Backside power delivery moves the power network to the <em>underside</em> of the wafer, connected through the substrate. Signal routing above gets the whole metal stack to itself, resistive voltage droop falls, and density improves. Intel shipped this first as PowerVia; TSMC introduces it with A16.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>Why node names have become almost useless for comparison</strong>
+    "2nm" from three different foundries describes three different transistors with different densities, different performance and different costs. There is no measured dimension in any of these names. The meaningful questions are density in millions of transistors per square millimetre, performance at a fixed power, defect density (which determines yield and therefore cost), and — increasingly the decisive one — whether the foundry has the advanced packaging capacity to assemble the finished part at all.
+  </div>
 </section>
 
 <section>
-  <h2>Photolithography: Printing Transistors with Light</h2>
+  <h2 id="photolithography-printing-transistors-with-light">Photolithography: Printing Transistors with Light</h2>
   <p>Transistors are patterned onto silicon using <strong>photolithography</strong> — the same principle as photography, scaled to molecular dimensions. A photosensitive material (photoresist) is coated on the wafer. A light source exposes it through a mask (a glass plate carrying the circuit pattern). Where light hits, the resist changes chemical properties. Developer solution removes the exposed or unexposed resist, leaving a precise pattern that guides subsequent etching or deposition.</p>
 
   <div class="eq">Resolution limit (Rayleigh criterion):
@@ -87,15 +113,15 @@ For EUV: λ=13.5 nm, NA=0.33:
 For DUV ArF (ArF laser): λ=193 nm, NA=1.35 (immersion lithography):
   CD = 0.35 × 193 / 1.35 = 50 nm → requires multiple patterning to reach 7nm</div>
 
-  <h3>Multiple Patterning</h3>
+  <h3 id="multiple-patterning">Multiple Patterning</h3>
   <p>Before EUV, foundries used 193nm ArF lasers with <strong>multiple patterning</strong>: expose a layer two, three, or four times with slightly different masks and etch steps to achieve features finer than the single-exposure resolution limit. TSMC's 7nm node used SADP (Self-Aligned Double Patterning), effectively halving the pitch. The 5nm node used SAQP (quadruple patterning) and LELE (Litho-Etch Litho-Etch) — adding cycle time and defect risk. EUV replaced much of this complexity.</p>
 </section>
 
 <section>
-  <h2>EUV: The Critical Chokepoint</h2>
+  <h2 id="euv-the-critical-chokepoint">EUV: The Critical Chokepoint</h2>
   <p>Extreme Ultraviolet (EUV) lithography uses 13.5nm wavelength light — 14× shorter than ArF — enabling single-exposure patterning of features that required quadruple patterning with ArF. TSMC began using EUV at 7nm (partially) and it is essential at 5nm and below.</p>
 
-  <h3>How EUV Light Is Generated</h3>
+  <h3 id="how-euv-light-is-generated">How EUV Light Is Generated</h3>
   <div class="eq">EUV light generation sequence:
 
 1. A tin (Sn) droplet, ~30 μm diameter, falls through the chamber at 50 kHz.
@@ -120,7 +146,7 @@ ASML EUV machine (NXE:3600D):
     ASML (Netherlands) is the sole manufacturer of EUV lithography machines. There are no alternatives. The machine contains parts from 5,000 suppliers across 40+ countries. Key subsystems: the CO₂ laser (Trumpf, Germany), beam delivery optics (Zeiss, Germany), and the precision positioning stage. A leading-edge chip fab without ASML EUV access cannot manufacture below ~7nm. This is the primary lever of US export controls: ASML is prohibited from selling EUV machines to China (policy in force since 2019).
   </div>
 
-  <h3>High-NA EUV</h3>
+  <h3 id="high-na-euv">High-NA EUV</h3>
   <p>The next generation — High-NA EUV (ASML EXE:5000) — increases the numerical aperture from 0.33 to 0.55, improving resolution by 40%. Planned for Intel 14A and TSMC N2 successor nodes:</p>
   <div class="eq">High-NA EUV: NA=0.55
   CD = 0.35 × 13.5 / 0.55 = 8.6 nm
@@ -129,7 +155,7 @@ ASML EUV machine (NXE:3600D):
 </section>
 
 <section>
-  <h2>From Wafer to Finished Chip</h2>
+  <h2 id="from-wafer-to-finished-chip">From Wafer to Finished Chip</h2>
 
   <div class="diagram">
     <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
@@ -228,7 +254,7 @@ ASML EUV machine (NXE:3600D):
     <figcaption>The wafer-to-chip journey. Steps 3–5 (lithography, etch, doping) are repeated for each of the 15+ metal layers and multiple transistor layers, accounting for most of the 3–4 month cycle time.</figcaption>
   </div>
 
-  <h3>The FEOL/BEOL Distinction</h3>
+  <h3 id="the-feol-beol-distinction">The FEOL/BEOL Distinction</h3>
   <div class="eq">FEOL (Front-End of Line): transistor fabrication
   - Gate oxide growth, gate stack deposition
   - Source/drain ion implantation (adds n-type or p-type dopants)
@@ -245,7 +271,7 @@ BEOL (Back-End of Line): metal interconnect wiring
 </section>
 
 <section>
-  <h2>Yield: The Economics of Imperfection</h2>
+  <h2 id="yield-the-economics-of-imperfection">Yield: The Economics of Imperfection</h2>
   <p>A 300mm silicon wafer contains hundreds of die. Not every die works — random defects (particles, crystal imperfections, process variation) kill transistors. <strong>Yield</strong> is the fraction of dies that pass electrical testing:</p>
 
   <div class="eq">Defect density D (defects/cm²) and die area A (cm²):
@@ -271,7 +297,7 @@ OEM price: $25,000–35,000 → ~8–10× markup reflects R&D, scarcity, and dem
 
   <p>This is why larger dies are disproportionately more expensive: doubling the die area more than doubles yield loss. This is also why AMD's "chiplet" strategy (multiple small dies instead of one large die) dramatically improves yield — a 300mm² chiplet has far higher yield than an 800mm² monolithic die.</p>
 
-  <h3>Binning</h3>
+  <h3 id="binning">Binning</h3>
   <p>Not all good dies are equal. Defects that don't kill a die may disable some functional units. Foundries and chip companies <strong>bin</strong> dies by testing performance and functionality:</p>
   <ul>
     <li><strong>NVIDIA H100 SXM5:</strong> Full 132 SM, 80 GB HBM — premium tier</li>
@@ -281,7 +307,7 @@ OEM price: $25,000–35,000 → ~8–10× markup reflects R&D, scarcity, and dem
 </section>
 
 <section>
-  <h2>Advanced Packaging: CoWoS and HBM Integration</h2>
+  <h2 id="advanced-packaging-cowos-and-hbm-integration">Advanced Packaging: CoWoS and HBM Integration</h2>
   <p>The H100's 80 GB HBM is not on the GPU die — it would be impossibly large. Instead, the GPU die and 6 HBM stacks are co-packaged on a large silicon <strong>interposer</strong> using TSMC's <strong>CoWoS</strong> (Chip on Wafer on Substrate) technology:</p>
 
   <div class="eq">CoWoS structure (H100 SXM5):
@@ -314,7 +340,7 @@ The B200 uses a larger CoWoS-S (S for substrate) interposer to accommodate the d
 </section>
 
 <section>
-  <h2>Key Foundry Players</h2>
+  <h2 id="key-foundry-players">Key Foundry Players</h2>
 
   <div class="table-wrap">
   <table>
@@ -329,7 +355,7 @@ The B200 uses a larger CoWoS-S (S for substrate) interposer to accommodate the d
   </table>
   </div>
 
-  <h3>TSMC's Advantages</h3>
+  <h3 id="tsmc-s-advantages">TSMC's Advantages</h3>
   <p>TSMC has maintained process leadership for over a decade due to:</p>
   <ul>
     <li><strong>Process R&D investment:</strong> $36B capex in 2023 alone — more than Samsung Foundry and Intel Foundry combined.</li>
@@ -340,10 +366,10 @@ The B200 uses a larger CoWoS-S (S for substrate) interposer to accommodate the d
 </section>
 
 <section>
-  <h2>Geopolitical Significance</h2>
+  <h2 id="geopolitical-significance">Geopolitical Significance</h2>
   <p>The global AI compute stack has extraordinary geographic concentration: nearly all leading-edge AI chips are manufactured at a single company (TSMC) on a small island (Taiwan, 180km from mainland China). The consequences:</p>
 
-  <h3>Export Control Regime</h3>
+  <h3 id="export-control-regime">Export Control Regime</h3>
   <div class="eq">US export control escalation for AI chips to China:
 
 Oct 2022: NVIDIA A100, H100 exports restricted (threshold: 600 TFLOPS FP16)
@@ -359,7 +385,18 @@ Nov 2024: BIS "AI Diffusion Rule" expands controls:
           - "Tier 2" countries: country-level quotas
           - "Tier 3" (China, Russia): prohibited
 
-Effect: China cannot purchase H100/H200/B200 through legal channels.
+2025:     The framework is rewritten rather than merely tightened.
+          The broad country-tier "AI Diffusion Rule" is rescinded and
+          replaced by <span class="highlight">bilateral, negotiated arrangements</span> with individual
+          governments — a shift from blanket rules to case-by-case deals.
+          Sales of specific cut-down accelerators to China are permitted,
+          then discouraged from the Chinese side, then partially resumed:
+          export policy became an instrument of trade negotiation rather
+          than a static technical threshold.
+
+Effect: China cannot purchase top-of-line accelerators through legal channels,
+and the rules now change faster than a chip design cycle — which is itself
+a form of control, since it makes long-term planning impossible.
 Chinese response: domestic alternatives (Huawei Ascend 910B, Biren GPU)
   - Ascend 910B: ~256 TFLOPS BF16 vs H100's 1,979 TFLOPS → ~8× gap
   - Manufacturing at SMIC 7nm (not TSMC), limited by EUV denial</div>
@@ -369,14 +406,37 @@ Chinese response: domestic alternatives (Huawei Ascend 910B, Biren GPU)
     A military conflict over Taiwan would disrupt global semiconductor supply instantly. No company could substitute TSMC capacity in under 5–10 years — building a leading-edge fab requires $20–30B, 4–5 years of construction, and a decade of process development. The CHIPS Act (US), European Chips Act, and TSMC's Arizona/Japan expansions are efforts to reduce this concentration, but leading-edge manufacturing will remain Taiwan-dominant through 2030 at minimum.
   </div>
 
-  <h3>TSMC Arizona</h3>
+  <h3 id="tsmc-arizona">TSMC Arizona</h3>
+  <div class="callout warn">
+    <strong>What export controls actually produced</strong>
+    Two effects, both instructive, and neither the one intended. <strong>Substitution</strong>: restricted access accelerated domestic Chinese accelerator programmes and gave them a guaranteed home market they would otherwise have had to win on merit. <strong>Efficiency</strong>: unable to buy more compute, Chinese labs became conspicuously better at using less of it — the sparse mixture-of-experts designs, KV-cache compression schemes and quantisation techniques that emerged under those constraints are now used by everyone, including the labs the controls were meant to protect. The controls have genuinely slowed the largest Chinese training runs, which was the goal. They have also demonstrated that a compute ceiling is a powerful forcing function for algorithmic progress. Both things are true, and any account that reports only one of them is incomplete.
+  </div>
+
   <p>TSMC is building two N4P (4nm) fabs and one N2 (2nm) fab in Phoenix, Arizona with $65B total planned investment and significant US government subsidies under the CHIPS Act ($6.6B). The first N4P fab began production in late 2024. Challenges: construction costs are ~2× higher than Taiwan, and experienced process engineers are scarce outside Taiwan. Arizona fabs will provide some geographic diversification but not full independence — key equipment, chemicals, and technical expertise still flow from Taiwan.</p>
 </section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Node names are marketing. Compare density, performance per watt, defect density and packaging availability instead.</li>
+    <li>EUV is the chokepoint of the entire industry: one supplier, one source of machines, and no substitute at the leading edge. This is the single most concentrated dependency in modern technology.</li>
+    <li>At 2nm the transistor changed shape (gate-all-around) and power delivery moved to the back of the wafer — the two biggest structural changes in a decade.</li>
+    <li>Advanced packaging, not wafer capacity, has been the binding constraint on accelerator supply. An accelerator is a package of several dies plus HBM stacks, and assembling it is its own scarce capability.</li>
+    <li>Yield economics drive everything downstream: die size, binning, product tiers, and ultimately the price of compute.</li>
+    <li>Export controls slowed the largest Chinese training runs and simultaneously accelerated both domestic chip programmes and global algorithmic efficiency.</li>
+  </ul>
+</div>
 
 </main>
 
 <footer>
-  <p>Learn AI · <a href="hardware.html">← Hardware</a> · <a href="glossary.html">Next: Glossary →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

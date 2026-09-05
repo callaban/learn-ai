@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI &amp; Robotics | Learn AI</title>
+  <meta name="description" content="Embodied AI: vision-language-action models, the robot data problem, simulation and sim-to-real transfer, humanoid hardware and control, and the economics of physical labour.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="robotics"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Systems</div>
+    <h1>AI &amp; Robotics</h1>
+    <p>Language models became useful the moment they had text to learn from. Robots have no internet of experience to read. This page is about what happens when you try to give a neural network a body — the data problem, the control problem, the hardware, and why so many companies are betting on a machine shaped like a person.</p>
+    <div class="page-meta">
+      <span>Prerequisites: Neural Networks, LLMs</span>
+      <span>Reading time ~30 min</span>
+      <span>Reviewed 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="the-hardest-easy-problem">The Hardest Easy Problem</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>AI turned out to be good at the things we think of as difficult — proving theorems, writing code, passing professional exams — and bad at the things a toddler does without thinking, like picking up a soft object without crushing it. Robotics is where AI meets that inversion head-on, and it is the reason a machine that can win a coding competition still cannot reliably load your dishwasher.</p>
+  </div>
+
+  <p>This inversion has a name. <strong>Moravec's paradox</strong>, observed in the 1980s, notes that high-level reasoning requires surprisingly little computation while low-level sensorimotor skill requires enormous amounts. The evolutionary explanation is straightforward: perception and movement were optimised over hundreds of millions of years and are deeply, invisibly sophisticated. Abstract reasoning is a recent bolt-on, which is why it feels effortful to us and why it turned out to be comparatively easy to automate.</p>
+
+  <p>Physical work also breaks nearly every assumption that made language models tractable:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Language models</th><th>Robots</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Training data</strong></td><td>Trillions of tokens, already written, free to collect</td><td>No corpus exists. Every hour must be generated on real or simulated hardware</td></tr>
+      <tr><td><strong>Cost of a mistake</strong></td><td>A wrong sentence. Regenerate it</td><td>A broken object, a damaged robot, an injured person. No undo</td></tr>
+      <tr><td><strong>Feedback</strong></td><td>Immediate and cheap</td><td>Delayed, partial, and expensive to obtain</td></tr>
+      <tr><td><strong>Latency budget</strong></td><td>Hundreds of milliseconds is fine</td><td>A balance controller misses its deadline and the robot falls over</td></tr>
+      <tr><td><strong>Environment</strong></td><td>Static text</td><td>Moves, deforms, breaks, and contains people</td></tr>
+      <tr><td><strong>Scaling</strong></td><td>Add GPUs</td><td>Add GPUs <em>and</em> build physical machines that wear out</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>Training a language model is like teaching someone by giving them every book ever written. Training a robot is like teaching someone to ride a bicycle: no amount of reading substitutes for falling off. The entire field is a series of attempts to make falling off cheaper — in simulation, on cheap hardware, by watching humans, or by transferring what was learned falling off one bicycle onto a different one.</p>
+  </div>
+</section>
+
+<section>
+  <h2 id="from-programmed-robots-to-learned-ones">From Programmed Robots to Learned Ones</h2>
+
+  <p>Industrial robots have worked reliably for fifty years, and they solve a different problem than the one described above. A welding arm repeats a trajectory to a tenth of a millimetre in a cage where nothing unexpected is permitted to happen. It has no perception worth the name and no capacity to adapt. It is superb — and it is useless the moment the part arrives rotated ten degrees.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Classical robotics</h4>
+      <p><strong>Sense → model → plan → execute.</strong> Build an explicit geometric model of the world, compute a collision-free trajectory, execute it under closed-loop control.</p>
+      <p><span class="pill green">Strengths</span> Provable guarantees, precision, decades of engineering maturity, fully certifiable for safety.</p>
+      <p><span class="pill red">Limits</span> Requires a model of everything. Fails on deformable objects, novel items, clutter, and any environment it was not explicitly designed for.</p>
+    </div>
+    <div>
+      <h4>Learned robotics</h4>
+      <p><strong>Observation → policy → action.</strong> A neural network maps camera images and robot state directly to motor commands, trained from demonstration and experience.</p>
+      <p><span class="pill green">Strengths</span> Handles novelty, contact-rich tasks, deformable materials, and instructions in plain language.</p>
+      <p><span class="pill red">Limits</span> Data-hungry, statistically fallible, hard to certify, and difficult to debug when it fails.</p>
+    </div>
+  </div>
+
+  <p>Real systems are hybrids, and the split is usually along the lines of who is good at what. A learned policy decides <em>what</em> to do and how to approach a contact-rich moment; classical control handles balance, joint limits, force ceilings and emergency stops. The safety layer is deliberately not a neural network, because you cannot write a certification argument for one.</p>
+
+  <h3 id="vision-language-action-models">Vision–Language–Action Models</h3>
+
+  <p>The architectural idea that reorganised the field is straightforward once stated: take a pretrained vision-language model — one that already understands images and instructions from internet-scale data — and fine-tune it to output <em>robot actions</em> instead of text. These are <strong>VLA (vision-language-action)</strong> models.</p>
+
+  <div class="eq">A VLA in one line
+
+  inputs:   camera images (one or more views)
+            proprioception (joint angles, velocities, forces)
+            an instruction in natural language: "put the mug in the sink"
+  ↓
+  a transformer backbone pretrained on web images and text,
+  fine-tuned on robot demonstration data
+  ↓
+  outputs:  a short sequence of future actions — joint targets or
+            end-effector poses — emitted as an "action chunk"
+            (typically 0.5–2 seconds of motion, re-planned continuously)
+
+Why the pretrained backbone matters:
+  the robot has never seen a colander. The vision-language model has
+  seen ten thousand pictures of colanders and read about what they do.
+  <span class="highlight">Semantic generalisation transfers; motor skill must be learned.</span></div>
+
+  <p>The lineage runs from Google's RT-1 and RT-2 (which first demonstrated that web-scale semantic knowledge transfers into robot policies), through the open-source OpenVLA, into today's generalist policies from dedicated robot-foundation-model companies and the major labs. The claim these systems make is a strong one: a <em>single</em> model, controlling <em>multiple different robot bodies</em>, performing tasks it was not specifically trained on, instructed in ordinary language. That claim is now partly demonstrated and partly aspirational — the generalisation is real but far more brittle than the demonstration videos suggest, a gap worth keeping firmly in mind.</p>
+
+  <div class="callout fact">
+    <strong>Why action chunking matters more than it sounds</strong>
+    Early learned policies predicted one action at a time, at every control step. This produced jittery, indecisive motion: tiny prediction errors compounded, and the policy would dither at moments requiring commitment. Predicting a <em>chunk</em> — a half-second or more of coordinated motion — produces smoother, more decisive behaviour, and neatly decouples the slow, expensive policy (running at perhaps 5–50 Hz) from the fast control loop (running at 500–1000 Hz) that actually tracks the trajectory. It is one of those unglamorous engineering details that quietly unlocked a capability.
+  </div>
+</section>
+
+<section>
+  <h2 id="the-data-problem">The Data Problem</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>There is no internet of robot experience. Every one of the roughly ten trillion words a language model trains on was written by a human for free, over decades. The equivalent robot dataset does not exist and cannot be scraped — it has to be manufactured, one robot-hour at a time. This single fact explains most of what is strange about how robotics companies operate.</p>
+  </div>
+
+  <p>Four sources of training data are in use, and each trades quality against quantity in a different way.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Source</th><th>How it works</th><th>Quality</th><th>Scalability</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Teleoperation</strong></td><td>A human drives the robot through the task wearing a VR rig or using a puppet controller; the recording becomes a demonstration</td><td>Highest — correct actions, correct robot, correct physics</td><td>Poor. Bounded by human hours and physical robots. Thousands of dollars per thousand demonstrations</td></tr>
+      <tr><td><strong>Simulation</strong></td><td>Physics engines run thousands of parallel virtual robots on GPUs; policies are trained by reinforcement learning</td><td>Variable — perfect for dynamics, poor for contact and deformable materials</td><td>Excellent. Years of experience per wall-clock day</td></tr>
+      <tr><td><strong>Human video</strong></td><td>Learn from ordinary or head-mounted video of people doing tasks</td><td>Rich in intent and semantics, but no action labels and the wrong body</td><td>Excellent — the largest existing corpus by far</td></tr>
+      <tr><td><strong>Fleet deployment</strong></td><td>Deployed robots log their own experience, including failures, and the fleet learns from all of it</td><td>Perfectly on-distribution — this is the real task</td><td>Compounds over time. Requires already having a deployed fleet</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>The cold-start problem, and why fleets are the prize</strong>
+    Fleet data is the most valuable kind, and you can only get it by deploying robots — which requires a policy good enough to deploy, which requires data. Every serious humanoid company is running the same play: bootstrap with teleoperation and simulation, get to "barely good enough" on a narrow commercial task, deploy at a customer site, and start the data flywheel. The strategic question is not who has the best demonstration video today but <em>who accumulates real-world robot-hours fastest</em>. This is why so many humanoid deployments target dull, repetitive logistics work: nobody thinks moving totes is the endgame. It is the cheapest available source of the data needed to reach the endgame.
+  </div>
+
+  <h3 id="simulation-and-the-reality-gap">Simulation and the Reality Gap</h3>
+
+  <p>Simulation is the only lever that scales like compute. GPU-accelerated physics engines run thousands of robot instances in parallel; a locomotion policy that would take decades to learn on real hardware trains in hours. Modern robot simulation stacks are built on this idea, and it works — <em>for some things</em>.</p>
+
+  <p>The catch is the <strong>reality gap</strong>: the simulator is wrong, and a policy trained in it exploits the ways it is wrong. Friction is approximate. Contact between soft bodies is genuinely hard to model. Cloth, cables, liquids, granular materials and everything else that deforms are poorly simulated. Motors have backlash and thermal drift the model omits. A policy trained naively in simulation performs beautifully in simulation and falls over outside it.</p>
+
+  <div class="eq">Techniques for crossing the reality gap
+
+  <span class="highlight">Domain randomisation</span> — randomise friction, mass, lighting, textures, latency
+    and sensor noise during training. The policy cannot overfit to any single
+    physics, so it learns behaviour robust across a whole distribution — and
+    reality is (hopefully) one sample from that distribution.
+
+  <span class="highlight">System identification</span> — measure the real robot carefully and tune the
+    simulator to match it. Narrows the gap rather than papering over it.
+
+  <span class="highlight">Real-to-sim-to-real</span> — reconstruct actual scenes from real sensor data,
+    train in those reconstructions, deploy back. Keeps visual realism honest.
+
+  <span class="highlight">Co-training</span> — train on simulated and real data together, letting real
+    data anchor the parts simulation gets wrong.
+
+Empirical rule of thumb:
+  <span class="comment">locomotion and whole-body control transfer well — the physics is rigid-body
+  dynamics, which simulators model accurately.
+  dexterous manipulation transfers poorly — it is dominated by contact and
+  deformation, which they do not.</span></div>
+
+  <p>This distinction explains an otherwise puzzling observation. Robot walking, backflipping and parkour — problems that were research-grade a decade ago — are now close to commodity, solved with reinforcement learning in simulation. Meanwhile picking up a plastic bag remains genuinely hard. The difference is not that walking is easier; it is that walking can be practised a billion times for free and bag-handling cannot.</p>
+
+  <h3 id="world-models-learning-the-simulator">World Models: Learning the Simulator</h3>
+  <p>The emerging alternative is to stop hand-writing physics and instead <em>learn</em> a predictive model of the world from video — a neural network that, given the current observation and a proposed action, predicts what happens next. A robot with such a model can plan by imagining outcomes rather than by trying them.</p>
+  <p>Video generation models turn out to be a plausible foundation for this, since generating physically coherent video requires implicitly modelling how objects move, fall and collide. This connects robotics directly to the generative-video work covered in <a href="multimodal.html">Beyond Text</a>, and it is one of the more interesting convergences in the field: the technology built to make video clips may end up being the technology that lets robots plan. Whether learned world models achieve the accuracy and reliability that contact-rich manipulation demands is, as of 2026, an open and actively contested research question.</p>
+</section>
+
+<section>
+  <h2 id="control-three-loops-at-three-speeds">Control: Three Loops at Three Speeds</h2>
+
+  <p>A common misconception is that a single neural network drives the robot. In practice control is layered, because the timescales involved differ by three orders of magnitude and no single system can serve all of them.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 700 370" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+      <defs>
+        <marker id="rb-arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#6366f1"/>
+        </marker>
+      </defs>
+
+      <rect x="60" y="18" width="580" height="76" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.8"/>
+      <text x="82" y="42" font-size="13" font-weight="700" fill="#4c1d95">Task layer — reasoning</text>
+      <text x="82" y="61" font-size="10.5" fill="#6d28d9">A large vision-language model: interprets the request, decomposes it, chooses the next subtask,</text>
+      <text x="82" y="76" font-size="10.5" fill="#6d28d9">recovers from surprises, asks a human when genuinely stuck</text>
+      <rect x="520" y="30" width="105" height="50" rx="7" fill="#8b5cf6"/>
+      <text x="572" y="50" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">0.5 – 5 Hz</text>
+      <text x="572" y="68" text-anchor="middle" font-size="9" fill="#ede9fe">cloud or on-board</text>
+
+      <path d="M350,94 L350,116" stroke="#6366f1" stroke-width="1.8" marker-end="url(#rb-arr)"/>
+      <text x="360" y="110" font-size="9.5" font-style="italic" fill="#64748b">subtask + language goal</text>
+
+      <rect x="60" y="120" width="580" height="76" rx="10" fill="#cffafe" stroke="#06b6d4" stroke-width="1.8"/>
+      <text x="82" y="144" font-size="13" font-weight="700" fill="#164e63">Policy layer — the VLA</text>
+      <text x="82" y="163" font-size="10.5" fill="#0e7490">Maps camera images + proprioception + the subtask into a chunk of future motion.</text>
+      <text x="82" y="178" font-size="10.5" fill="#0e7490">This is where learned dexterity lives, and where generalisation comes from</text>
+      <rect x="520" y="132" width="105" height="50" rx="7" fill="#06b6d4"/>
+      <text x="572" y="152" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">5 – 50 Hz</text>
+      <text x="572" y="170" text-anchor="middle" font-size="9" fill="#cffafe">on-board GPU</text>
+
+      <path d="M350,196 L350,218" stroke="#6366f1" stroke-width="1.8" marker-end="url(#rb-arr)"/>
+      <text x="360" y="212" font-size="9.5" font-style="italic" fill="#64748b">trajectory / target poses</text>
+
+      <rect x="60" y="222" width="580" height="76" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="1.8"/>
+      <text x="82" y="246" font-size="13" font-weight="700" fill="#064e3b">Control layer — classical, not learned</text>
+      <text x="82" y="265" font-size="10.5" fill="#065f46">Whole-body control, balance, inverse dynamics, joint and torque limits, impedance control.</text>
+      <text x="82" y="280" font-size="10.5" fill="#065f46">Deterministic, analysable, certifiable — deliberately not a neural network</text>
+      <rect x="520" y="234" width="105" height="50" rx="7" fill="#10b981"/>
+      <text x="572" y="254" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">200 – 1000 Hz</text>
+      <text x="572" y="272" text-anchor="middle" font-size="9" fill="#d1fae5">real-time MCU</text>
+
+      <path d="M350,298 L350,318" stroke="#6366f1" stroke-width="1.8" marker-end="url(#rb-arr)"/>
+
+      <rect x="60" y="322" width="580" height="34" rx="8" fill="#1e293b"/>
+      <text x="350" y="344" text-anchor="middle" font-size="11.5" font-weight="700" fill="#e2e8f0">Motors, encoders, force sensors — and a hardware safety layer that overrides everything above it</text>
+    </svg>
+    <figcaption>The control hierarchy. Each layer runs at a different rate and has a different failure mode. The bottom layer is intentionally conventional engineering: safety cases are written about deterministic systems, not learned ones.</figcaption>
+  </div>
+
+  <p>Reading the diagram bottom-up explains several things at once. It explains why on-board compute matters: a policy running at 30 Hz cannot tolerate a round trip to a data centre, so inference must happen on the robot, within a power and thermal budget measured in tens of watts. It explains why safety certification is tractable at all — the layer that can hurt someone is deterministic. And it explains why the reasoning layer <em>can</em> be slow and cloud-hosted: deciding what to do next is not a real-time problem.</p>
+</section>
+
+<section>
+  <h2 id="humanoid-hardware">Humanoid Hardware</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A humanoid robot is roughly forty electric motors, a battery, several cameras, a small computer, and a metal skeleton — trying to do what a body does with muscles that are stronger for their weight, joints that heal, and a power source that runs all day. The hardware is not a solved problem waiting on software; it is a genuine and simultaneous constraint.</p>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Subsystem</th><th>Typical state of the art</th><th>The binding constraint</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Degrees of freedom</strong></td><td>~25–50 total; a dexterous hand alone wants 6–22</td><td>Every joint adds mass, cost, wiring and a failure mode. Hands dominate the count and the difficulty</td></tr>
+      <tr><td><strong>Actuators</strong></td><td>Quasi-direct-drive electric motors with low-ratio planetary gearing; harmonic drives where precision is needed</td><td>Torque density. Muscle still beats electric motors on force per kilogram, and gearboxes trade backforce sensing against strength</td></tr>
+      <tr><td><strong>Battery</strong></td><td>1–2.5 kWh, giving roughly 2–5 hours of real work</td><td>Energy density. Longer runtime means more mass, which needs more power. Hot-swap packs are the practical workaround</td></tr>
+      <tr><td><strong>Sensing</strong></td><td>Stereo and RGB cameras, IMU, joint encoders, joint-torque or current sensing; tactile skin still rare</td><td>Touch. Humans rely enormously on fingertip force sensing; robot tactile sensing remains immature and fragile</td></tr>
+      <tr><td><strong>On-board compute</strong></td><td>Embedded GPU modules delivering hundreds of INT8 TOPS in tens of watts</td><td>Watts and heat. Every watt of compute is a watt not spent moving, plus heat to remove</td></tr>
+      <tr><td><strong>Hands</strong></td><td>Three to five fingers; a widening gap between demonstration hands and durable ones</td><td>The hardest part of the machine. Density of actuation, tactile sensing and durability all conflict</td></tr>
+      <tr><td><strong>Cost</strong></td><td>Falling sharply — from research platforms costing hundreds of thousands toward commercial units in the tens of thousands</td><td>Volume. Costs follow the same learning curve as any manufactured good, and the curve has been steep</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>The energy comparison that frames the whole field</strong>
+    An adult human doing physical work runs on roughly 100 watts and refuels with a sandwich. A humanoid robot performing comparable work draws several hundred watts and carries a battery weighing tens of kilograms — a battery that is itself part of the mass the motors must move. Biology has had a very long time to optimise this, and the gap is not a detail. Runtime, duty cycle and charging logistics are central to whether a deployment makes economic sense, not footnotes to it.
+  </div>
+
+  <h3 id="why-humanoid-at-all">Why Humanoid at All?</h3>
+
+  <p>The humanoid form is not obviously optimal, and the debate about it is genuinely unsettled. Both cases are strong.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>The case for</h4>
+      <ul>
+        <li><strong>The world is already human-shaped.</strong> Doorways, stairs, tools, shelf heights, vehicle cabs — trillions of dollars of built environment designed around one body plan. A humanoid needs no renovation.</li>
+        <li><strong>General purpose beats special purpose economically.</strong> One machine that does twenty jobs badly may beat twenty machines that each do one job well, because utilisation and inventory dominate.</li>
+        <li><strong>Human data transfers.</strong> Video of people doing tasks is the largest manipulation dataset in existence, and it is recorded from a human body.</li>
+        <li><strong>Teleoperation is natural.</strong> A person in a VR rig can drive a humanoid intuitively — which is exactly how the training data gets made.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>The case against</h4>
+      <ul>
+        <li><strong>Legs are a tax.</strong> Bipedalism costs energy, complexity and safety margin. Wheels are better on flat floors, which is where most commercial work happens.</li>
+        <li><strong>Specialised beats general, per task.</strong> A wheeled arm on a mobile base is cheaper, safer and more reliable for the warehouse tasks humanoids are currently deployed on.</li>
+        <li><strong>Anthropomorphism invites misplaced trust.</strong> A machine that looks like a person is assumed to understand like one, and does not.</li>
+        <li><strong>The form may be a fundraising decision.</strong> Humanoids demo spectacularly and attract capital. That is not the same as being the right engineering answer.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>A reasonable synthesis, and roughly where the industry is converging: the humanoid form is a bet on <em>generality</em> arriving before <em>specialisation</em> saturates the market. If a single learned policy can genuinely do many jobs, the value of not rebuilding the world around each robot is enormous. If generality remains out of reach, purpose-built machines will win every individual task on cost. The next few years of deployment data should settle it — and the settlement may well be "both, in different places."</p>
+</section>
+
+<section>
+  <h2 id="the-economics-of-physical-labour">The Economics of Physical Labour</h2>
+
+  <p>Robot economics are refreshingly concrete compared with the model-layer arguments on the <a href="economics.html">Economics</a> page. A robot either costs less than the labour it replaces or it does not.</p>
+
+  <div class="eq">A payback calculation, with the assumptions made visible
+
+  Robot capital cost                        $50,000   <span class="comment">falling with volume</span>
+  Deployment, integration, training         $20,000   <span class="comment">often underestimated</span>
+  Annual service, spares, software           $8,000
+  Energy (0.5 kW × 6,000 h × $0.12)            $360
+  ─────────────────────────────────────────────────
+  Year-1 cost                               $78,360
+  Cost per year thereafter (5-yr life)      $18,360
+
+  Compare: one worker on two shifts       ~$90,000/yr  <span class="comment">fully loaded, US</span>
+
+  <span class="highlight">Looks decisive — but the arithmetic hides the three real questions:</span>
+  1. <span class="comment">Utilisation.</span> A robot idle 70% of the time triples its effective cost.
+  2. <span class="comment">Task coverage.</span> If it does 80% of a job, you still employ the person
+     for the other 20%, and you have saved far less than the model suggests.
+  3. <span class="comment">Reliability.</span> An unplanned stop that halts a production line costs
+     more per hour than the robot costs per year.</div>
+
+  <p>Point two is where most deployments actually fail. Real jobs are bundles of tasks, and the last 20% — the exception, the jam, the damaged item, the judgement call — is usually the hard 20%. Automating 80% of a role frequently eliminates zero jobs while adding a new maintenance responsibility. This is the same lesson the <a href="agents.html">Agentic AI</a> page draws about verification: the economics turn on the exceptions, not on the average case.</p>
+
+  <p>Two consequences follow. First, deployments concentrate where tasks are genuinely narrow and repetitive — logistics, warehousing, machine tending, some assembly — rather than where the demonstration videos are most impressive. Second, <strong>robots-as-a-service</strong> has become the dominant commercial model: the customer pays an hourly or monthly rate rather than a capital sum, the vendor retains the hardware risk, and — not incidentally — the vendor also retains the fleet data.</p>
+
+  <div class="callout warn">
+    <strong>Where the labour argument gets genuinely hard</strong>
+    Two honest framings sit uneasily together. Many advanced economies face real demographic shortages in physically demanding work — warehousing, elder care, agriculture, construction — where employers cannot fill roles at any price they can afford. In those settings robots fill a gap rather than displace anyone. But the same technology deployed in a slack labour market shifts bargaining power decisively toward capital, and the workers affected are typically those with the least capacity to retrain. Both things are true simultaneously, in different places, sometimes in the same industry. Any argument that only acknowledges one of them is selling something — and that includes arguments from both the robotics industry and its critics.
+  </div>
+</section>
+
+<section>
+  <h2 id="safety-in-a-machine-that-can-hurt-you">Safety in a Machine That Can Hurt You</h2>
+
+  <p>A language model that fails produces a wrong answer. A 70-kilogram machine that fails can break a person's arm. Robotics inherits an entire discipline of functional safety that the rest of AI has never had to engage with — and it is a discipline built on assumptions that neural networks violate.</p>
+
+  <ul>
+    <li><strong>Established standards assume determinism.</strong> Industrial safety standards for robots and for collaborative operation are built around analysable, deterministic behaviour and bounded worst cases. A learned policy has no worst case you can compute. Standards work for AI-driven and mobile manipulators is actively catching up, and the certification question is genuinely unresolved.</li>
+    <li><strong>Hence layered architecture.</strong> Force and velocity limits, workspace boundaries, watchdogs and emergency stops are implemented in hardware and simple deterministic software <em>below</em> the learned policy, where they can be verified. The neural network proposes; the safety layer disposes.</li>
+    <li><strong>Collaborative operation has physics-based limits.</strong> Power-and-force-limited operation constrains contact energy so that an impact cannot cause injury — real engineering with measured thresholds, not a software promise.</li>
+    <li><strong>Humanoids are a harder case than arms.</strong> A fixed arm has a definable workspace you can fence. A walking robot's workspace is the building, and a fall is a hazard in itself, independent of any task.</li>
+    <li><strong>Regulation is arriving.</strong> Robots incorporating AI fall within scope of frameworks such as the EU AI Act's high-risk provisions and machinery regulation, layering algorithmic accountability on top of existing physical safety law. See <a href="safety.html">Safety &amp; Governance</a>.</li>
+  </ul>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why can a robot learn to walk in simulation but not to fold laundry?</summary>
+    <p>Walking is rigid-body dynamics, which physics engines model accurately, so billions of simulated attempts transfer to reality. Laundry is deformable-object manipulation dominated by contact and cloth mechanics, which simulators model poorly — so simulated practice teaches the policy to exploit the simulator rather than to handle fabric.</p></details>
+    <details><summary>Why is the safety layer deliberately not a neural network?</summary>
+    <p>Because safety certification requires arguing about worst-case behaviour, and a learned policy has no computable worst case. Deterministic force, velocity and workspace limits below the policy can be analysed, tested and certified — and they constrain whatever the policy does.</p></details>
+    <details><summary>A humanoid company deploys robots into a warehouse at a price that barely covers costs. Why might that be rational?</summary>
+    <p>Fleet data. Real-world robot-hours on real tasks are the scarcest input in the field and cannot be bought any other way. Early deployments are frequently a data-acquisition strategy priced as a product.</p></details>
+  </div>
+</section>
+
+<section>
+  <h2 id="where-this-is-going">Where This Is Going</h2>
+
+  <ul class="timeline">
+    <li>
+      <span class="t-when">Achieved</span>
+      <span class="t-title">Locomotion is largely solved</span>
+      <p>Reinforcement learning in simulation produces robust walking, running, stair-climbing and fall recovery across many robot bodies. What was a research milestone a decade ago now ships on commercial hardware, including inexpensive units.</p>
+    </li>
+    <li>
+      <span class="t-when">In progress</span>
+      <span class="t-title">Generalist manipulation policies</span>
+      <p>A single VLA controlling several robot bodies across many tasks, instructed in language. Real and improving quickly, but success rates on genuinely novel tasks in unstructured environments remain far below what commercial deployment requires.</p>
+    </li>
+    <li>
+      <span class="t-when">In progress</span>
+      <span class="t-title">Commercial humanoid pilots</span>
+      <p>Deployments in logistics and manufacturing, mostly narrow, mostly supervised, mostly structured as data-gathering exercises with a revenue line attached. Watch published utilisation and intervention rates rather than announcement counts.</p>
+    </li>
+    <li class="future">
+      <span class="t-when">Projected</span>
+      <span class="t-title">Dexterity as the gate</span>
+      <p>Hands — actuation density, tactile sensing, durability — are the most likely binding constraint on general-purpose robots. Progress here, more than model scale, determines the timeline.</p>
+    </li>
+    <li class="future">
+      <span class="t-when">Projected</span>
+      <span class="t-title">The data flywheel turns, or it doesn't</span>
+      <p>The central bet of the field is that deployed fleets generate enough real-world data to reach reliability, which enables wider deployment, which generates more data. If that loop closes, progress compounds sharply. If pilots stall below the reliability needed for unsupervised operation, the loop never starts. This is the single most important thing to watch, and it should be resolved one way or the other within a few years.</p>
+    </li>
+  </ul>
+
+  <div class="callout">
+    <strong>A provocation worth sitting with</strong>
+    We have spent seventy years assuming that machines would take physical work first and creative work last. That was the entire premise of how we thought about automation, and it shaped which skills we told people were safe. The actual order arrived inverted: software writes competent code, drafts competent prose and analyses competent radiology while robots still struggle to reliably pick up a towel. Whatever else this teaches, it should induce real humility about confident predictions of which human abilities are hard to replicate — including the confident predictions in this section.
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Moravec's paradox is the organising fact of robotics: sensorimotor skill is computationally harder than abstract reasoning, and physical mistakes cannot be undone.</li>
+    <li>Vision-language-action models fine-tune internet-pretrained vision-language backbones to output robot actions, so semantic understanding transfers even though motor skill must be learned from scratch.</li>
+    <li>There is no internet of robot data. Teleoperation, simulation, human video and deployed fleets each solve part of the problem, and fleet data is the strategic prize.</li>
+    <li>Locomotion transfers from simulation because rigid-body physics simulates well; dexterous manipulation does not, because contact and deformation do not.</li>
+    <li>Control is layered across three timescales, and the safety-critical bottom layer is deliberately deterministic so it can be certified.</li>
+    <li>Robot economics turn on utilisation, task coverage and reliability — not on the headline comparison between robot cost and wages.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

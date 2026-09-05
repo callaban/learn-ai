@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Training Foundational Models | Learn AI</title>
+  <meta name="description" content="Training Foundational Models — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html" class="active">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="training"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,16 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>The Training Objective</h2>
+  <h2 id="the-training-objective">The Training Objective</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Training is guess-and-adjust, repeated an astronomical number of times. Show the model some text with the next word hidden. It guesses. Measure how wrong the guess was. Nudge every one of its billions of internal numbers a tiny amount in the direction that would have made the guess less wrong. Repeat for months. Nobody tells the model about grammar, facts, or reasoning — all of that turns out to be what "predict the next word well" requires, if you do enough of it.</p>
+  </div>
+
   <p>Training is an optimisation problem. Given a dataset 𝒟 = {(xᵢ, yᵢ)} and a model fθ parameterised by weights θ, find θ* that minimises the empirical risk:</p>
 
   <div class="eq"><span class="highlight">θ* = argmin_θ  (1/|𝒟|) Σᵢ L(fθ(xᵢ), yᵢ)</span>
@@ -46,9 +55,9 @@ The loss is cross-entropy: L = −log P_θ(yᵢ | xᵢ)</div>
 </section>
 
 <section>
-  <h2>Optimisers: From SGD to Adam</h2>
+  <h2 id="optimisers-from-sgd-to-adam">Optimisers: From SGD to Adam</h2>
 
-  <h3>Stochastic Gradient Descent (SGD)</h3>
+  <h3 id="stochastic-gradient-descent-sgd">Stochastic Gradient Descent (SGD)</h3>
   <p>Rather than computing the gradient over the full dataset (prohibitively expensive), SGD estimates it from a random <em>mini-batch</em> B ⊂ 𝒟 of size m:</p>
   <div class="eq">g = (1/m) Σᵢ∈B ∇_θ L(fθ(xᵢ), yᵢ)
 
@@ -60,7 +69,7 @@ The loss is cross-entropy: L = −log P_θ(yᵢ | xᵢ)</div>
   <div class="eq">v ← μv + g         (μ = momentum coefficient, typically 0.9)
 θ ← θ − η · v</div>
 
-  <h3>Adam: Adaptive Moment Estimation</h3>
+  <h3 id="adam-adaptive-moment-estimation">Adam: Adaptive Moment Estimation</h3>
   <p>Adam, introduced by Kingma &amp; Ba (2014), is the dominant optimiser for large model training. It maintains per-parameter first and second moment estimates:</p>
   <div class="eq">m_t = β₁ m_{t-1} + (1 − β₁) g_t         [first moment: mean of gradient]
 v_t = β₂ v_{t-1} + (1 − β₂) g_t²        [second moment: uncentered variance]
@@ -80,7 +89,7 @@ Hyperparameters: β₁=0.9, β₂=0.95, ε=10⁻⁸, η=1–3×10⁻⁴</div>
     Adam stores two moment vectors (m and v) in addition to the parameters (θ) and gradients (g). For a 70B parameter model in float32, that is 4 × 70B × 4 bytes ≈ 1.1 TB of optimizer state alone. This is why distributed training uses sharded optimizer states (ZeRO Stage 2/3 or FSDP).
   </div>
 
-  <h3>Learning Rate Scheduling</h3>
+  <h3 id="learning-rate-scheduling">Learning Rate Scheduling</h3>
   <p>A fixed learning rate is rarely optimal. Modern LLM training uses a two-phase schedule:</p>
   <div class="eq"><span class="comment">Phase 1: Linear warm-up over W steps</span>
 η(t) = η_max · t/W        for t ≤ W
@@ -94,11 +103,11 @@ Typical: η_max=3e-4, η_min=3e-5, W=2000 steps, T=1M steps</div>
 </section>
 
 <section>
-  <h2>Data: Scale, Quality, and Preprocessing</h2>
+  <h2 id="data-scale-quality-and-preprocessing">Data: Scale, Quality, and Preprocessing</h2>
 
   <p>A foundational model's capability is bounded by the quality and diversity of its training data. GPT-3 was trained on 300B tokens; LLaMA 3 on 15 trillion tokens. The primary corpus for language models is the web — Common Crawl alone is hundreds of terabytes of compressed text.</p>
 
-  <h3>Data Pipeline</h3>
+  <h3 id="data-pipeline">Data Pipeline</h3>
   <ol class="steps">
     <li data-n="1"><strong>Crawl and download</strong> — Raw HTML from web crawls, books, code repositories, academic papers, Wikipedia. Raw Common Crawl dumps are ~80 TB/year.</li>
     <li data-n="2"><strong>Extraction and cleaning</strong> — Strip HTML, deduplicate near-identical documents using MinHash LSH, remove boilerplate (menus, footers), filter low-quality pages using a classifier trained on high-quality reference data.</li>
@@ -108,7 +117,7 @@ Typical: η_max=3e-4, η_min=3e-5, W=2000 steps, T=1M steps</div>
     <li data-n="6"><strong>Shuffling</strong> — Documents are shuffled globally so each mini-batch contains a diverse mix of sources, preventing the model from learning batch-level correlations.</li>
   </ol>
 
-  <h3>Tokenisation in Detail</h3>
+  <h3 id="tokenisation-in-detail">Tokenisation in Detail</h3>
   <p>BPE starts from a character-level vocabulary and iteratively merges the most frequent adjacent pair of symbols. After 32,000 merges, common words are single tokens, rare words are decomposed into familiar subwords. The model never encounters an unknown token — any byte sequence is representable.</p>
   <div class="eq">Example BPE tokenisation (GPT-4 tokeniser):
 "Backpropagation"  →  ["Back", "prop", "ag", "ation"]
@@ -117,7 +126,7 @@ Typical: η_max=3e-4, η_min=3e-5, W=2000 steps, T=1M steps</div>
 </section>
 
 <section>
-  <h2>Mixed-Precision Training</h2>
+  <h2 id="mixed-precision-training">Mixed-Precision Training</h2>
   <p>Full float32 (FP32) requires 4 bytes per parameter. For a 70B parameter model, parameters alone consume 280 GB. Modern training uses <strong>mixed precision</strong> to reduce memory and accelerate compute on tensor cores:</p>
 
   <div class="table-wrap">
@@ -146,23 +155,23 @@ With ZeRO-3 sharding across 512 GPUs: ~2.5 GB/GPU</div>
 </section>
 
 <section>
-  <h2>Distributed Training</h2>
+  <h2 id="distributed-training">Distributed Training</h2>
   <p>A single GPU cannot hold a 70B-parameter model in training mode. Modern training distributes across thousands of GPUs using three parallelism strategies, often combined (3D parallelism):</p>
 
-  <h3>Data Parallelism</h3>
+  <h3 id="data-parallelism">Data Parallelism</h3>
   <p>Each GPU holds a full copy of the model. Different GPUs process different batches. After each backward pass, gradients are averaged across all GPUs with an <strong>all-reduce</strong> collective operation before updating weights. Scales to arbitrary batch sizes; requires each GPU to hold the full model — infeasible for very large models.</p>
 
-  <h3>Tensor Parallelism (Megatron-style)</h3>
+  <h3 id="tensor-parallelism-megatron-style">Tensor Parallelism (Megatron-style)</h3>
   <p>Individual weight matrices are sharded across GPUs. A matrix multiplication W × x is split into column-wise or row-wise shards, computed in parallel, and results combined with all-reduce or all-gather. For a transformer attention layer:</p>
   <div class="eq">Q, K, V projection weights split column-wise across P GPUs.
 GPU i holds W_i ∈ ℝ^{d×(d/P)}
 Each GPU computes Q_i = x W_i, K_i = x W_i, V_i = x W_i
 Results are gathered and attention computed across heads.</div>
 
-  <h3>Pipeline Parallelism</h3>
+  <h3 id="pipeline-parallelism">Pipeline Parallelism</h3>
   <p>The model is partitioned into L sequential stages across groups of GPUs. Stage 0 processes layer 0–15, stage 1 processes layers 16–31, etc. Micro-batches pipeline through stages, keeping all GPUs busy. Introduces a pipeline bubble (idle time at start/end of a batch) — minimised by using many micro-batches per macro-batch (1F1B schedule).</p>
 
-  <h3>ZeRO Optimizer (Zero Redundancy Optimizer)</h3>
+  <h3 id="zero-optimizer-zero-redundancy-optimizer">ZeRO Optimizer (Zero Redundancy Optimizer)</h3>
   <p>Microsoft's ZeRO partitions optimizer state, gradients, and parameters across data-parallel ranks, eliminating redundancy:</p>
   <div class="eq">ZeRO Stage 1: Partition optimizer state    → 4× memory reduction
 ZeRO Stage 2: + Partition gradients         → 8× memory reduction
@@ -173,7 +182,7 @@ Memory per GPU ≈ Total_training_memory / 1024</div>
 </section>
 
 <section>
-  <h2>Scaling Laws</h2>
+  <h2 id="scaling-laws">Scaling Laws</h2>
   <p>The <strong>Chinchilla scaling laws</strong> (Hoffmann et al., DeepMind, 2022) empirically determined the optimal relationship between model size P, training tokens D, and compute budget C:</p>
 
   <div class="eq"><span class="highlight">Optimal: D ≈ 20 × P</span>
@@ -197,10 +206,29 @@ A ≈ 406.4, B ≈ 410.7, α ≈ 0.34, β ≈ 0.28</div>
     <strong>Practical implication</strong>
     Training compute is paid once. Inference compute is paid for every query, forever. The Chinchilla insight justifies training a model 2–4× longer than naive scaling would suggest, if the model will be served millions of times. Smaller, well-trained models are cheaper to deploy.
   </div>
+
+  <h3 id="how-the-picture-has-changed-since-chinchilla">How the Picture Has Changed Since Chinchilla</h3>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Chinchilla answered the question "given a fixed training budget, what is the best model I can train?" That was the right question when training dominated costs. It is no longer the only question, because three things happened: serving costs came to dominate, high-quality text started running out, and it turned out you could buy capability at inference time instead.</p>
+  </div>
+
+  <ul>
+    <li><strong>Deliberate overtraining.</strong> Chinchilla optimises loss per unit of <em>training</em> compute. If a model will serve trillions of tokens, the right objective is total lifetime cost, which favours a smaller model trained far past the Chinchilla point. Modern flagship models are routinely trained on token-to-parameter ratios many times the Chinchilla ratio — the returns diminish, but they do not vanish, and the inference saving is permanent.</li>
+    <li><strong>The data wall.</strong> Chinchilla assumes tokens are freely available. At 15–20 trillion tokens, a training run has consumed a large fraction of the high-quality text that exists. The responses are all imperfect: multiple epochs over the same data (which works better than theory predicted, but saturates), aggressive filtering and reweighting toward higher-quality sources, non-text modalities as additional signal, and synthetic data.</li>
+    <li><strong>Synthetic data, carefully.</strong> Using a strong model to generate training data for another model works well when the output can be <em>verified</em> — solutions checked against a proof or a test suite, or reasoning traces filtered by whether they reached the right answer. It degrades when generated text is recycled unfiltered, since errors and stylistic tics compound across generations. The distinction between verified and unverified synthetic data is the whole ballgame.</li>
+    <li><strong>Two more scaling axes.</strong> Post-training reinforcement learning and inference-time reasoning both convert compute into capability without touching pretraining. Frontier labs now allocate a substantial fraction of total compute to post-training — a reallocation that would have looked bizarre in 2022. See <a href="llms.html">Reasoning Models</a>.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>Scaling laws are empirical, not physical</strong>
+    Power-law fits are extrapolations from observed data, and their constants shift with architecture, data mixture and tokeniser. They have held remarkably well over several orders of magnitude, which is why the industry bet so heavily on them. But "the curve keeps going" is a forecast, not a law, and the curve says nothing about which <em>capabilities</em> a given loss reduction buys. Loss is smooth; usefulness is not.
+  </div>
 </section>
 
 <section>
-  <h2>The Training Loop</h2>
+  <h2 id="the-training-loop">The Training Loop</h2>
   <div class="diagram">
     <svg viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
       <rect width="800" height="240" fill="#f8fafc" rx="8"/>
@@ -266,15 +294,15 @@ A ≈ 406.4, B ≈ 410.7, α ≈ 0.34, β ≈ 0.28</div>
 </section>
 
 <section>
-  <h2>Pretraining, Fine-Tuning, and RLHF</h2>
+  <h2 id="pretraining-fine-tuning-and-rlhf">Pretraining, Fine-Tuning, and RLHF</h2>
 
-  <h3>Pretraining: Next-Token Prediction</h3>
+  <h3 id="pretraining-next-token-prediction">Pretraining: Next-Token Prediction</h3>
   <p>A foundation model is pretrained on a massive, diverse text corpus with the <strong>causal language modelling</strong> objective: predict the next token given all preceding tokens. This is self-supervised — no human labels needed. The model implicitly learns grammar, facts, reasoning patterns, and world knowledge to minimise prediction loss.</p>
 
-  <h3>Supervised Fine-Tuning (SFT)</h3>
+  <h3 id="supervised-fine-tuning-sft">Supervised Fine-Tuning (SFT)</h3>
   <p>The pretrained model is then fine-tuned on a curated dataset of (instruction, response) pairs written or curated by humans. SFT teaches the model the format of helpful responses and aligns output style with human expectations. Typically involves 10,000–100,000 high-quality examples, trained for 1–3 epochs at a lower learning rate (~5×10⁻⁶).</p>
 
-  <h3>Reinforcement Learning from Human Feedback (RLHF)</h3>
+  <h3 id="reinforcement-learning-from-human-feedback-rlhf">Reinforcement Learning from Human Feedback (RLHF)</h3>
   <ol class="steps">
     <li data-n="1"><strong>Collect preference data:</strong> For a given prompt, sample K responses from the SFT model. Human raters rank the responses (e.g. preferred / not preferred).</li>
     <li data-n="2"><strong>Train a reward model:</strong> A separate neural network r_φ(prompt, response) → scalar is trained to predict human preference rankings. Loss: r(preferred) > r(not preferred).</li>
@@ -287,13 +315,91 @@ Too large β → model barely changes from SFT.</div>
     </li>
   </ol>
 
-  <p><strong>Direct Preference Optimisation (DPO)</strong>, introduced in 2023, sidesteps the reward model entirely and directly optimises the language model on preference data using a closed-form loss derived from the Bradley-Terry preference model. DPO is simpler to implement and increasingly preferred over PPO for alignment.</p>
+  <p><strong>Direct Preference Optimisation (DPO)</strong>, introduced in 2023, sidesteps the reward model entirely and directly optimises the language model on preference data using a closed-form loss derived from the Bradley-Terry preference model. DPO is simpler to implement and, for many alignment tasks, has displaced PPO.</p>
+
+  <h3 id="reinforcement-learning-from-verifiable-rewards">Reinforcement Learning from Verifiable Rewards</h3>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>RLHF asks humans which of two answers they prefer. That works until the questions get harder than the humans. The alternative is to train only on problems where a computer can check the answer — does the code compile and pass its tests, does the proof verify, is the arithmetic right — and let the model attempt them millions of times. No human is in the loop, so the process scales with compute instead of with labelling hours. This is what produced reasoning models, and it is the most important change in training since RLHF itself.</p>
+  </div>
+
+  <div class="eq">The RLVR loop
+
+  1. Sample G attempts at a problem from the current policy
+  2. Score each attempt with a <span class="highlight">program</span>, not a person:
+       tests pass / fail · proof checks / does not · answer matches / does not
+  3. Compute each attempt's advantage <span class="comment">relative to the group's mean score</span>
+  4. Update the policy toward high-advantage attempts, with a KL penalty
+     holding it near the reference model
+  5. Repeat, on harder problems, for a very long time
+
+<span class="highlight">GRPO</span> (Group Relative Policy Optimisation) is the widely used variant.
+Its practical advantage over PPO: by using the group mean as the baseline,
+it <span class="highlight">eliminates the separately trained value network</span> — removing a large
+model from the training loop and roughly halving memory and complexity.
+
+What emerges, unprompted, from this objective:
+  · the model writes out longer and longer reasoning as training proceeds
+  · it starts verifying its own intermediate steps
+  · it backtracks after dead ends instead of committing to a bad path
+  <span class="comment">None of this was demonstrated to it. It is what the optimisation found.</span></div>
+
+  <div class="callout warn">
+    <strong>The limits of verifiable rewards</strong>
+    RLVR requires an automatic grader, which restricts it to domains with checkable answers — mathematics, code, formal logic, structured tool use. Capability gains transfer partially to unverifiable domains such as writing and analysis, but only partially, and the transfer is not well understood. There is also a persistent hazard: the model optimises the <em>checker</em>, not the goal. If the grader can be satisfied by special-casing its inputs, weakening a test, or exploiting a bug in the environment, a sufficiently capable optimiser will find that route. Reward hacking is not an occasional bug in RLVR; it is the default behaviour that careful environment design exists to prevent.
+  </div>
+
+  <h3 id="the-modern-post-training-stack">The Modern Post-Training Stack</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Stage</th><th>Data</th><th>Signal</th><th>What it produces</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pretraining</strong></td><td>Web-scale text, code, images</td><td>Next-token prediction</td><td>Knowledge, fluency, latent capability</td></tr>
+      <tr><td><strong>Mid-training</strong></td><td>Curated high-quality and domain data</td><td>Next-token prediction</td><td>Domain strength, long-context ability, tool-call formats</td></tr>
+      <tr><td><strong>SFT</strong></td><td>Curated demonstrations</td><td>Imitation</td><td>Instruction following, response format, refusal behaviour</td></tr>
+      <tr><td><strong>Preference optimisation</strong></td><td>Human or AI preference pairs</td><td>RLHF / DPO</td><td>Helpfulness, tone, harmlessness</td></tr>
+      <tr><td><strong>RLVR</strong></td><td>Automatically gradable tasks</td><td>Programmatic reward</td><td>Reasoning, persistence, tool use, agentic competence</td></tr>
+      <tr><td><strong>Distillation</strong></td><td>Strong model's outputs</td><td>Imitation of a teacher</td><td>Small models with much of a large model's capability</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Two observations about this table are worth more than the table itself. First, <strong>post-training is where models are differentiated now</strong>: pretraining recipes have converged considerably across labs, while post-training is where the proprietary craft lives. Second, <strong>distillation is why capability diffuses so fast</strong>. Once a capability exists in any model, a smaller model can be trained to imitate it far more cheaply than it was originally created — which is a large part of why the gap between frontier and open-weight models is measured in months rather than years, and a large part of the commoditisation argument on the <a href="economics.html">Economics</a> page.</p>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Why does the industry train models well past the Chinchilla-optimal point?</summary>
+    <p>Chinchilla minimises loss for a fixed training budget. It ignores serving cost, which is paid on every query forever. A smaller model trained longer costs more to train and much less to run, so lifetime cost favours overtraining whenever the model will be served at scale.</p></details>
+    <details><summary>What does GRPO remove from PPO, and why does that matter practically?</summary>
+    <p>The separately trained value network. GRPO uses the mean score of a group of sampled attempts as the baseline instead, which removes an entire large model from the training loop — roughly halving memory and a good deal of engineering complexity.</p></details>
+    <details><summary>Why is verified synthetic data safe when unverified synthetic data degrades models?</summary>
+    <p>Verification filters out errors before they enter training. Unverified generated text recycles the teacher's mistakes and stylistic quirks, and those compound across generations — the model learns its predecessor's flaws as if they were features of the language.</p></details>
+  </div>
 </section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Training is gradient descent on next-token prediction. Everything a model knows is a side effect of getting good at that one objective.</li>
+    <li>Adam's per-parameter adaptive step sizes are what make training stable at this scale, at the cost of two extra optimiser states per parameter.</li>
+    <li>Distributed training combines data, tensor, pipeline and expert parallelism; which combination you use is dictated by memory and interconnect bandwidth, not preference.</li>
+    <li>Chinchilla answers "best model for a training budget." Deliberate overtraining answers "cheapest model over its serving life," and that is now usually the right question.</li>
+    <li>Post-training — SFT, preference optimisation, and reinforcement learning on verifiable rewards — is where frontier models are differentiated, and where reasoning ability comes from.</li>
+    <li>Reward hacking is the default failure mode of any automatic grader. Environment design is safety work.</li>
+  </ul>
+</div>
 
 </main>
 
 <footer>
-  <p>Learn AI · <a href="neural-networks.html">← Neural Networks</a> · <a href="inference.html">Next: Inference →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

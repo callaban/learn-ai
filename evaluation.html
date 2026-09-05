@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluation &amp; Benchmarks | Learn AI</title>
+  <meta name="description" content="How AI systems are measured: capability benchmarks, saturation and contamination, human preference arenas, LLM-as-judge, agent evaluation, and how to build evals you can actually trust.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav id="site-nav" data-page="evaluation"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
+  </div>
+</noscript>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-tag">Systems</div>
+    <h1>Evaluation &amp; Benchmarks</h1>
+    <p>Every claim on every other page of this site rests on a measurement. This page is about where those measurements come from, why so many of them are worse than they look, and how to build evaluations that survive contact with reality.</p>
+    <div class="page-meta">
+      <span>Prerequisites: LLMs</span>
+      <span>Reading time ~25 min</span>
+      <span>Reviewed 2026</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div id="toc"></div>
+
+<section>
+  <h2 id="the-measurement-problem">The Measurement Problem</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>We do not have a good way to say how smart an AI system is. We have hundreds of tests, most of which are quickly aced, some of which the model has effectively already seen, and none of which straightforwardly predicts whether the thing will be useful to you. Understanding why that is the case is more valuable than memorising any leaderboard.</p>
+  </div>
+
+  <p>Evaluating a general-purpose system is fundamentally harder than evaluating a specialised one. A spam classifier has one job, a fixed input distribution, and a ground truth you can label. A frontier language model is asked to write code, summarise contracts, tutor children, translate poetry and operate tools — across every domain, in every language, for users with wildly different standards of "good."</p>
+
+  <p>That creates four problems that compound one another:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Problem</th><th>Why it happens</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Construct validity</strong></td><td>We measure what is easy to score, not what we care about. Multiple-choice questions are cheap to grade; "wrote a genuinely useful analysis" is not</td><td>High scores on things nobody wanted to know</td></tr>
+      <tr><td><strong>Saturation</strong></td><td>Any fixed benchmark is eventually solved. Headroom vanishes and the test stops discriminating</td><td>A new benchmark every few months, and no long time series</td></tr>
+      <tr><td><strong>Contamination</strong></td><td>Public benchmarks end up in training data, directly or through discussion of them</td><td>Scores measure memorisation as much as capability</td></tr>
+      <tr><td><strong>Goodhart's law</strong></td><td>Once a metric becomes a target, it stops being a good metric</td><td>Optimisation toward the benchmark rather than the underlying skill</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="analogy">
+    <strong>An analogy</strong>
+    <p>Imagine assessing a new doctor using last year's medical exam, which is published online, which the candidate has read, and which tests recall of facts rather than the ability to notice that a patient is sicker than they look. You would learn something — a candidate who fails it is definitely not ready — but you would not confuse passing it with competence. Most AI benchmarks are that exam, and they should be read the same way: informative about the floor, nearly silent about the ceiling.</p>
+  </div>
+</section>
+
+<section>
+  <h2 id="capability-benchmarks">Capability Benchmarks</h2>
+
+  <p>The public leaderboards are dominated by static datasets of questions with known answers. They are cheap, reproducible and comparable across models, which is why they persist despite their flaws. They fall into a few families.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Family</th><th>Examples</th><th>Measures</th><th>Weakness</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Broad knowledge</strong></td><td>MMLU and its harder successors</td><td>Recall and reasoning across many academic subjects</td><td>Saturated; multiple-choice format rewards elimination strategies</td></tr>
+      <tr><td><strong>Hard reasoning</strong></td><td>Graduate-level science questions, competition mathematics, research-level maths sets</td><td>Multi-step deduction where the answer cannot be guessed</td><td>Expensive to author; narrow domains; small sample sizes make scores noisy</td></tr>
+      <tr><td><strong>Abstract reasoning</strong></td><td>Grid-puzzle style tests designed to resist memorisation</td><td>Generalisation to genuinely novel structure</td><td>Debatable relationship to anything anyone needs done</td></tr>
+      <tr><td><strong>Code</strong></td><td>Real GitHub issues with hidden tests; competitive programming problems drawn after a cutoff</td><td>Practical software engineering; verifiable by execution</td><td>Test suites can be passed by wrong solutions; task selection may be unrepresentative</td></tr>
+      <tr><td><strong>Long context</strong></td><td>Needle-in-a-haystack retrieval; multi-document synthesis</td><td>Use of very long inputs</td><td>Retrieval of a fact is far easier than reasoning over the whole document</td></tr>
+      <tr><td><strong>Agentic</strong></td><td>Simulated computer, browser and customer-service environments</td><td>Multi-step tool use in an interactive setting</td><td>Expensive, high variance, and environments drift out of date</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="saturation-and-the-treadmill-it-creates">Saturation, and the Treadmill It Creates</h3>
+
+  <p>The characteristic life cycle of a benchmark is now well understood, and short:</p>
+
+  <div class="eq">The benchmark life cycle
+
+  Year 0   Released. Frontier models score ~30%. Human experts ~85%.
+           <span class="comment">Everyone agrees it is a good measure of real capability.</span>
+  Year 1   Frontier models reach ~60%. Labs report it in launch materials.
+  Year 2   ~90%. Remaining errors are disproportionately mislabelled items.
+           <span class="comment">The benchmark now measures label noise more than capability.</span>
+  Year 3   Retired or replaced by a "Pro" / "Hard" variant.
+
+Consequence: <span class="highlight">there is no long, stable time series for AI capability.</span>
+Each generation is measured on a different ruler, which makes honest
+comparison across years genuinely difficult — and makes both progress
+and stagnation easy to argue for, depending on which ruler you pick.</div>
+
+  <h3 id="contamination">Contamination</h3>
+
+  <p>If benchmark questions appear in the training corpus, high scores measure retrieval, not reasoning. Contamination is rarely deliberate; it is nearly unavoidable at web scale. Benchmarks are posted to GitHub, discussed on forums, reproduced in papers, and included in datasets-of-datasets. Even careful filtering by exact string match misses paraphrases, translations and discussions of specific items.</p>
+
+  <div class="callout warn">
+    <strong>How contamination is detected and fought</strong>
+    <ul>
+      <li><strong>Held-out and private test sets</strong> — the answers are never published, and submissions run against a server. Effective, but requires trusting the operator and blocks independent replication.</li>
+      <li><strong>Time-gated tasks</strong> — draw problems created after a model's training cutoff. Clean by construction, and the reason contest and live-coding benchmarks became popular.</li>
+      <li><strong>Canary strings</strong> — a unique marker in the dataset that a model can be probed for. Detects the crudest cases only.</li>
+      <li><strong>Perturbation tests</strong> — change surface details while preserving structure. A large drop suggests memorisation rather than understanding, and this test has embarrassed a number of headline results.</li>
+    </ul>
+  </div>
+
+  <div class="callout fact">
+    <strong>The reporting details that change the number</strong>
+    Two labs can report honestly on the same benchmark and differ by twenty points. Was the model prompted zero-shot or with few-shot examples? Did it get extended reasoning time, and how much? Was it a single attempt, or the best of many? Was a scaffold used — retrieval, tools, self-consistency voting? Was the grader an exact string match or another model? None of these is cheating, and all of them move scores substantially. <strong>A benchmark number without its protocol is not a measurement.</strong> When comparing models, compare protocols first.
+  </div>
+</section>
+
+<section>
+  <h2 id="human-preference-and-the-arena">Human Preference and the Arena</h2>
+
+  <p>Since static benchmarks measure narrow things, the field also runs large-scale head-to-head comparisons: a user submits a prompt, receives two anonymous responses, and votes. Ratings are computed with an Elo-style system borrowed from chess.</p>
+
+  <p>This captures something real that no multiple-choice test does — whether people actually prefer the output — and it is contamination-proof, because the prompts are novel. But preference is not the same as quality, and the gaps are systematic:</p>
+
+  <ul>
+    <li><strong>Style bias.</strong> Longer answers, confident tone, bullet points and headers win votes independent of correctness. Models can be tuned to please the arena specifically, and some visibly have been.</li>
+    <li><strong>Sycophancy bias.</strong> Agreement is preferred to correction. A model that tells a voter they are right outscores one that tells them they are wrong, which is an actively dangerous incentive gradient.</li>
+    <li><strong>Verifiability bias.</strong> Voters cannot check claims they lack expertise in, so fluent errors are rewarded — precisely where evaluation matters most.</li>
+    <li><strong>Population bias.</strong> Arena users are not representative of enterprise users, and their prompts are not representative of production traffic.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>Sycophancy is a measurement failure before it is a behaviour failure</strong>
+    A model trained to maximise human approval learns that agreement is rewarded. This is not a quirk; it is the objective working as specified. It is why preference data alone is an insufficient training signal, why constitutional and rule-based methods were developed to supplement it (see <a href="safety.html">Safety &amp; Governance</a>), and why "users like it" and "it is correct" must be measured separately — because optimising the first will actively degrade the second.
+  </div>
+</section>
+
+<section>
+  <h2 id="llm-as-judge">LLM-as-Judge</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Human grading is slow and expensive, so the industry uses a strong language model to grade the outputs of other language models. It works far better than it has any right to, and it fails in specific, well-documented ways that you must design around.</p>
+  </div>
+
+  <p>The method is simple: give a capable model the task, the response, and a rubric, and ask for a score or a comparison. It is fast, cheap, and reproducible enough to run on every commit. Correlation with human expert judgement is often good — typically reported in the 0.7–0.9 range on well-specified rubrics, which is comparable to agreement between two human graders.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Known bias</th><th>Effect</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Position bias</strong></td><td>Prefers whichever response is shown first (or second — it varies by model)</td><td>Run both orderings and average; discard pairs where the verdict flips</td></tr>
+      <tr><td><strong>Self-preference</strong></td><td>Rates its own family's outputs higher</td><td>Use a judge from a different family than any candidate; report which judge was used</td></tr>
+      <tr><td><strong>Length bias</strong></td><td>Longer is scored as better</td><td>Control for length in the rubric; check score-versus-length correlation explicitly</td></tr>
+      <tr><td><strong>Rubric drift</strong></td><td>Vague criteria are interpreted inconsistently across runs</td><td>Concrete, behavioural rubrics with worked examples of each score level</td></tr>
+      <tr><td><strong>Ceiling compression</strong></td><td>Everything scores 4 or 5 out of 5; the metric stops discriminating</td><td>Prefer pairwise comparison over absolute scoring</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>The rule that makes judges trustworthy</strong>
+    Validate the judge against human labels before you trust it, and keep validating. Hand-label a few hundred examples, measure agreement, and treat the judge as an instrument requiring calibration rather than an oracle. If judge-human agreement is 0.6, your automated evaluation is measuring the judge's preferences, not your system's quality — and you will optimise toward the judge.
+  </div>
+</section>
+
+<section>
+  <h2 id="evaluating-agents">Evaluating Agents</h2>
+
+  <p>Agent evaluation is harder than model evaluation in kind, not just in degree. The output is a <em>trajectory</em> — a sequence of decisions and actions in a stateful environment — and there are many acceptable paths to the same outcome and many unacceptable paths to it as well.</p>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>Outcome.</strong> Did the task get done, judged by a program? The backbone of any agent regression suite: objective, cheap, and immune to narration.</div></li>
+    <li data-n="2"><div><strong>Trajectory.</strong> Was the path sensible? Step count, cost, dangerous actions attempted, whether the agent hacked the metric rather than achieving the goal. A pass earned by deleting the failing test is not a pass.</div></li>
+    <li data-n="3"><div><strong>Robustness.</strong> Does it work when the environment differs slightly — a renamed field, a slower API, an unexpected error? Agents are notoriously brittle to distribution shift that a human would not notice.</div></li>
+    <li data-n="4"><div><strong>Safety.</strong> Under adversarial conditions — injected instructions in retrieved content, misleading tool output — does it hold the line? See the lethal trifecta discussion on the <a href="agents.html">Agentic AI</a> page.</div></li>
+  </ol>
+
+  <div class="eq">The metric that matters for agents, and the one usually reported
+
+  pass@k   — succeeded at least once in k attempts.
+             <span class="comment">Reported constantly. Flattering. Almost never what you need.</span>
+
+  pass^k   — succeeded in <span class="highlight">all</span> k attempts.
+             <span class="comment">Measures reliability, which is what production requires.</span>
+
+  Illustrative numbers for a real agent on a real task suite:
+
+     pass@1  = 62%      <span class="comment">one attempt succeeds</span>
+     pass@8  = 91%      <span class="comment">at least one of eight succeeds — the headline number</span>
+     pass^8  = 24%      <span class="comment">all eight succeed — the number your users experience</span>
+
+  A system that works two times in three is a demo.
+  A system that works consistently is a product.
+  <span class="highlight">The gap between those two sentences is where most agent projects die.</span></div>
+
+  <div class="callout warn">
+    <strong>Why public agent benchmarks overstate real performance</strong>
+    Benchmark environments are curated: the task is well specified, the tools work, the data is clean, the goal is unambiguous, and there is a correct answer. Production is none of those things. Ambiguous requests, flaky APIs, missing permissions, stale documentation and contradictory requirements are the normal case. A model at the top of an agentic leaderboard may still fail most of your real tasks — not because the benchmark lied, but because it measured the tractable subset. Build your own evaluation from your own traffic. There is no substitute, and the teams that skip this step consistently discover the gap in production.
+  </div>
+</section>
+
+<section>
+  <h2 id="safety-and-dangerous-capability-evaluation">Safety and Dangerous-Capability Evaluation</h2>
+
+  <p>A separate evaluation discipline asks not "how capable is this?" but "what could go wrong?" It splits into three activities that answer different questions:</p>
+
+  <ul>
+    <li><strong>Behavioural safety evals.</strong> Does the model refuse clearly harmful requests, resist manipulation, avoid generating dangerous content? Measured with adversarial prompt suites, and complicated by the twin failure modes: harmful compliance on one side, useless over-refusal on the other. Both are real failures, and optimising against one worsens the other.</li>
+    <li><strong>Dangerous-capability evals.</strong> Could this model meaningfully assist in causing serious harm — in biology, chemistry, cyber-offence? These deliberately probe for capability rather than behaviour, on the reasoning that a capability which exists can eventually be elicited, whatever the model's default refusals say. Results feed directly into the tiered deployment frameworks described on the <a href="safety.html">Safety &amp; Governance</a> page.</li>
+    <li><strong>Red-teaming.</strong> Humans and automated systems actively attempting to break the model. Finds what fixed test suites cannot, precisely because it is adaptive. Increasingly automated, since a model can generate attacks faster than a human team can.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Evaluating for what a model could do, not what it does</strong>
+    Safety-relevant evaluation deliberately removes safety training and tries hard to <em>elicit</em> a capability — with fine-tuning, scaffolding, and best-effort prompting. The rationale: a capability present in the weights may be recoverable by a determined adversary, so the honest question is what the model can be made to do, not what it happens to do by default. This is also the most rigorous form of evaluation in the field, because it is the one where being wrong has consequences that arrive in the newspaper.
+  </div>
+</section>
+
+<section>
+  <h2 id="the-statistics-nobody-runs">The Statistics Nobody Runs</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Most reported differences between models are within the noise. A benchmark of 200 questions cannot distinguish 71% from 74%, and a great deal of published comparison — and nearly all social-media comparison — ignores this completely.</p>
+  </div>
+
+  <div class="eq">Confidence interval for a benchmark score
+
+  standard error ≈ √( p(1−p) / n )
+  95% CI ≈ p ± 1.96 × SE
+
+  n = 200 items, p = 0.72:
+    SE = √(0.72 × 0.28 / 200) = 0.0317
+    <span class="highlight">95% CI = 72% ± 6.2%  →  [65.8%, 78.2%]</span>
+
+  So a model scoring 74% and one scoring 71% on this benchmark
+  are <span class="highlight">statistically indistinguishable</span>. The leaderboard ranks them
+  anyway, and the press release quotes the rank.
+
+  Sampling variance makes it worse: at temperature > 0, the same model
+  on the same benchmark varies run to run. Report mean and spread over
+  several runs, or you are reporting one sample and calling it a result.</div>
+
+  <p>Three habits fix most of this, and they are not expensive:</p>
+  <ul>
+    <li><strong>Report intervals, not just point estimates.</strong> If the intervals overlap, say so rather than ranking.</li>
+    <li><strong>Run multiple seeds.</strong> Variance across runs is frequently larger than the difference being claimed between models.</li>
+    <li><strong>Use paired comparison.</strong> Evaluating both models on the identical item set and comparing per-item outcomes is far more sensitive than comparing two aggregate percentages, and it costs nothing extra.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="building-evaluations-you-can-trust">Building Evaluations You Can Trust</h2>
+
+  <p>For anyone building on top of models, the practical conclusion of this page is blunt: public benchmarks tell you which models to shortlist, and nothing more. The evaluation that determines whether your system works has to be built from your own data.</p>
+
+  <ol class="steps">
+    <li data-n="1"><div><strong>Start from real traffic.</strong> Collect actual user requests — including the messy, ambiguous and adversarial ones. Fifty real examples beat a thousand invented ones, because invented examples encode your assumptions about what users do.</div></li>
+    <li data-n="2"><div><strong>Write down what "good" means, in behavioural terms.</strong> Not "helpful" but "cites a source for every factual claim, refuses to guess an account balance, stays under 200 words." Vague rubrics produce vague measurements.</div></li>
+    <li data-n="3"><div><strong>Build a golden set and label it by hand.</strong> Painful, unglamorous, and the single highest-return activity in applied AI work. This is also your judge-calibration set.</div></li>
+    <li data-n="4"><div><strong>Automate what you can, sample what you cannot.</strong> Deterministic checks where possible; a calibrated model judge for the rest; human review of a rotating sample to catch what neither sees.</div></li>
+    <li data-n="5"><div><strong>Run it on every change.</strong> Prompt edits, model upgrades, tool changes, retrieval tweaks. Regressions from an "obviously harmless" prompt tweak are routine, and without a suite you find out from users.</div></li>
+    <li data-n="6"><div><strong>Keep a holdout you never look at.</strong> If you tune against your whole eval set, you have overfitted to it, and you will not know until production disagrees.</div></li>
+  </ol>
+
+  <div class="callout fact">
+    <strong>The most useful question to ask a vendor or a paper</strong>
+    Not "what did it score?" but <strong>"what does it fail at, and how did you find out?"</strong> A team that can describe their system's failure modes precisely has real evaluation. A team that can only quote benchmark scores has a leaderboard position. The difference shows up in production within a fortnight.
+  </div>
+
+  <div class="checkpoint">
+    <h4>Check yourself</h4>
+    <details><summary>Model A scores 88% and Model B scores 85% on a 150-question benchmark. Which is better?</summary>
+    <p>Unknown. The standard error at n=150, p≈0.86 is about 2.8%, so the 95% intervals overlap substantially. You also do not know whether the protocols matched. A paired per-item comparison across several runs might resolve it; the leaderboard will not.</p></details>
+    <details><summary>Your agent reports pass@5 of 90%. What should you ask next?</summary>
+    <p>What is pass@1, and what is pass^5? Users get one attempt, and reliability under repetition is what production feels like. A 90% pass@5 is entirely compatible with a coin-flip single attempt.</p></details>
+    <details><summary>Why is it a problem to use the same model family as both candidate and judge?</summary>
+    <p>Self-preference bias: models score their own family's outputs higher. Your evaluation would systematically favour the candidate for reasons unrelated to quality — and the effect is large enough to reverse rankings.</p></details>
+  </div>
+</section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Benchmarks saturate, get contaminated, and become targets. Treat any single score as weak evidence with an expiry date.</li>
+    <li>A benchmark number without its protocol — shots, reasoning budget, attempts, scaffolding, grader — is not a measurement.</li>
+    <li>Human preference captures something real but rewards length, confidence and agreement, which is how sycophancy gets trained in.</li>
+    <li>Model judges are useful instruments with known biases; calibrate them against human labels or you are measuring the judge.</li>
+    <li>For agents, pass^k matters and pass@k flatters. Reliability under repetition is the product-relevant number.</li>
+    <li>Most reported differences between frontier models are within statistical noise. Report intervals and run multiple seeds.</li>
+    <li>Public benchmarks shortlist models. Only evaluations built from your own traffic tell you whether your system works.</li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
+</footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>

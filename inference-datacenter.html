@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inference Data Centers | Learn AI</title>
+  <meta name="description" content="Inference Data Centers — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html" class="active">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="inference-datacenter"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,15 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>Training vs Inference: Two Different Worlds</h2>
+  <h2 id="training-vs-inference-two-different-worlds">Training vs Inference: Two Different Worlds</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A training cluster runs one enormous job for months and nobody is waiting on it. An inference fleet runs millions of tiny jobs at once and every one of them has an impatient person or program at the other end. Same hardware, opposite problems: training optimises for total throughput, serving trades throughput against latency on every single request.</p>
+  </div>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Dimension</th><th>Training</th><th>Inference</th></tr></thead>
@@ -53,7 +61,7 @@
 </section>
 
 <section>
-  <h2>The Serving Architecture</h2>
+  <h2 id="the-serving-architecture">The Serving Architecture</h2>
   <p>A production LLM serving system has multiple layers between the user and the GPU:</p>
 
   <div class="diagram">
@@ -159,7 +167,7 @@
 </section>
 
 <section>
-  <h2>Tensor Parallelism for Serving</h2>
+  <h2 id="tensor-parallelism-for-serving">Tensor Parallelism for Serving</h2>
   <p>A 70B-parameter model at INT4 quantisation requires 35 GB just for weights. An H100 has 80 GB HBM — it fits. But at BF16, 70B requires 140 GB — needs 2 GPUs minimum. At FP32, 280 GB — needs 4+ GPUs. More importantly, a single H100 running decode for a batch of 1 at 70B is memory-bandwidth-limited at a low token rate.</p>
 
   <p><strong>Tensor parallelism</strong> shards model weights across multiple GPUs within a serving pod. Each GPU holds a fraction of each weight matrix; they collaborate on every forward pass via all-reduce:</p>
@@ -179,15 +187,15 @@ Sweet spot for 70B: TP=4 or TP=8 depending on latency SLO and cost target.</div>
 </section>
 
 <section>
-  <h2>Continuous Batching and PagedAttention</h2>
+  <h2 id="continuous-batching-and-pagedattention">Continuous Batching and PagedAttention</h2>
 
-  <h3>The Problem with Static Batching</h3>
+  <h3 id="the-problem-with-static-batching">The Problem with Static Batching</h3>
   <p>Naive inference servers process a fixed batch of N requests together, wait for all N to complete, then accept the next batch. This "static batching" wastes GPU time: a request that finishes early leaves its GPU slot idle until the longest request in the batch completes.</p>
 
-  <h3>Continuous Batching (Orca, 2022)</h3>
+  <h3 id="continuous-batching-orca-2022">Continuous Batching (Orca, 2022)</h3>
   <p>Each decode step, the scheduler inserts new requests into available batch slots as existing ones complete — at token granularity, not request granularity. This keeps all GPU batch slots occupied. GPU utilisation improves from 30–50% (static) to 70–90% (continuous batching) on typical traffic distributions.</p>
 
-  <h3>PagedAttention Memory Management</h3>
+  <h3 id="pagedattention-memory-management">PagedAttention Memory Management</h3>
   <div class="eq">KV cache for a single request: sequence_len × n_layers × n_heads × d_head × 2 bytes
 For LLaMA-3 70B, max context 8K, BF16:
   = 8192 × 80 × 64 × 128 × 2 ≈ 10.7 GB per request at max length
@@ -203,7 +211,7 @@ Result: supports 50+ concurrent requests on a single H100, not 5.</div>
 </section>
 
 <section>
-  <h2>Prompt Prefix Caching</h2>
+  <h2 id="prompt-prefix-caching">Prompt Prefix Caching</h2>
   <p>Many API users prepend a long system prompt to every request (e.g., "You are a customer service agent for Company X…"). Without caching, the prefill phase recomputes the KV vectors for this system prompt on every request — wasteful.</p>
 
   <p><strong>Prefix caching</strong> (implemented in vLLM, TensorRT-LLM, OpenAI's API) stores the KV cache for common prefixes. When a new request starts with a cached prefix, the stored KV tensors are reused — prefill starts mid-sequence, dramatically reducing TTFT and GPU compute:</p>
@@ -222,7 +230,7 @@ Eviction policy: LRU (Least Recently Used) across all requests in the serving po
 </section>
 
 <section>
-  <h2>Geographic Distribution</h2>
+  <h2 id="geographic-distribution">Geographic Distribution</h2>
   <p>Inference latency has a physical speed-of-light floor. Light travels ~200 km/ms in fibre (with switching overhead). A user in Tokyo querying a server in Virginia adds ~75 ms one-way round-trip before the first token arrives — violating TTFT SLOs.</p>
 
   <p>Inference is deployed across <strong>Points of Presence (PoPs)</strong> in major population centres. Model weights are replicated to each PoP — for a 70B model at INT4, that is 35 GB per PoP. A global deployment might have 8–12 PoPs:</p>
@@ -240,15 +248,20 @@ Model replication cost:
   Each PoP: 2–8 GPU pods for redundancy (16–64 H100s minimum)
   Global serving fleet: 100–1,000 H100s for a mid-scale consumer LLM</div>
 
-  <h3>Traffic Routing</h3>
+  <h3 id="traffic-routing">Traffic Routing</h3>
   <p>Anycast DNS routes users to the geographically nearest PoP. If a PoP is at capacity, requests overflow to the next-nearest. Health checks detect GPU pod failures within seconds and remove unhealthy pods from the routing pool. Blue/green deployments push model version updates to one PoP at a time, rolling forward only if metrics remain healthy.</p>
 </section>
 
 <section>
-  <h2>Cost Modeling</h2>
+  <h2 id="cost-modeling">Cost Modeling</h2>
   <p>The economics of inference determine pricing and profitability. Key cost driver: GPU hours per token.</p>
 
-  <div class="eq">Cost per 1M output tokens (rough estimates, 2024):
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>The cost of serving a model is the cost of renting the accelerators divided by how many tokens you can push through them. Everything in this page — batching, caching, quantisation, parallelism — is an attempt to increase the divisor. The headline story of the last few years is that the divisor grew far faster than anyone expected, which is why the price of a given level of capability has fallen roughly an order of magnitude per year.</p>
+  </div>
+
+  <div class="eq">Cost per 1M output tokens (illustrative structure — prices move fast):
 
 H100 cloud spot price:  ~$2.50–3.00/GPU-hour
 70B model, TP=8: 8 GPUs per pod
@@ -263,12 +276,35 @@ OpenAI GPT-4o:    $15.00/M output tokens → ~5× markup (larger model, less eff
 GPT-4o mini:       $0.60/M output → smaller model, ~5× cheaper than 70B size
 Groq (LPU):        ~$0.27/M → specialised inference hardware, extremely efficient</div>
 
-  <div class="callout fact">
-    <strong>Hardware choice for inference</strong>
-    GPUs are general-purpose and dominate due to availability and software ecosystem. Purpose-built inference accelerators like Groq's LPU (Language Processing Unit) and AWS Trainium/Inferentia sacrifice training flexibility for 10–50× better tokens/watt and tokens/dollar. As model architectures stabilise, more inference will shift to fixed-function hardware.
+  <div class="callout warn">
+    <strong>Treat published prices as a snapshot, and read the tiers</strong>
+    Per-token prices for a given capability level have fallen by roughly an order of magnitude per year, driven by better hardware, lower-precision arithmetic, sparse architectures, distillation and serving improvements. Any specific price quoted here would be wrong within months. What has proven durable is the <em>structure</em>: output tokens cost several times input tokens; cached input costs a small fraction of uncached input; batch or offline processing costs roughly half of interactive; and a distilled small model costs one to two orders of magnitude less than a frontier model. Those ratios reflect real differences in the hardware and change far more slowly than the absolute numbers.
   </div>
 
-  <h3>Dedicated Inference Chips</h3>
+  <h3 id="where-the-cost-actually-goes">Where the Cost Actually Goes</h3>
+  <div class="eq">Four levers, in rough order of leverage
+
+  1. <span class="highlight">Model choice</span>          100× spread between a frontier model and a
+                              distilled small one. Routing easy requests
+                              to a cheap model beats every other optimisation.
+
+  2. <span class="highlight">Prefix caching</span>         Up to ~10× on the cached portion.
+                              Decisive for agents, which re-send a growing
+                              transcript on every single step.
+
+  3. <span class="highlight">Batching + paging</span>      2–20× throughput versus naive serving.
+                              This is what continuous batching and
+                              PagedAttention buy you.
+
+  4. <span class="highlight">Quantisation</span>           2–4×, and it is mostly a bandwidth win:
+                              fewer bytes of weights crossing the memory bus
+                              per generated token.
+
+  <span class="comment">Reasoning models change the arithmetic. A request that generates 8,000
+  hidden reasoning tokens before a 200-token answer costs ~40× a plain
+  reply. Deciding *when* to reason is now a first-class cost control.</span></div>
+
+  <h3 id="dedicated-inference-chips">Dedicated Inference Chips</h3>
   <div class="table-wrap">
   <table>
     <thead><tr><th>Chip</th><th>Company</th><th>Tokens/sec (70B)</th><th>Approach</th></tr></thead>
@@ -276,16 +312,42 @@ Groq (LPU):        ~$0.27/M → specialised inference hardware, extremely effici
       <tr><td><strong>H100 SXM5</strong></td><td>NVIDIA</td><td>~1,200 (batch 512)</td><td>General GPU, CUDA ecosystem</td></tr>
       <tr><td><strong>LPU</strong></td><td>Groq</td><td>~800 (single request)</td><td>SRAM-only, no HBM, deterministic</td></tr>
       <tr><td><strong>Inferentia2</strong></td><td>AWS</td><td>~600</td><td>Custom ASIC, tight AWS integration</td></tr>
-      <tr><td><strong>TPU v5e</strong></td><td>Google</td><td>~800</td><td>Matrix engine, Google-only</td></tr>
+      <tr><td><strong>TPU v5e / v7</strong></td><td>Google</td><td>~800 and up</td><td>Matrix engine; later generations explicitly inference-first</td></tr>
+      <tr><td><strong>Trainium 2 / 3</strong></td><td>AWS</td><td>—</td><td>Custom silicon deployed at very large scale for a single major customer's workloads</td></tr>
+      <tr><td><strong>Wafer-scale engines</strong></td><td>Cerebras</td><td>Very high, single request</td><td>Entire wafer as one chip; weights in on-chip SRAM, no HBM bottleneck</td></tr>
     </tbody>
+    <caption>Throughput figures depend heavily on model, precision, batch size and context length, and vendor-published numbers use favourable settings. Use these as an indication of architectural approach rather than as a benchmark.</caption>
   </table>
   </div>
+
+  <div class="callout fact">
+    <strong>The SRAM gambit</strong>
+    Conventional accelerators keep weights in HBM and stream them through the chip for every token — which is why decode is memory-bandwidth-bound. An alternative is to keep the weights entirely in on-chip SRAM, whose bandwidth is orders of magnitude higher, and accept that on-chip memory is small enough to require spreading a model across many chips. The result is single-request token generation far faster than any HBM-based design can achieve. The constraint is capacity and cost per model served, which confines the approach to a real but bounded niche. That niche is growing, because reasoning models made output-token speed matter much more than it used to: a user waiting on 8,000 tokens of reasoning notices the difference.
+  </div>
 </section>
+
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Serving optimises latency per request under a throughput constraint; training optimises total throughput. Nearly every design difference follows from that.</li>
+    <li>Continuous batching and PagedAttention together took GPU memory utilisation from roughly a third to near ninety percent — the largest single win in serving.</li>
+    <li>Prefix caching is the highest-leverage optimisation for agentic workloads, because agents re-send a growing, mostly-stable context on every step.</li>
+    <li>Prefill and decode have opposite bottlenecks, which is why serving systems increasingly run them on separate hardware pools.</li>
+    <li>Price per unit of capability has fallen roughly an order of magnitude a year. The ratios between tiers are far more stable than the absolute prices.</li>
+    <li>Reasoning models multiply output tokens per request, which reshapes both cost models and hardware choice.</li>
+  </ul>
+</div>
 
 </main>
 
 <footer>
-  <p>Learn AI · <a href="training-datacenter.html">← Training DCs</a> · <a href="hardware.html">Next: Hardware →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

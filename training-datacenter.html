@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Training Data Centers | Learn AI</title>
+  <meta name="description" content="Training Data Centers — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html">LLMs</a>
-    <a href="training-datacenter.html" class="active">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="training-datacenter"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,16 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>Scale of Compute Required</h2>
+  <h2 id="scale-of-compute-required">Scale of Compute Required</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>A training cluster is not a big computer room. It is a single machine the size of a warehouse, in which tens of thousands of accelerators must stay in lockstep — every one waiting for every other, thousands of times per second, for months without a break. If any part fails, the whole thing stalls. Building one is less like assembling servers and more like commissioning a small power station that happens to do arithmetic.</p>
+  </div>
+
   <p>Training a frontier LLM requires an amount of compute that dwarfs any other computation in history. Using the Chinchilla formula C ≈ 6PD:</p>
 
   <div class="eq">GPT-4 (estimated): P ≈ 1.8T params, D ≈ 13T tokens
@@ -54,11 +63,18 @@ Real GPT-4 training: estimated ~3 months → MFU was higher, or cluster was larg
     <div class="spec-card"><span class="val">~70 MW</span><div class="lbl">Power consumed by 100K H100s at 700W TDP each</div></div>
     <div class="spec-card"><span class="val">35–50%</span><div class="lbl">Typical Model FLOP Utilisation (MFU) on well-tuned runs</div></div>
     <div class="spec-card"><span class="val">&lt;1 μs</span><div class="lbl">GPU-to-GPU latency within a node via NVLink</div></div>
+    <div class="spec-card"><span class="val">1 GW+</span><div class="lbl">Power envisaged for the largest announced single AI campuses</div></div>
+    <div class="spec-card"><span class="val">~120 kW</span><div class="lbl">Power draw of one rack-scale accelerator system</div></div>
+  </div>
+
+  <div class="callout warn">
+    <strong>The unit of construction is now the campus, not the cluster</strong>
+    Announced AI infrastructure programmes are measured in gigawatts and tens of billions of dollars: multi-site campuses with dedicated generation, their own substations and their own water infrastructure. For scale, one gigawatt is roughly the output of a large nuclear reactor, or the consumption of a mid-sized city. The binding constraint on these projects is almost never chips. It is <strong>grid interconnection</strong> — the multi-year queue to connect a large new load to a transmission network — followed by transformer and turbine lead times. Which is why AI companies now employ energy developers, and why the sector's growth rate is increasingly set by utilities rather than by foundries.
   </div>
 </section>
 
 <section>
-  <h2>Intra-Node Interconnects: NVLink</h2>
+  <h2 id="intra-node-interconnects-nvlink">Intra-Node Interconnects: NVLink</h2>
   <p>Within a single server, multiple GPUs must exchange gradient tensors with extremely high bandwidth. PCIe (the standard CPU-GPU interface) tops out at 64 GB/s bidirectional — far too slow for distributed training. NVIDIA's <strong>NVLink</strong> is a proprietary GPU-to-GPU interconnect:</p>
 
   <div class="table-wrap">
@@ -86,7 +102,7 @@ All-reduce bandwidth on a DGX node (ring algorithm):
 </section>
 
 <section>
-  <h2>Inter-Node Interconnects: InfiniBand</h2>
+  <h2 id="inter-node-interconnects-infiniband">Inter-Node Interconnects: InfiniBand</h2>
   <p>Communication between servers uses <strong>InfiniBand (IB)</strong>, a high-speed low-latency network protocol purpose-built for HPC clusters. Ethernet is used in cloud data centres but has higher latency and lower efficiency for collective communications.</p>
 
   <div class="table-wrap">
@@ -102,7 +118,7 @@ All-reduce bandwidth on a DGX node (ring algorithm):
 
   <p>Each DGX H100 server has 8 IB network cards (one per GPU, via an NVLink-IB bridge called ConnectX). With NDR, each server has 8 × 400 Gb/s = 3.2 Tb/s of total external bandwidth — needed to match the NVLink bandwidth available within the node for inter-node gradient synchronisation.</p>
 
-  <h3>RDMA: Remote Direct Memory Access</h3>
+  <h3 id="rdma-remote-direct-memory-access">RDMA: Remote Direct Memory Access</h3>
   <p>InfiniBand uses <strong>RDMA</strong> — one GPU can read or write data directly into another GPU's HBM across the network without involving either server's CPU. This eliminates PCIe and CPU bottlenecks:</p>
   <div class="eq">Traditional network: GPU → PCIe → CPU → NIC → network → CPU → PCIe → GPU
 RDMA path:          GPU → NVLink → NIC → network → NIC → GPU
@@ -112,7 +128,7 @@ RDMA latency: 600 ns–1 μs (vs 50–100 μs for TCP/IP)</div>
 </section>
 
 <section>
-  <h2>Fat-Tree Network Topology</h2>
+  <h2 id="fat-tree-network-topology">Fat-Tree Network Topology</h2>
   <p>A training cluster connects thousands of servers. The topology must provide high aggregate bandwidth and non-blocking communication — any two servers must be able to communicate at near full link speed, regardless of which servers they are.</p>
 
   <p>The <strong>fat-tree</strong> (or Clos) topology achieves this. A three-tier fat-tree with k-port switches provides (k/2)³ = k³/8 server endpoints with full bisection bandwidth:</p>
@@ -208,7 +224,7 @@ RDMA latency: 600 ns–1 μs (vs 50–100 μs for TCP/IP)</div>
     <figcaption>Three-tier fat-tree topology. Each leaf switch connects to 16–32 GPU servers and uplinks to every aggregation switch in its pod. Core switches provide full any-to-any bandwidth. Real clusters have thousands of leaf switches.</figcaption>
   </div>
 
-  <h3>All-Reduce in Practice</h3>
+  <h3 id="all-reduce-in-practice">All-Reduce in Practice</h3>
   <p>During data-parallel training, all GPUs must sum their gradient tensors and distribute the result. The NCCL library (NVIDIA Collective Communications Library) implements ring-all-reduce on top of NVLink and IB:</p>
   <div class="eq">Ring all-reduce on N GPUs, data size S:
   Phase 1 (Reduce-Scatter): each GPU sends/receives S/N data in N-1 steps
@@ -221,7 +237,7 @@ RDMA latency: 600 ns–1 μs (vs 50–100 μs for TCP/IP)</div>
 </section>
 
 <section>
-  <h2>Storage: Parallel File Systems</h2>
+  <h2 id="storage-parallel-file-systems">Storage: Parallel File Systems</h2>
   <p>Training data must be fed to GPUs fast enough to keep them busy. A single H100 processes ~16,000 tokens/second. A 10,000-GPU cluster processes 160 million tokens/second — 320 MB/s of tokenised data. The storage system must sustain far higher rates to allow checkpointing and data shuffling.</p>
 
   <p>Production training uses <strong>distributed parallel file systems</strong>:</p>
@@ -235,8 +251,8 @@ RDMA latency: 600 ns–1 μs (vs 50–100 μs for TCP/IP)</div>
 </section>
 
 <section>
-  <h2>Power and Cooling</h2>
-  <h3>Power Density</h3>
+  <h2 id="power-and-cooling">Power and Cooling</h2>
+  <h3 id="power-density">Power Density</h3>
   <div class="eq">H100 SXM5 TDP: 700W
 DGX H100 (8× H100 + 2× Intel Xeon + networking): ~10.2 kW per server
 42U rack with 10 DGX servers: ~102 kW per rack
@@ -248,7 +264,7 @@ AI cluster rack limit: 100–200 kW/rack (liquid-cooled)
 Total facility power: ~15–18 MW for 10,000 GPUs
 100,000 GPU cluster (xAI): ~120–150 MW</div>
 
-  <h3>Cooling Technologies</h3>
+  <h3 id="cooling-technologies">Cooling Technologies</h3>
   <div class="two-col">
     <div>
       <h4>Air Cooling</h4>
@@ -270,17 +286,32 @@ Total facility power: ~15–18 MW for 10,000 GPUs
     </div>
   </div>
 
-  <h3>Power Sources</h3>
-  <p>A 150 MW AI training facility exceeds the capacity of a typical city substation. Operators increasingly co-locate with power generation:</p>
+  <div class="callout fact">
+    <strong>Liquid cooling stopped being optional</strong>
+    Rack-scale accelerator systems draw well over 100 kW in a single rack, and no practical volume of air removes that much heat. Direct-to-chip liquid cooling is now the default for new AI capacity rather than an upgrade, which changes the building: coolant distribution units, secondary loops, leak detection, and facility water systems all become part of the critical path. Power distribution is changing alongside it — higher-voltage DC architectures reduce the enormous conduction losses and copper mass involved in delivering a hundred kilowatts to a single rack at conventional voltages. A modern AI hall has more in common with an industrial plant than with a traditional data centre.
+  </div>
+
+  <h3 id="power-sources-and-the-grid-problem">Power Sources and the Grid Problem</h3>
+  <p>A large AI campus exceeds the capacity of a typical city substation, and increasingly exceeds what a regional grid can absorb on the timescale the operator wants. The responses in use:</p>
   <ul>
-    <li><strong>xAI Memphis:</strong> Powered initially by natural gas turbines on-site; transitioning to grid. 150 MW planned capacity.</li>
-    <li><strong>Microsoft/OpenAI:</strong> Exploring dedicated nuclear plant construction (SMRs) for the multi-GW scale needed for GPT-5 and beyond.</li>
-    <li><strong>Google:</strong> Signed the first-ever corporate Power Purchase Agreement for advanced nuclear (Kairos Power, 2024).</li>
+    <li><strong>On-site generation.</strong> Gas turbines installed at the site, bypassing the interconnection queue entirely. Fast to deploy, and the most contentious option locally — permitting fights and air-quality objections have become routine.</li>
+    <li><strong>Nuclear power purchase agreements.</strong> Long-term contracts with existing plants, including agreements to restart previously retired reactors, plus investment in small modular reactors. SMRs are a genuine long-term answer and are unlikely to contribute meaningful capacity within this build cycle.</li>
+    <li><strong>Renewables with firming.</strong> Solar and wind at scale, backed by storage and gas. Cheap energy, but intermittent, and training runs want steady load.</li>
+    <li><strong>Siting for power rather than for people.</strong> Locating next to generation and transmission instead of near users — viable for training, which is latency-insensitive, and not for inference, which is not.</li>
+    <li><strong>Flexible load.</strong> Agreeing to curtail during grid stress in exchange for faster interconnection. Training runs can be paused and resumed from a checkpoint, making them unusually good candidates for this — one of the few places where AI's constraints and the grid's happen to align.</li>
   </ul>
+
+  <div class="callout warn">
+    <strong>Who pays for the grid?</strong>
+    Large new loads require transmission upgrades, and how those costs are allocated between the data-centre operator and the general ratepayer is now an active political fight in several jurisdictions. Alongside it sits water: evaporative cooling consumes it, closed-loop liquid cooling largely does not, and which is used has become a genuine siting issue in water-stressed regions. These are not peripheral concerns. Local opposition and utility regulation are, plausibly, a firmer limit on AI buildout than any technical constraint — and unlike a supply chain, they cannot be solved with capital.
+  </div>
+
+  <h3 id="training-across-multiple-data-centres">Training Across Multiple Data Centres</h3>
+  <p>When one site cannot supply enough power, the run must span several. This is hard: synchronous data-parallel training assumes an all-reduce across every worker at every step, and a wide-area link has thousands of times the latency and a fraction of the bandwidth of an in-building fabric. The techniques that make it viable are all forms of communicating less often or less precisely — hierarchical all-reduce that synchronises fully within a site and less frequently between sites, gradient compression, and asynchronous or delayed-update schemes that tolerate stale gradients. Multi-site training has been demonstrated at frontier scale; it costs efficiency, and it is the direct consequence of power, not compute, being the limiting resource.</p>
 </section>
 
 <section>
-  <h2>Fault Tolerance on Long Training Runs</h2>
+  <h2 id="fault-tolerance-on-long-training-runs">Fault Tolerance on Long Training Runs</h2>
   <p>A training run on 10,000+ GPUs over 3 months has an extremely high probability of hardware failure. GPU failure rates are ~0.1–1% per month per GPU; on 10,000 GPUs, expect 10–100 failures per month. Training frameworks must:</p>
   <ul>
     <li><strong>Checkpoint frequently</strong> — every 10–30 minutes, writing model state to parallel storage. On failure, resume from the last checkpoint.</li>
@@ -290,10 +321,28 @@ Total facility power: ~15–18 MW for 10,000 GPUs
   </ul>
 </section>
 
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>A training cluster is one tightly coupled machine, not a collection of servers. Synchronisation cost, not raw FLOPS, sets its effective throughput.</li>
+    <li>The interconnect hierarchy — NVLink within a rack domain, InfiniBand or Ethernet between racks — determines which parallelism strategies are viable.</li>
+    <li>Model FLOP utilisation of 35–50% is a good result. The gap between peak and achieved is communication, memory movement and stalls.</li>
+    <li>Power is the binding constraint on AI expansion, and grid interconnection queues are the binding constraint on power.</li>
+    <li>Rack densities above 100 kW make liquid cooling mandatory and change the building's mechanical and electrical design.</li>
+    <li>Failures are certain at this scale, so checkpointing and fast recovery are core engineering, not operations hygiene.</li>
+  </ul>
+</div>
+
 </main>
 
 <footer>
-  <p>Learn AI · <a href="llms.html">← LLMs</a> · <a href="inference-datacenter.html">Next: Inference DCs →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>

@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Large Language Models | Learn AI</title>
+  <meta name="description" content="Large Language Models — part of the Learn AI guide.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">Learn<span>AI</span></a>
-    <a href="neural-networks.html">Neural Nets</a>
-    <a href="training.html">Training</a>
-    <a href="inference.html">Inference</a>
-    <a href="llms.html" class="active">LLMs</a>
-    <a href="training-datacenter.html">Training DCs</a>
-    <a href="inference-datacenter.html">Inference DCs</a>
-    <a href="hardware.html">Hardware</a>
-    <a href="foundry.html">Foundry</a>
-    <a href="implementation.html">Implementation</a>
-    <a href="glossary.html">Glossary</a>
+<nav id="site-nav" data-page="llms"></nav>
+<noscript>
+  <div class="ns-nav">
+    <a href="index.html">Home</a> · <a href="learn.html">Learning Paths</a> ·
+    <a href="neural-networks.html">Neural Networks</a> · <a href="llms.html">LLMs</a> ·
+    <a href="training.html">Training</a> · <a href="inference.html">Inference</a> ·
+    <a href="multimodal.html">Beyond Text</a> · <a href="agents.html">Agentic AI</a> ·
+    <a href="robotics.html">Robotics</a> · <a href="implementation.html">Implementation</a> ·
+    <a href="evaluation.html">Evaluation</a> · <a href="hardware.html">Hardware</a> ·
+    <a href="training-datacenter.html">Training DCs</a> · <a href="inference-datacenter.html">Inference DCs</a> ·
+    <a href="foundry.html">Foundry</a> · <a href="economics.html">Economics</a> ·
+    <a href="safety.html">Safety</a> · <a href="glossary.html">Glossary</a>
   </div>
-</nav>
+</noscript>
 
 <header class="page-hero">
   <div class="page-hero-inner">
@@ -33,8 +34,16 @@
 
 <main>
 
+<div id="toc"></div>
+
 <section>
-  <h2>From RNNs to Transformers</h2>
+  <h2 id="from-rnns-to-transformers">From RNNs to Transformers</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Before 2017, a language model read a sentence the way you do — one word at a time, carrying a summary of everything so far in its head. That summary kept getting blurrier, so anything said fifty words ago was effectively forgotten, and because each word had to wait for the one before it, training could not be parallelised. The transformer's insight was to abandon reading in order entirely: let every word look directly at every other word, all at once. Distance stops mattering, and the whole thing runs in parallel on a GPU.</p>
+  </div>
+
   <p>Prior to 2017, language models used Recurrent Neural Networks (RNNs). An RNN processes tokens sequentially, maintaining a hidden state hₜ:</p>
   <div class="eq">h_t = tanh(W_h h_{t-1} + W_x x_t + b)   [RNN cell]</div>
   <p>The problem: this sequential computation is inherently serial — you cannot compute h₄₀ before h₃₉. Training is slow. Worse, gradients must flow backwards through hundreds of time steps — they vanish. Long-range dependencies (a pronoun referring to a subject 500 words earlier) are essentially unlearnable.</p>
@@ -43,7 +52,7 @@
 </section>
 
 <section>
-  <h2>Scaled Dot-Product Attention</h2>
+  <h2 id="scaled-dot-product-attention">Scaled Dot-Product Attention</h2>
   <p>The core operation of a transformer. Given a sequence of token representations packed into a matrix X ∈ ℝ^{n×d} (n tokens, d dimensions), three linear projections produce Query, Key, and Value matrices:</p>
 
   <div class="eq">Q = X W_Q       W_Q ∈ ℝ^{d × d_k}
@@ -65,7 +74,7 @@ Dimensions:
     With large d_k (e.g. 128), dot products QᵢKⱼ have variance proportional to d_k. Without scaling, these large values push softmax into near-zero gradient regions — the largest logit dominates with probability ≈1, all others ≈0, and gradients vanish. Dividing by √d_k keeps dot product variance constant at 1 regardless of d_k.
   </div>
 
-  <h3>Causal Masking</h3>
+  <h3 id="causal-masking">Causal Masking</h3>
   <p>During training (and in decoder-only models like GPT/LLaMA/Claude), each token may only attend to previous tokens — not future ones. This is implemented by adding −∞ to the upper triangle of QKᵀ before softmax, so e^{−∞} = 0 after softmax:</p>
   <div class="eq">Masked_Score(i,j) = QᵢKⱼᵀ / √d_k   if j ≤ i
                     = −∞               if j > i
@@ -74,7 +83,7 @@ After softmax, future positions receive attention weight 0.</div>
 </section>
 
 <section>
-  <h2>Multi-Head Attention</h2>
+  <h2 id="multi-head-attention">Multi-Head Attention</h2>
   <p>A single attention head can only model one type of relationship at a time. Multi-head attention runs H independent attention operations in parallel, each with its own projection matrices, then concatenates and projects results:</p>
 
   <div class="eq">head_h = Attention(Q W_Q^h, K W_K^h, V W_V^h)     for h = 1, …, H
@@ -92,7 +101,7 @@ Total parameters in MHA: 4d² = 4×8192² = 268M per layer</div>
 
   <p>Different heads empirically specialise: some track syntactic dependencies, others co-reference, others domain-specific patterns. Head 3 in layer 15 of a large LLM might specialise in tracking which entity a pronoun refers to 200 tokens back.</p>
 
-  <h3>Grouped Query Attention (GQA)</h3>
+  <h3 id="grouped-query-attention-gqa">Grouped Query Attention (GQA)</h3>
   <p>Standard MHA replicates K and V matrices for every head — expensive for KV cache. <strong>Grouped Query Attention</strong> (Ainslie et al., 2023, used in LLaMA-3, Mistral) groups Q heads and shares a single K, V per group:</p>
   <div class="eq">G groups, H query heads, H/G key-value heads.
 
@@ -104,7 +113,7 @@ KV cache reduced from 64× to 8× (8× memory saving for long contexts)</div>
 </section>
 
 <section>
-  <h2>The Transformer Block</h2>
+  <h2 id="the-transformer-block">The Transformer Block</h2>
   <p>Each of the L transformer layers (blocks) applies two sub-layers in sequence, each followed by residual addition and layer normalisation:</p>
 
   <div class="eq"><span class="highlight">x' = x + Attention(LN(x))          [multi-head self-attention + residual]
@@ -113,7 +122,7 @@ x'' = x' + FFN(LN(x'))             [feed-forward network + residual]</span>
 LN = Layer Normalisation (pre-norm variant, used in modern LLMs)
 This is the "pre-norm" formulation; original 2017 transformer used post-norm.</div>
 
-  <h3>Feed-Forward Network (FFN)</h3>
+  <h3 id="feed-forward-network-ffn">Feed-Forward Network (FFN)</h3>
   <p>The FFN applies two linear projections with a nonlinearity in between. It constitutes ~2/3 of parameters in a transformer:</p>
   <div class="eq">FFN(x) = W₂ · SiLU(W₁x) ⊙ (W₃x)     [SwiGLU variant, used in LLaMA]
 
@@ -204,7 +213,7 @@ Ratio: FFN ≈ 3× attention parameters</div>
 </section>
 
 <section>
-  <h2>Positional Encoding</h2>
+  <h2 id="positional-encoding">Positional Encoding</h2>
   <p>Self-attention is permutation-invariant — the same result regardless of token order. Positional encoding injects order information. Modern LLMs use <strong>Rotary Positional Embeddings (RoPE)</strong>:</p>
 
   <div class="eq">RoPE rotates the Query and Key vectors for position m by angle mθᵢ:
@@ -224,7 +233,7 @@ Benefits:
 </section>
 
 <section>
-  <h2>Scale and the Emergence of Capability</h2>
+  <h2 id="scale-and-the-emergence-of-capability">Scale and the Emergence of Capability</h2>
   <p>Model capability scales as a smooth power law with parameters, data, and compute — until it doesn't. <strong>Emergent abilities</strong> are qualitative capability jumps that appear discontinuously at specific scale thresholds, not predicted by interpolating from smaller models:</p>
 
   <div class="table-wrap">
@@ -240,15 +249,22 @@ Benefits:
   </table>
   </div>
 
-  <h3>Notable Model Scale</h3>
+  <h3 id="notable-model-scale">Notable Model Scale</h3>
   <div class="specs-grid">
-    <div class="spec-card"><span class="val">175B</span><div class="lbl">GPT-3 (2020) — 96 layers, 96 heads, d=12,288</div></div>
-    <div class="spec-card"><span class="val">70B</span><div class="lbl">LLaMA-3 70B — 80 layers, 64/8 GQA, RoPE, SwiGLU</div></div>
-    <div class="spec-card"><span class="val">~1T+</span><div class="lbl">GPT-4 (estimated MoE, ~1.8T total params, 8 experts × 220B)</div></div>
-    <div class="spec-card"><span class="val">15T</span><div class="lbl">Training tokens: LLaMA-3 (Meta, 2024)</div></div>
+    <div class="spec-card"><span class="val">175B</span><div class="lbl">GPT-3 (2020) — dense, 96 layers, d=12,288. The model that made scale the story</div></div>
+    <div class="spec-card"><span class="val">405B</span><div class="lbl">Llama 3.1 405B (2024) — the largest widely released <em>dense</em> model</div></div>
+    <div class="spec-card"><span class="val">671B / 37B</span><div class="lbl">DeepSeek-V3 — total vs active parameters. Sparsity is now the norm</div></div>
+    <div class="spec-card"><span class="val">~1T+</span><div class="lbl">Frontier closed models — sparse MoE, total parameters generally undisclosed</div></div>
+    <div class="spec-card"><span class="val">15–20T+</span><div class="lbl">Pretraining tokens for a modern flagship — approaching the limit of available quality text</div></div>
+    <div class="spec-card"><span class="val">128K–1M+</span><div class="lbl">Context windows now in production</div></div>
   </div>
 
-  <h3>Mixture of Experts (MoE)</h3>
+  <div class="callout warn">
+    <strong>Parameter counts have stopped being a useful headline</strong>
+    Three things broke the old comparison. <strong>Sparsity</strong>: a 671B-parameter MoE model activating 37B per token costs roughly what a 37B dense model costs to run, so "parameters" now needs the word "total" or "active" attached to mean anything. <strong>Non-disclosure</strong>: frontier labs largely stopped publishing architecture details, so the widely quoted figures for closed models are informed guesses. <strong>Inference-time compute</strong>: a smaller model that reasons for thirty seconds routinely beats a larger one that answers immediately, so capability no longer tracks size in any simple way. The honest modern description of a model is a triple — active parameters, training tokens, and reasoning budget — and even that omits the post-training, which may matter most of all.
+  </div>
+
+  <h3 id="mixture-of-experts-moe">Mixture of Experts (MoE)</h3>
   <p>MoE replaces each FFN with E independent expert networks. A learned router network selects the top-k experts (typically k=2) for each token:</p>
   <div class="eq">Router:  g(x) = TopK(softmax(W_r · x), k)      scores each expert for token x
 
@@ -259,10 +275,70 @@ Active parameters per token: k × FFN_params   (only k experts fire)
 
 Mixtral 8×7B: 8 experts, 2 active → 46.7B total params, 12.9B active per token
 → inference cost of a 13B model, quality approaching a 70B model</div>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>Instead of one enormous general-purpose layer that every word must pass through, an MoE layer is a room full of specialists with a receptionist at the door. Each word is sent to the two or three specialists most likely to be useful, and the rest of the room sits idle. The model can therefore <em>know</em> far more than it has to <em>compute</em> for any single word — which is why total parameter counts have grown so much faster than the cost of running them.</p>
+  </div>
+
+  <p>Mixture-of-experts has gone from a research curiosity to the default architecture for frontier models, and the design has sharpened considerably since Mixtral:</p>
+  <ul>
+    <li><strong>Far more, far smaller experts.</strong> Modern designs use hundreds of fine-grained experts rather than eight large ones, with a higher top-k. More specialisation, better load balance, and a smoother capability curve.</li>
+    <li><strong>Shared experts.</strong> One or more experts every token passes through, capturing general knowledge, so the routed experts are free to specialise rather than each re-learning the basics.</li>
+    <li><strong>Load balancing without auxiliary losses.</strong> Early MoE training needed an extra loss term to stop the router sending everything to a few favourite experts — which degraded quality. Bias-based balancing schemes achieve the same distribution without polluting the objective.</li>
+    <li><strong>The real cost is memory, not compute.</strong> All experts must be resident even though few fire per token. A sparse model is cheap in FLOPs and expensive in HBM, which is precisely why the rack-scale NVLink domains described on the <a href="hardware.html">Hardware</a> page were built.</li>
+  </ul>
+
+  <h3 id="attention-variants-that-shrink-the-kv-cache">Attention Variants That Shrink the KV Cache</h3>
+  <p>Grouped-query attention was the first widely adopted response to KV cache pressure. Two further approaches now matter:</p>
+  <ul>
+    <li><strong>Multi-head latent attention (MLA).</strong> Rather than sharing key-value heads, compress keys and values into a low-rank latent vector, cache <em>that</em>, and reconstruct per-head projections on the fly. This can shrink the cache by an order of magnitude relative to standard multi-head attention while retaining more expressiveness than aggressive GQA — trading a little extra computation for a large memory saving, which is exactly the right trade when memory is the binding constraint.</li>
+    <li><strong>Sparse and hybrid attention.</strong> Interleave full-attention layers with cheaper ones — sliding-window attention, or learned sparse selection of which past tokens to attend to. Some architectures go further and interleave transformer layers with state-space (Mamba-style) layers, which have constant memory per token rather than growing cache. These hybrids trade a small amount of recall for a large reduction in long-context serving cost.</li>
+  </ul>
 </section>
 
 <section>
-  <h2>Context Length and Its Challenges</h2>
+  <h2 id="reasoning-models-and-inference-time-compute">Reasoning Models and Inference-Time Compute</h2>
+
+  <div class="plain">
+    <strong>In plain terms</strong>
+    <p>For years, making a model better meant making it bigger and training it on more text. Then a third option appeared: let the model think for longer before answering. A model that writes out several thousand tokens of working — trying approaches, noticing errors, backtracking — before giving its answer can dramatically outperform the same model answering immediately. Thinking time became a resource you can buy, like parameters or data.</p>
+  </div>
+
+  <p>This is the most significant architectural shift since the transformer itself, and it is not an architectural change at all. The model is the same; what changed is the training that teaches it to use extra tokens productively, and the willingness to spend them at inference.</p>
+
+  <div class="eq">Three axes of scaling, and how they differ
+
+  1. <span class="highlight">Pretraining compute</span>   — more parameters, more tokens
+     Paid once. Improves everything. Increasingly constrained by
+     the supply of high-quality text.
+
+  2. <span class="highlight">Post-training compute</span>  — reinforcement learning on tasks with
+     automatically checkable answers (maths, code, proofs)
+     Paid once. Teaches the model to reason, persist, and self-correct.
+     Scales with compute rather than with human labelling.
+
+  3. <span class="highlight">Inference-time compute</span> — let the model generate a long chain of
+     reasoning before committing to an answer
+     Paid <span class="highlight">every single time you use it.</span> Accuracy improves roughly
+     log-linearly with reasoning tokens on hard problems, and not at
+     all on easy ones.
+
+Axis 3 is qualitatively different: it turns capability into a per-query
+cost decision. You can now literally choose to buy a better answer.</div>
+
+  <p>How the capability is trained: the model is asked to produce a long chain of reasoning and then a final answer; the answer is checked by a program; trajectories leading to correct answers are reinforced. Crucially, nobody demonstrates <em>how</em> to reason — the reasoning behaviour emerges from the optimisation. Models trained this way spontaneously develop recognisable strategies: checking their work, trying an alternative approach after a dead end, and noticing their own errors mid-derivation. The same training recipe is what produces competent agents, which is why the <a href="agents.html">Agentic AI</a> page treats reasoning models as the unlock for practical agents.</p>
+
+  <div class="callout warn">
+    <strong>Two cautions</strong>
+    First, <strong>reasoning does not help uniformly</strong>. On problems with a verifiable structure — mathematics, competitive programming, logical deduction — the gains are dramatic. On open-ended writing, factual recall, or matters of taste, extra reasoning tokens mostly cost money. Deciding when to spend them is a real engineering problem, and it is why models increasingly expose a reasoning-effort control.
+    <br><br>
+    Second, <strong>the visible reasoning is not necessarily the actual computation</strong>. A model can reach an answer by one route and produce a plausible written derivation by another. Treat a chain of thought as generated text that correlates with the model's process, not as a log of it. This has direct consequences for oversight, discussed on the <a href="safety.html">Safety &amp; Governance</a> page.
+  </div>
+</section>
+
+<section>
+  <h2 id="context-length-and-its-challenges">Context Length and Its Challenges</h2>
 
   <p>The attention matrix QKᵀ ∈ ℝ^{n×n} scales quadratically with sequence length n. Memory and compute cost of attention:</p>
 
@@ -280,7 +356,20 @@ Solutions:
 
   Ring attention: distribute the n×n attention matrix across GPUs in a ring.
     Each GPU computes a local block; pass K,V between GPUs in a ring.
-    Scales to 1M+ tokens by adding GPUs.</div>
+    Scales to 1M+ tokens by adding GPUs.
+
+  <span class="highlight">Native sparse attention</span>: learn which past tokens are worth attending to,
+    rather than fixing the pattern in advance. Keeps a global receptive
+    field at sub-quadratic cost, at the price of a harder training problem.
+
+  <span class="highlight">Hybrid SSM layers</span>: interleave transformer layers with state-space layers
+    whose memory per token is constant. Long-context serving cost drops
+    substantially; exact long-range recall degrades somewhat.</div>
+
+  <div class="callout warn">
+    <strong>A long context window is not the same as using it well</strong>
+    Retrieving a single fact planted in a million tokens — the "needle in a haystack" test — is close to solved and is a much easier problem than it sounds. Reasoning jointly over many facts spread across that same context is not, and measured performance degrades well before the advertised limit. This is the <em>context rot</em> discussed on the <a href="agents.html">Agentic AI</a> page, and it is why agent engineering is mostly about deciding what <em>not</em> to put in the window. Advertised context length is a capacity specification, not a capability claim.
+  </div>
 
   <div class="callout fact">
     <strong>FlashAttention implementation insight</strong>
@@ -288,10 +377,28 @@ Solutions:
   </div>
 </section>
 
+<div class="takeaways">
+  <h3 id="key-takeaways">Key takeaways</h3>
+  <ul>
+    <li>Attention replaced recurrence by letting every position look at every other position directly — which removes the distance penalty and makes training parallel.</li>
+    <li>Attention is O(n²) in sequence length. Nearly every architectural innovation since is an attempt to pay less for that without losing what it buys.</li>
+    <li>Grouped-query attention, multi-head latent attention and sparse or hybrid layers all target the same bottleneck: the KV cache, which dominates long-context serving cost.</li>
+    <li>Sparse mixture-of-experts is now the default frontier architecture. It decouples what a model knows from what it computes per token — cheap in FLOPs, expensive in memory.</li>
+    <li>Capability now scales along three axes: pretraining, post-training reinforcement learning, and inference-time reasoning. Only the third is paid per query.</li>
+    <li>A model's visible chain of thought correlates with its computation but does not faithfully report it.</li>
+  </ul>
+</div>
+
 </main>
 
 <footer>
-  <p>Learn AI · <a href="inference.html">← Inference</a> · <a href="training-datacenter.html">Next: Training Data Centers →</a></p>
+  <p>Learn AI · <a href="index.html">All topics</a> · <a href="glossary.html">Glossary</a> ·
+     <a href="https://github.com/callaban/learn-ai">Source on GitHub</a></p>
+  <p class="foot-note">An open educational resource. Figures describing a fast-moving industry are dated
+     where they matter; treat forward-looking items as informed projections, not certainties.
+     Corrections and additions are welcome via GitHub.</p>
 </footer>
+<script src="js/search-index.js" defer></script>
+<script src="js/site.js" defer></script>
 </body>
 </html>
